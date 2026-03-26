@@ -1,0 +1,11 @@
+{
+    "mcpServers": {
+        "laravel-boost": {
+            "command": "/www/server/php/82/bin/php",
+            "args": [
+                "/www/wwwroot/godlytools.local.host/godlytools/artisan",
+                "boost:mcp"
+            ]
+        }
+    }
+}
