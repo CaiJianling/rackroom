@@ -243,6 +243,7 @@
         "backToUsers": "返回用户列表",
         "cancel": "取消",
         "password": "密码",
-        "cannotChangeOwnStatus": "无法更改自己的状态"
+        "cannotChangeOwnStatus": "无法更改自己的状态",
+        "deleteWarning": "您确定要删除此用户吗？此操作无法撤销。"
     }
 }

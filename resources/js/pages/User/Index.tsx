@@ -2,8 +2,8 @@
  * @Author: CaiJianling caijianling@outlook.com
  * @Date: 2026-02-25 00:31:51
  * @LastEditors: CaiJianling caijianling@outlook.com
- * @LastEditTime: 2026-03-26 12:13:21
- * @FilePath: /godlytools/resources/js/Pages/User/Index.tsx
+ * @LastEditTime: 2026-03-26 12:28:57
+ * @FilePath: /rackroom/resources/js/pages/User/Index.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 import { Head, Link, router, usePage } from '@inertiajs/react';
@@ -69,6 +69,8 @@ export default function UserIndex({ users, breadcrumbs = [] }: Props) {
     const currentUserId = auth?.user?.id;
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [form, setForm] = useState({
         name: '',
@@ -86,9 +88,24 @@ export default function UserIndex({ users, breadcrumbs = [] }: Props) {
     );
 
     const handleDelete = (userId: number) => {
-        if (confirm(t('userManagement.confirmDelete'))) {
-            router.delete(`/users/${userId}`);
+        setDeletingUserId(userId);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (deletingUserId) {
+            router.delete(`/users/${deletingUserId}`, {
+                onSuccess: () => {
+                    setIsDeleteDialogOpen(false);
+                    setDeletingUserId(null);
+                },
+            });
         }
+    };
+
+    const cancelDelete = () => {
+        setIsDeleteDialogOpen(false);
+        setDeletingUserId(null);
     };
 
     const openEditDialog = (user: User) => {
@@ -679,6 +696,36 @@ export default function UserIndex({ users, breadcrumbs = [] }: Props) {
                             </Button>
                         </div>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete User Dialog */}
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {t('userManagement.confirmDelete')}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {t('userManagement.deleteWarning')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={cancelDelete}
+                        >
+                            {t('common.cancel')}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            onClick={confirmDelete}
+                        >
+                            {t('common.delete')}
+                        </Button>
+                    </div>
                 </DialogContent>
             </Dialog>
         </AppLayout>

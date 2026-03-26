@@ -24,6 +24,7 @@ i18n.use(LanguageDetector)
             lookupCookie: 'locale',
             lookupLocalStorage: 'locale',
         },
+        debug: false,
     });
 
 export default i18n;
