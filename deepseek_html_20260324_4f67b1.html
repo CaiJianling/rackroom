@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>智联机柜管理系统 | 设备可视化与远程管理</title>
+    <!-- Font Awesome 6 (免费图标库) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- 引入 jQuery 简化 AJAX 模拟，同时用于拖拽辅助 -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <!-- jQuery UI 拖拽核心 -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 避免拖拽时选中文本，但输入框不影响 */
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #e9eef3;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        /* 顶部工具栏 */
+        .toolbar {
+            background: #1f2a3e;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        .toolbar-group {
+            display: flex;
+            gap: 8px;
+            background: #0f1722;
+            padding: 5px 12px;
+            border-radius: 32px;
+            align-items: center;
+        }
+        .toolbar-group label {
+            font-size: 13px;
+            font-weight: 500;
+        }
+        input, select, button {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: none;
+            font-size: 13px;
+        }
+        button {
+            background: #2c3e66;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #1e2a4a;
+            transform: scale(0.98);
+        }
+        button.primary {
+            background: #0f7b6e;
+        }
+        button.primary:hover {
+            background: #0a5e54;
+        }
+        button.warning {
+            background: #b85c1a;
+        }
+        .status-badge {
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        /* 主体布局 */
+        .app-main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            gap: 0;
+        }
+        /* 左侧设备库 */
+        .device-library {
+            width: 280px;
+            background: #f8fafc;
+            border-right: 1px solid #cfdee9;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 12px;
+        }
+        .lib-header {
+            font-weight: bold;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .category-tabs {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 8px;
+        }
+        .cat-btn {
+            background: #e2e8f0;
+            color: #1e293b;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .cat-btn.active {
+            background: #0f7b6e;
+            color: white;
+        }
+        .device-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .device-card {
+            background: white;
+            border-radius: 10px;
+            padding: 8px 12px;
+            border-left: 5px solid #2c6e9e;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            cursor: grab;
+            transition: 0.1s;
+        }
+        .device-card:active {
+            cursor: grabbing;
+        }
+        .device-name {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .device-meta {
+            font-size: 11px;
+            color: #475569;
+        }
+        /* 中间画布区 (机柜布局) */
+        .canvas-area {
+            flex: 1;
+            overflow: auto;
+            background: #dce3ec;
+            padding: 20px;
+            position: relative;
+        }
+        .rack-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+        .rack {
+            background: #2c2e3a;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            width: 180px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .rack-header {
+            background: #1e1f2c;
+            color: #eee;
+            text-align: center;
+            padding: 6px;
+            font-weight: bold;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            font-size: 13px;
+        }
+        .rack-u-container {
+            display: flex;
+            flex-direction: column-reverse; /* 底部为1U */
+            background: #3a3e4c;
+        }
+        .u-slot {
+            height: 28px;
+            border-bottom: 1px solid #565b6e;
+            background: #4a4f60;
+            position: relative;
+            transition: 0.05s linear;
+        }
+        .u-slot.empty {
+            background: #2e3345;
+            border: 1px dashed #6c7a8e;
+        }
+        .device-item {
+            background: #2c7da0;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 28px;
+            height: 28px;
+            width: 100%;
+            cursor: pointer;
+            border-radius: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 4px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+        .power-bar {
+            background: #262b38;
+            padding: 4px;
+            text-align: center;
+            font-size: 10px;
+            color: #ffd966;
+            cursor: pointer;
+            border-top: 1px solid #5f6b7e;
+        }
+        .online {
+            border-left: 3px solid #2ecc71;
+        }
+        .offline {
+            border-left: 3px solid #e74c3c;
+        }
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            width: 400px;
+            padding: 20px;
+            border-radius: 20px;
+        }
+        .modal-content input, .modal-content select {
+            width: 100%;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+        }
+        .remote-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .badge-sm {
+            font-size: 10px;
+            background: #00000066;
+            border-radius: 10px;
+            padding: 2px 6px;
+        }
+        footer {
+            background: #f1f5f9;
+            font-size: 11px;
+            text-align: center;
+            padding: 4px;
+            border-top: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+<div class="toolbar">
+    <div class="toolbar-group">
+        <label>机柜U数:</label>
+        <input type="number" id="rackU" value="12" min="4" max="42" style="width:60px">
+        <label>排数(行):</label>
+        <input type="number" id="rackRows" value="1" min="1" max="4">
+        <label>列数(列):</label>
+        <input type="number" id="rackCols" value="2" min="1" max="5">
+        <button id="genRacksBtn" class="primary"><i class="fas fa-server"></i> 生成机柜</button>
+        <button id="expandRacksBtn"><i class="fas fa-plus-circle"></i> 扩展机柜(增加1列)</button>
+    </div>
+    <div class="toolbar-group">
+        <button id="previewBtn"><i class="fas fa-eye"></i> 预览模式</button>
+        <button id="exportConfigBtn"><i class="fas fa-download"></i> 导出配置</button>
+        <button id="importConfigBtn"><i class="fas fa-upload"></i> 导入配置</button>
+        <button id="exportReportBtn"><i class="fas fa-file-alt"></i> 导出报表(CSV)</button>
+    </div>
+    <div class="toolbar-group">
+        <span><i class="fas fa-plug"></i> 状态监测:</span>
+        <button id="pingAllBtn"><i class="fas fa-network-wired"></i> 批量Ping检测</button>
+    </div>
+</div>
+
+<div class="app-main">
+    <!-- 左侧设备库 -->
+    <div class="device-library">
+        <div class="lib-header">
+            <span><i class="fas fa-database"></i> 设备库</span>
+            <button id="addDeviceToLibBtn" style="padding:2px 8px;">+ 新增设备</button>
+        </div>
+        <div class="category-tabs" id="categoryTabs">
+            <button data-cat="服务器" class="cat-btn active">服务器</button>
+            <button data-cat="网络设备" class="cat-btn">网络设备</button>
+            <button data-cat="存储设备" class="cat-btn">存储设备</button>
+            <button data-cat="电源设备" class="cat-btn">电源设备</button>
+        </div>
+        <div class="device-list" id="deviceListContainer"></div>
+        <div style="font-size:11px; margin-top:12px; color:gray;">💡 拖拽设备至机柜U位</div>
+    </div>
+
+    <!-- 画布区域 -->
+    <div class="canvas-area" id="canvasArea">
+        <div class="rack-container" id="rackContainer"></div>
+    </div>
+</div>
+<footer>双击设备编辑信息 | 双击功率条修改功率值 | 支持SSH/HTTP等远程连接 (右键或点击远程按钮)</footer>
+
+<!-- 编辑弹窗模态框 -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3>编辑设备信息</h3>
+        <input type="text" id="editDevName" placeholder="设备名称">
+        <input type="text" id="editDevIP" placeholder="IP地址">
+        <input type="text" id="editDevModel" placeholder="型号">
+        <input type="number" id="editDevPower" placeholder="功率(W)">
+        <select id="editDevProtocol">
+            <option value="http">HTTP</option>
+            <option value="https">HTTPS</option>
+            <option value="ssh">SSH</option>
+            <option value="telnet">Telnet</option>
+        </select>
+        <div class="remote-buttons">
+            <button id="remoteConnectBtn"><i class="fas fa-link"></i> 远程连接</button>
+            <button id="saveEditBtn">保存</button>
+            <button id="closeModalBtn">取消</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- 全局数据结构 ----------
+    let currentScene = "default";      // 简单场景持久化localStorage
+    let racksData = [];                // 每个机柜对象: { id, name, totalU, slots: Array(U), powerConfig: {maxPower,curPower} , devicesMap }
+    let deviceLibrary = [];            // 设备库 [{ id, name, category, model, power, ip, protocol, height(默认1U) }]
+    let nextDeviceId = 100;
+    let activeCategory = "服务器";
+    let currentEditDeviceContext = null; // { rackIdx, uIndex, deviceId }
+    let previewMode = false;
+
+    // 辅助函数: 保存场景至localStorage
+    function saveScene() {
+        const sceneData = {
+            racks: racksData.map(rack => ({
+                id: rack.id, name: rack.name, totalU: rack.totalU, powerConfig: rack.powerConfig,
+                slots: rack.slots.map(slot => slot ? { deviceId: slot.deviceId, name: slot.name, ip: slot.ip, model: slot.model, power: slot.power, protocol: slot.protocol, height:1 } : null)
+            })),
+            deviceLib: deviceLibrary,
+            nextId: nextDeviceId
+        };
+        localStorage.setItem(`rack_scene_${currentScene}`, JSON.stringify(sceneData));
+        // 同时记录场景列表简单元数据
+        let scenes = JSON.parse(localStorage.getItem("rack_scene_list") || '["default"]');
+        if(!scenes.includes(currentScene)) scenes.push(currentScene);
+        localStorage.setItem("rack_scene_list", JSON.stringify(scenes));
+    }
+
+    function loadScene(sceneName) {
+        const raw = localStorage.getItem(`rack_scene_${sceneName}`);
+        if(!raw) { initDefaultRacks(); return false; }
+        try{
+            const data = JSON.parse(raw);
+            racksData = data.racks.map(r => ({
+                ...r,
+                slots: r.slots.map(s => s ? {...s, deviceId: s.deviceId} : null)
+            }));
+            deviceLibrary = data.deviceLib || [];
+            nextDeviceId = data.nextId || 200;
+            renderAllRacks();
+            renderDeviceLibrary();
+            return true;
+        }catch(e){ initDefaultRacks(); return false;}
+    }
+
+    function initDefaultRacks(){
+        const totalU = parseInt(document.getElementById('rackU').value);
+        const rows = parseInt(document.getElementById('rackRows').value);
+        const cols = parseInt(document.getElementById('rackCols').value);
+        generateRacks(totalU, rows, cols);
+    }
+
+    function generateRacks(uCount, rows, cols){
+        const newRacks = [];
+        let idx=1;
+        for(let r=0;r<rows;r++){
+            for(let c=0;c<cols;c++){
+                const rackId = `rack_${r}_${c}`;
+                const slots = new Array(uCount).fill(null);
+                newRacks.push({
+                    id: rackId,
+                    name: `机柜 ${String.fromCharCode(65+r)}${c+1}`,
+                    totalU: uCount,
+                    slots: slots,
+                    powerConfig: { maxPower: 5000, curPower: 0 }
+                });
+            }
+        }
+        racksData = newRacks;
+        recalcAllPower();
+        renderAllRacks();
+        saveScene();
+    }
+
+    function recalcAllPower(){
+        racksData.forEach(rack => {
+            let total=0;
+            rack.slots.forEach(dev => { if(dev && dev.power) total+= dev.power; });
+            rack.powerConfig.curPower = total;
+        });
+    }
+
+    function renderAllRacks(){
+        const container = $('#rackContainer');
+        container.empty();
+        if(previewMode) container.css('background','#fff');
+        racksData.forEach((rack, rackIdx) => {
+            const rackDiv = $('<div>').addClass('rack').css('width','200px');
+            rackDiv.append(`<div class="rack-header">${rack.name} (${rack.totalU}U)</div>`);
+            const uDiv = $('<div>').addClass('rack-u-container');
+            for(let i=rack.totalU-1; i>=0; i--){
+                const slot = rack.slots[i];
+                const uSlot = $('<div>').addClass('u-slot').attr('data-rack-idx', rackIdx).attr('data-u-idx', i);
+                if(!slot){
+                    uSlot.addClass('empty').html('<div style="font-size:8px; text-align:center;color:#aaa;">空闲</div>');
+                    // 拖拽放置区域
+                    uSlot.droppable({
+                        accept: '.device-card',
+                        drop: function(ev, ui) {
+                            const draggedId = ui.draggable.data('deviceId');
+                            const device = deviceLibrary.find(d => d.id == draggedId);
+                            if(device){
+                                const targetRackIdx = $(this).data('rack-idx');
+                                const targetU = $(this).data('u-idx');
+                                addDeviceToRack(targetRackIdx, targetU, device);
+                            }
+                        }
+                    });
+                } else {
+                    const dev = slot;
+                    const devDiv = $('<div>').addClass('device-item').text(dev.name.length>10?dev.name.slice(0,8)+'..':dev.name);
+                    devDiv.attr('title', `${dev.name}\nIP:${dev.ip||'无'}\n功率:${dev.power||0}W`);
+                    // 在线状态风格标记 (动态ping后加类)
+                    if(dev.online === true) devDiv.css('border-left','4px solid #2ecc71');
+                    else if(dev.online === false) devDiv.css('border-left','4px solid #e74c3c');
+                    devDiv.dblclick(()=> openEditDevice(rackIdx, i, dev.deviceId));
+                    uSlot.append(devDiv);
+                }
+                uDiv.append(uSlot);
+            }
+            rackDiv.append(uDiv);
+            // 功率条
+            const powerPercent = (rack.powerConfig.curPower / rack.powerConfig.maxPower)*100;
+            const powerColor = powerPercent>85? '#e67e22' : '#f1c40f';
+            const powerBar = $(`<div class="power-bar"><i class="fas fa-bolt"></i> 功率: ${rack.powerConfig.curPower}/${rack.powerConfig.maxPower}W</div>`);
+            powerBar.dblclick(()=>{
+                let newMax = prompt("请输入最大功率(W)", rack.powerConfig.maxPower);
+                if(newMax) { rack.powerConfig.maxPower = parseInt(newMax); recalcAllPower(); renderAllRacks(); saveScene();}
+            });
+            rackDiv.append(powerBar);
+            container.append(rackDiv);
+        });
+        // 重新启用拖拽克隆
+        $('.device-card').draggable({
+            revert: "invalid",
+            helper: "clone",
+            cursor: "move",
+            appendTo: "body",
+            zIndex: 1000
+        });
+    }
+
+    function addDeviceToRack(rackIdx, uIndex, device){
+        if(rackIdx<0 || rackIdx>=racksData.length) return;
+        const rack = racksData[rackIdx];
+        if(rack.slots[uIndex] !== null) { alert("此U位已有设备"); return; }
+        const newDev = {
+            deviceId: device.id,
+            name: device.name,
+            ip: device.ip || '',
+            model: device.model || '',
+            power: device.power || 0,
+            protocol: device.protocol || 'http',
+            online: null,
+            height:1
+        };
+        rack.slots[uIndex] = newDev;
+        recalcAllPower();
+        renderAllRacks();
+        saveScene();
+    }
+
+    function openEditDevice(rackIdx, uIdx, deviceId){
+        const dev = racksData[rackIdx].slots[uIdx];
+        if(!dev) return;
+        currentEditDeviceContext = { rackIdx, uIdx, deviceId };
+        $('#editDevName').val(dev.name);
+        $('#editDevIP').val(dev.ip||'');
+        $('#editDevModel').val(dev.model||'');
+        $('#editDevPower').val(dev.power||0);
+        $('#editDevProtocol').val(dev.protocol||'http');
+        $('#editModal').css('display','flex');
+    }
+
+    $('#saveEditBtn').on('click',function(){
+        if(currentEditDeviceContext){
+            const { rackIdx, uIdx } = currentEditDeviceContext;
+            const dev = racksData[rackIdx].slots[uIdx];
+            if(dev){
+                dev.name = $('#editDevName').val();
+                dev.ip = $('#editDevIP').val();
+                dev.model = $('#editDevModel').val();
+                dev.power = parseInt($('#editDevPower').val()) || 0;
+                dev.protocol = $('#editDevProtocol').val();
+                recalcAllPower();
+                renderAllRacks();
+                saveScene();
+            }
+        }
+        $('#editModal').css('display','none');
+    });
+    $('#closeModalBtn').click(()=>$('#editModal').hide());
+    $('#remoteConnectBtn').click(()=>{
+        if(currentEditDeviceContext){
+            const dev = racksData[currentEditDeviceContext.rackIdx].slots[currentEditDeviceContext.uIdx];
+            if(dev && dev.ip){
+                let url='';
+                if(dev.protocol === 'http') url = `http://${dev.ip}`;
+                else if(dev.protocol === 'https') url = `https://${dev.ip}`;
+                else if(dev.protocol === 'ssh') url = `ssh://${dev.ip}`;
+                else url = `telnet://${dev.ip}`;
+                window.open(url, '_blank');
+            } else alert("设备未配置IP地址");
+        } else alert("未选中设备");
+    });
+
+    // 设备库渲染
+    function renderDeviceLibrary(){
+        const container = $('#deviceListContainer');
+        container.empty();
+        const filtered = deviceLibrary.filter(d => d.category === activeCategory);
+        filtered.forEach(dev => {
+            const card = $(`<div class="device-card" data-device-id="${dev.id}"><div class="device-name">${dev.name}</div><div class="device-meta">${dev.model||'通用'} | ${dev.power}W</div></div>`);
+            card.draggable({
+                revert: "invalid",
+                helper: "clone",
+                cursor: "move",
+                appendTo: "body",
+                data: { deviceId: dev.id }
+            });
+            card.data('deviceId', dev.id);
+            container.append(card);
+        });
+    }
+
+    function addDeviceToLib(){
+        let name = prompt("设备名称","新设备");
+        if(!name) return;
+        let ip = prompt("IP地址(可选)","192.168.1.1");
+        let power = prompt("功率(W)","300");
+        let model = prompt("型号","标准");
+        const newDev = {
+            id: nextDeviceId++,
+            name: name,
+            category: activeCategory,
+            model: model,
+            power: parseInt(power) || 0,
+            ip: ip,
+            protocol: 'http',
+            height:1
+        };
+        deviceLibrary.push(newDev);
+        renderDeviceLibrary();
+        saveScene();
+    }
+    $('#addDeviceToLibBtn').click(addDeviceToLib);
+    $('.cat-btn').click(function(){
+        activeCategory = $(this).data('cat');
+        $('.cat-btn').removeClass('active');
+        $(this).addClass('active');
+        renderDeviceLibrary();
+    });
+
+    // ping监测
+    async function pingDevice(dev){
+        return new Promise(resolve=>{
+            // 模拟ping (实际生产可调用后端，但前端模拟延迟展示)
+            setTimeout(()=>{
+                const online = Math.random() > 0.2; // 80%在线模拟
+                dev.online = online;
+                resolve(online);
+            }, 300);
+        });
+    }
+    $('#pingAllBtn').click(async ()=>{
+        let devicesToPing = [];
+        racksData.forEach(rack=>{
+            rack.slots.forEach(dev=>{ if(dev) devicesToPing.push(dev); });
+        });
+        for(let dev of devicesToPing){
+            await pingDevice(dev);
+        }
+        renderAllRacks();
+        alert("批量在线监测完成 (模拟延迟)");
+    });
+
+    // 导入导出
+    $('#exportConfigBtn').click(()=>{
+        const exportData = {
+            racks: racksData,
+            deviceLibrary: deviceLibrary,
+            nextDeviceId: nextDeviceId,
+            meta: { version: "1.0" }
+        };
+        const dataStr = JSON.stringify(exportData,null,2);
+        const blob = new Blob([dataStr], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = $('<a>', { href: url, download: `rack_config_${currentScene}.json` })[0];
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+    $('#importConfigBtn').click(()=>{
+        const input = $('<input type="file" accept="application/json">');
+        input.on('change', function(e){
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev){
+                try{
+                    const data = JSON.parse(ev.target.result);
+                    racksData = data.racks;
+                    deviceLibrary = data.deviceLibrary;
+                    nextDeviceId = data.nextDeviceId;
+                    renderAllRacks();
+                    renderDeviceLibrary();
+                    saveScene();
+                    alert("配置导入成功");
+                }catch(ex){ alert("文件解析失败");}
+            };
+            reader.readAsText(file);
+        });
+        input.click();
+    });
+    $('#exportReportBtn').click(()=>{
+        let rows = [["机柜名称","U位","设备名称","型号","IP地址","功率(W)","状态"]];
+        racksData.forEach(rack=>{
+            rack.slots.forEach((dev, idx)=>{
+                if(dev){
+                    rows.push([rack.name, (idx+1)+"U", dev.name, dev.model||'', dev.ip||'', dev.power||0, dev.online===true?"在线":(dev.online===false?"离线":"未知")]);
+                }
+            });
+        });
+        let csv = rows.map(row=>row.map(cell=>`"${cell}"`).join(",")).join("\n");
+        const blob = new Blob([csv], {type:"text/csv"});
+        const url = URL.createObjectURL(blob);
+        const a = $('<a>',{href:url,download:"rack_report.csv"})[0];
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    $('#previewBtn').click(()=>{ previewMode = !previewMode; renderAllRacks(); });
+    $('#genRacksBtn').click(()=>{
+        const u = parseInt($('#rackU').val());
+        const rows = parseInt($('#rackRows').val());
+        const cols = parseInt($('#rackCols').val());
+        generateRacks(u, rows, cols);
+    });
+    $('#expandRacksBtn').click(()=>{
+        if(racksData.length===0) return;
+        let maxColsPerRow = 1;
+        // 简单扩展最后一列增加一列
+        let newRacks = [...racksData];
+        let newId = racksData.length;
+        let lastRack = racksData[racksData.length-1];
+        let rowLetter = lastRack.name.charAt(1);
+        let newColNum = parseInt(lastRack.name.slice(2))+1;
+        let newRack = {
+            id: `rack_expand_${newId}`,
+            name: `机柜 ${rowLetter}${newColNum}`,
+            totalU: racksData[0].totalU,
+            slots: new Array(racksData[0].totalU).fill(null),
+            powerConfig: { maxPower: 5000, curPower:0 }
+        };
+        racksData.push(newRack);
+        renderAllRacks();
+        saveScene();
+    });
+
+    // 初始化: 尝试加载场景
+    function init(){
+        loadScene("default");
+        // 默认给设备库加几个示例
+        if(deviceLibrary.length===0){
+            deviceLibrary.push({id:1,name:"浪潮服务器",category:"服务器",model:"NF5280",power:450,ip:"10.0.0.1",protocol:"ssh"});
+            deviceLibrary.push({id:2,name:"华为交换机",category:"网络设备",model:"S5720",power:120,ip:"10.0.0.2",protocol:"http"});
+            deviceLibrary.push({id:3,name:"戴尔存储",category:"存储设备",model:"MD3800",power:600,ip:"10.0.0.3"});
+            nextDeviceId=10;
+            saveScene();
+        }
+        renderDeviceLibrary();
+    }
+    init();
+</script>
+</body>
+</html>
