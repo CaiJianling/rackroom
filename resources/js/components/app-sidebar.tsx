@@ -2,7 +2,7 @@
  * @Author: CaiJianling caijianling@outlook.com
  * @Date: 2026-03-25 03:55:13
  * @LastEditors: CaiJianling caijianling@outlook.com
- * @LastEditTime: 2026-03-26 14:59:24
+ * @LastEditTime: 2026-03-27 07:10:27
  * @FilePath: /rackroom/resources/js/components/app-sidebar.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -16,7 +16,8 @@ import {
     Server,
     Cpu,
     Activity,
-    Settings
+    Settings,
+    Eye,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { NavFooter } from '@/components/nav-footer';
@@ -51,21 +52,13 @@ export function AppSidebar() {
         },
         {
             title: t('navigation.rackManagement'),
+            href: '/racks',
             icon: Server,
-            items: [
-                {
-                    title: t('navigation.rackList'),
-                    href: '/racks',
-                },
-                {
-                    title: t('navigation.rackVisualEdit'),
-                    href: '/racks/:id/edit-visual',
-                },
-                {
-                    title: t('navigation.rackDetails'),
-                    href: '/racks/:id',
-                },
-            ],
+        },
+        {
+            title: t('navigation.rackVisualEdit'),
+            href: '/racks/visual-edit',
+            icon: Eye,
         },
         {
             title: t('navigation.deviceManagement'),

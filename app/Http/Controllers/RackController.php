@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Rack;
 use App\Models\Room;
+use App\Models\Device;
 use Illuminate\Http\Request;
 
 class RackController extends Controller
@@ -29,6 +30,23 @@ class RackController extends Controller
         $rooms = Room::all();
 
         return inertia('Rack/Index', compact('racks', 'rooms'));
+    }
+
+    public function visualEdit(Request $request)
+    {
+        $rooms = Room::all();
+
+        $roomId = $request->input('room_id');
+        $query = Rack::with(['room', 'devices']);
+
+        if ($roomId) {
+            $query->where('room_id', $roomId);
+        }
+
+        $racks = $query->orderBy('room_id')->orderBy('name')->get();
+        $devices = Device::whereNull('rack_id')->orWhere('rack_id', 0)->get();
+
+        return inertia('Rack/VisualEdit', compact('racks', 'rooms', 'devices'));
     }
 
     public function create()
