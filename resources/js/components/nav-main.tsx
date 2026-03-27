@@ -48,8 +48,8 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
 }
 
 function CollapsibleNavItem({ item, isCurrentUrl }: { item: NavItem; isCurrentUrl: (href: NonNullable<InertiaLinkProps['href']>) => boolean }) {
-    const [isOpen, setIsOpen] = useState(false);
     const hasActiveChild = item.items?.some(subItem => subItem.href && isCurrentUrl(subItem.href));
+    const [isOpen, setIsOpen] = useState(hasActiveChild);
 
     return (
         <>

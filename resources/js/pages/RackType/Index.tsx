@@ -8,7 +8,6 @@ import {
     Server,
     Zap,
     Cpu,
-    Building2,
     Eye,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
@@ -32,13 +31,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import {
     Table,
     TableBody,
     TableCell,
@@ -53,76 +45,52 @@ interface PageProps {
     errors?: Record<string, string>;
 }
 
-interface Room {
-    id: number;
-    name: string;
-}
-
 interface RackType {
     id: number;
     name: string;
     u_count: number;
     power: number;
     description: string | null;
-}
-
-interface Rack {
-    id: number;
-    room_id: number;
-    rack_type_id: number | null;
-    name: string;
-    u_count: number;
-    power: number;
-    device_count: number;
-    description: string | null;
     created_at: string;
     updated_at: string;
-    room?: Room;
-    rack_type?: RackType;
 }
 
 interface Props {
-    racks: Rack[];
-    rooms: Room[];
-    rackTypes?: RackType[];
+    rackTypes: RackType[];
     breadcrumbs?: Array<{ title: string; href: string }>;
 }
 
-export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = [] }: Props) {
+export default function RackTypeIndex({ rackTypes, breadcrumbs = [] }: Props) {
     const { t } = useTranslation();
     const { errors } = usePage().props as PageProps;
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
-    const [deletingRackId, setDeletingRackId] = useState<number | null>(null);
-    const [viewingRack, setViewingRack] = useState<Rack | null>(null);
-    const [editingRack, setEditingRack] = useState<Rack | null>(null);
+    const [deletingRackTypeId, setDeletingRackTypeId] = useState<number | null>(null);
+    const [viewingRackType, setViewingRackType] = useState<RackType | null>(null);
+    const [editingRackType, setEditingRackType] = useState<RackType | null>(null);
     const [form, setForm] = useState({
-        room_id: '',
-        rack_type_id: '',
         name: '',
         u_count: 42,
-        power: 0,
-        device_count: 0,
+        power: 5000,
         description: '',
     });
     const [searchTerm, setSearchTerm] = useState('');
-    const [roomFilter, setRoomFilter] = useState<string>('all');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
-    const handleDelete = (rackId: number) => {
-        setDeletingRackId(rackId);
+    const handleDelete = (rackTypeId: number) => {
+        setDeletingRackTypeId(rackTypeId);
         setIsDeleteDialogOpen(true);
     };
 
     const confirmDelete = () => {
-        if (deletingRackId) {
-            router.delete(`/racks/${deletingRackId}`, {
+        if (deletingRackTypeId) {
+            router.delete(`/rack-types/${deletingRackTypeId}`, {
                 onSuccess: () => {
                     setIsDeleteDialogOpen(false);
-                    setDeletingRackId(null);
+                    setDeletingRackTypeId(null);
                 },
             });
         }
@@ -130,55 +98,46 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
 
     const cancelDelete = () => {
         setIsDeleteDialogOpen(false);
-        setDeletingRackId(null);
+        setDeletingRackTypeId(null);
     };
 
-    const openEditDialog = (rack: Rack) => {
-        setEditingRack(rack);
+    const openEditDialog = (rackType: RackType) => {
+        setEditingRackType(rackType);
         setForm({
-            room_id: rack.room_id.toString(),
-            rack_type_id: rack.rack_type_id?.toString() || '',
-            name: rack.name,
-            u_count: rack.u_count,
-            power: rack.power,
-            device_count: rack.device_count,
-            description: rack.description || '',
+            name: rackType.name,
+            u_count: rackType.u_count,
+            power: rackType.power,
+            description: rackType.description || '',
         });
         setIsEditDialogOpen(true);
     };
 
     const closeEditDialog = () => {
         setIsEditDialogOpen(false);
-        setEditingRack(null);
+        setEditingRackType(null);
         setForm({
-            room_id: '',
-            rack_type_id: '',
             name: '',
             u_count: 42,
-            power: 0,
-            device_count: 0,
+            power: 5000,
             description: '',
         });
     };
 
-    const openDetailDialog = (rack: Rack) => {
-        setViewingRack(rack);
+    const openDetailDialog = (rackType: RackType) => {
+        setViewingRackType(rackType);
         setIsDetailDialogOpen(true);
     };
 
     const closeDetailDialog = () => {
         setIsDetailDialogOpen(false);
-        setViewingRack(null);
+        setViewingRackType(null);
     };
 
     const openCreateDialog = () => {
         setForm({
-            room_id: '',
-            rack_type_id: '',
             name: '',
             u_count: 42,
-            power: 0,
-            device_count: 0,
+            power: 5000,
             description: '',
         });
         setIsCreateDialogOpen(true);
@@ -187,24 +146,17 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
     const closeCreateDialog = () => {
         setIsCreateDialogOpen(false);
         setForm({
-            room_id: '',
-            rack_type_id: '',
             name: '',
             u_count: 42,
-            power: 0,
-            device_count: 0,
+            power: 5000,
             description: '',
         });
     };
 
     const handleEditSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (editingRack) {
-            const submitData = {
-                ...form,
-                rack_type_id: form.rack_type_id === 'none' ? null : (form.rack_type_id || null),
-            };
-            router.put(`/racks/${editingRack.id}`, submitData, {
+        if (editingRackType) {
+            router.put(`/rack-types/${editingRackType.id}`, form, {
                 onSuccess: () => closeEditDialog(),
             });
         }
@@ -212,37 +164,28 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
 
     const handleCreateSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const submitData = {
-            ...form,
-            rack_type_id: form.rack_type_id === 'none' ? null : (form.rack_type_id || null),
-        };
-        router.post('/racks', submitData, {
+        router.post('/rack-types', form, {
             onSuccess: () => closeCreateDialog(),
         });
     };
 
-    const filteredRacks = useMemo(() => {
-        return racks.filter((rack) => {
+    const filteredRackTypes = useMemo(() => {
+        return rackTypes.filter((rackType) => {
             const matchesSearch =
                 searchTerm === '' ||
-                rack.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (rack.room?.name &&
-                    rack.room.name.toLowerCase().includes(searchTerm.toLowerCase()));
+                rackType.name.toLowerCase().includes(searchTerm.toLowerCase());
 
-            const matchesRoom =
-                roomFilter === 'all' || rack.room_id.toString() === roomFilter;
-
-            return matchesSearch && matchesRoom;
+            return matchesSearch;
         });
-    }, [racks, searchTerm, roomFilter]);
+    }, [rackTypes, searchTerm]);
 
-    const paginatedRacks = useMemo(() => {
+    const paginatedRackTypes = useMemo(() => {
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
-        return filteredRacks.slice(startIndex, endIndex);
-    }, [filteredRacks, currentPage]);
+        return filteredRackTypes.slice(startIndex, endIndex);
+    }, [filteredRackTypes, currentPage]);
 
-    const totalPages = Math.ceil(filteredRacks.length / itemsPerPage);
+    const totalPages = Math.ceil(filteredRackTypes.length / itemsPerPage);
 
     const clearSearch = () => {
         setSearchTerm('');
@@ -250,21 +193,20 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
 
     const clearFilters = () => {
         setSearchTerm('');
-        setRoomFilter('all');
         setCurrentPage(1);
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={t('rackManagement.title')} />
+            <Head title={t('rackTypeManagement.title')} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">
-                        {t('rackManagement.title')}
+                        {t('rackTypeManagement.title')}
                     </h1>
                     <Button onClick={openCreateDialog}>
                         <Plus className="mr-2 h-4 w-4" />
-                        {t('rackManagement.addRack')}
+                        {t('rackTypeManagement.addRackType')}
                     </Button>
                 </div>
 
@@ -273,7 +215,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                         <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
                         <Input
                             type="text"
-                            placeholder={t('rackManagement.searchPlaceholder')}
+                            placeholder={t('rackTypeManagement.searchPlaceholder')}
                             value={searchTerm}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                 setSearchTerm(e.target.value);
@@ -292,30 +234,6 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                             </Button>
                         )}
                     </div>
-
-                    <div className="flex gap-2">
-                        <Select
-                            value={roomFilter}
-                            onValueChange={(value) => {
-                                setRoomFilter(value);
-                                setCurrentPage(1);
-                            }}
-                        >
-                            <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder={t('rackManagement.allRooms')} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">
-                                    {t('rackManagement.allRooms')}
-                                </SelectItem>
-                                {rooms.map((room) => (
-                                    <SelectItem key={room.id} value={room.id.toString()}>
-                                        {room.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
                 </div>
 
                 {errors?.error && (
@@ -328,15 +246,15 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <div>
-                                <CardTitle>{t('rackManagement.racks')}</CardTitle>
+                                <CardTitle>{t('rackTypeManagement.rackTypes')}</CardTitle>
                                 <CardDescription>
-                                    {t('rackManagement.manageRacks')}
+                                    {t('rackTypeManagement.manageRackTypes')}
                                 </CardDescription>
                             </div>
                             <div className="text-sm text-muted-foreground">
-                                {t('rackManagement.racksCount', {
-                                    filtered: filteredRacks.length,
-                                    total: racks.length,
+                                {t('rackTypeManagement.rackTypesCount', {
+                                    filtered: filteredRackTypes.length,
+                                    total: rackTypes.length,
                                 })}
                             </div>
                         </div>
@@ -347,61 +265,46 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                 <TableRow className="bg-muted/50">
                                     <TableHead className="h-10 px-4">
                                         <div className="flex items-center gap-2">
-                                            <Building2 className="h-4 w-4" />
-                                            {t('rackManagement.room')}
-                                        </div>
-                                    </TableHead>
-                                    <TableHead className="h-10 px-4">
-                                        <div className="flex items-center gap-2">
                                             <Server className="h-4 w-4" />
-                                            {t('rackManagement.name')}
+                                            {t('rackTypeManagement.name')}
                                         </div>
                                     </TableHead>
                                     <TableHead className="h-10 px-4">
                                         <div className="flex items-center gap-2">
                                             <Cpu className="h-4 w-4" />
-                                            {t('rackManagement.rackType')}
-                                        </div>
-                                    </TableHead>
-                                    <TableHead className="h-10 px-4">
-                                        <div className="flex items-center gap-2">
-                                            <Cpu className="h-4 w-4" />
-                                            {t('rackManagement.uCount')}
+                                            {t('rackTypeManagement.uCount')}
                                         </div>
                                     </TableHead>
                                     <TableHead className="h-10 px-4">
                                         <div className="flex items-center gap-2">
                                             <Zap className="h-4 w-4" />
-                                            {t('rackManagement.power')}
+                                            {t('rackTypeManagement.power')}
                                         </div>
                                     </TableHead>
                                     <TableHead className="h-10 px-4">
-                                        <div className="flex items-center gap-2">
-                                            <Server className="h-4 w-4" />
-                                            {t('rackManagement.deviceCount')}
-                                        </div>
+                                        {t('rackTypeManagement.description')}
                                     </TableHead>
                                     <TableHead className="h-10 px-4">
-                                        {t('rackManagement.created')}
+                                        {t('rackTypeManagement.created')}
                                     </TableHead>
                                     <TableHead className="h-10 px-4 text-right">
-                                        {t('rackManagement.actions')}
+                                        {t('rackTypeManagement.actions')}
                                     </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredRacks.length === 0 ? (
+                                {filteredRackTypes.length === 0 ? (
                                     <TableRow>
                                         <TableCell
-                                            colSpan={8}
+                                            colSpan={6}
                                             className="py-8 text-center text-muted-foreground"
                                         >
-                                            {searchTerm || roomFilter !== 'all' ? (
+                                            {searchTerm ? (
                                                 <div className="flex flex-col items-center gap-2">
                                                     <Search className="h-8 w-8 text-muted-foreground/50" />
                                                     <p>
                                                         {t(
-                                                            'rackManagement.noRacksFound',
+                                                            'rackTypeManagement.noRackTypesFound',
                                                         )}
                                                     </p>
                                                     <Button
@@ -410,7 +313,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                                         onClick={clearFilters}
                                                     >
                                                         {t(
-                                                            'rackManagement.clearFilters',
+                                                            'rackTypeManagement.clearFilters',
                                                         )}
                                                     </Button>
                                                 </div>
@@ -419,7 +322,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                                     <Plus className="h-8 w-8 text-muted-foreground/50" />
                                                     <p>
                                                         {t(
-                                                            'rackManagement.noRacks',
+                                                            'rackTypeManagement.noRackTypes',
                                                         )}
                                                     </p>
                                                     <Button
@@ -428,7 +331,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                                         onClick={openCreateDialog}
                                                     >
                                                         {t(
-                                                            'rackManagement.addFirstRack',
+                                                            'rackTypeManagement.addFirstRackType',
                                                         )}
                                                     </Button>
                                                 </div>
@@ -436,25 +339,19 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    paginatedRacks.map((rack) => (
+                                    paginatedRackTypes.map((rackType) => (
                                         <TableRow
-                                            key={rack.id}
+                                            key={rackType.id}
                                             className="border-b border-border/50 transition-colors hover:bg-muted/30"
                                         >
-                                            <TableCell className="px-4 py-3">
-                                                {rack.room?.name || '-'}
-                                            </TableCell>
                                             <TableCell className="px-4 py-3 font-medium">
-                                                {rack.name}
-                                            </TableCell>
-                                            <TableCell className="px-4 py-3">
-                                                {rack.rack_type?.name || '-'}
+                                                {rackType.name}
                                             </TableCell>
                                             <TableCell className="px-4 py-3">
                                                 <div className="flex items-center gap-2">
                                                     <Cpu className="h-4 w-4 text-muted-foreground" />
                                                     <span className="font-semibold">
-                                                        {rack.u_count}U
+                                                        {rackType.u_count}U
                                                     </span>
                                                 </div>
                                             </TableCell>
@@ -462,21 +359,16 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                                 <div className="flex items-center gap-2">
                                                     <Zap className="h-4 w-4 text-muted-foreground" />
                                                     <span className="font-semibold">
-                                                        {rack.power}W
+                                                        {rackType.power}W
                                                     </span>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="px-4 py-3">
-                                                <div className="flex items-center gap-2">
-                                                    <Server className="h-4 w-4 text-muted-foreground" />
-                                                    <span className="font-semibold">
-                                                        {rack.device_count}
-                                                    </span>
-                                                </div>
+                                                {rackType.description || '-'}
                                             </TableCell>
                                             <TableCell className="px-4 py-3">
                                                 {new Date(
-                                                    rack.created_at,
+                                                    rackType.created_at,
                                                 ).toLocaleDateString()}
                                             </TableCell>
                                             <TableCell className="px-4 py-3 text-right">
@@ -485,7 +377,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                                         variant="ghost"
                                                         size="sm"
                                                         onClick={() =>
-                                                            openDetailDialog(rack)
+                                                            openDetailDialog(rackType)
                                                         }
                                                         className="h-8 w-8 p-0"
                                                     >
@@ -495,7 +387,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                                         variant="ghost"
                                                         size="sm"
                                                         onClick={() =>
-                                                            openEditDialog(rack)
+                                                            openEditDialog(rackType)
                                                         }
                                                         className="h-8 w-8 p-0"
                                                     >
@@ -505,7 +397,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                                         variant="ghost"
                                                         size="sm"
                                                         onClick={() =>
-                                                            handleDelete(rack.id)
+                                                            handleDelete(rackType.id)
                                                         }
                                                         className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                                                     >
@@ -522,9 +414,9 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                         {totalPages > 1 && (
                             <div className="flex items-center justify-between border-t px-4 py-3">
                                 <div className="text-sm text-muted-foreground">
-                                    {t('rackManagement.racksCount', {
-                                        filtered: filteredRacks.length,
-                                        total: racks.length,
+                                    {t('rackTypeManagement.rackTypesCount', {
+                                        filtered: filteredRackTypes.length,
+                                        total: rackTypes.length,
                                     })}
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -532,28 +424,26 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                         variant="outline"
                                         size="sm"
                                         onClick={() =>
-                                            setCurrentPage((prev) =>
-                                                Math.max(prev - 1, 1)
-                                            )
+                                            setCurrentPage((p) => Math.max(1, p - 1))
                                         }
                                         disabled={currentPage === 1}
                                     >
-                                        {t('deviceManagement.previousPage')}
+                                        Previous
                                     </Button>
-                                    <span className="text-sm">
+                                    <span className="text-sm text-muted-foreground">
                                         {currentPage} / {totalPages}
                                     </span>
                                     <Button
                                         variant="outline"
                                         size="sm"
                                         onClick={() =>
-                                            setCurrentPage((prev) =>
-                                                Math.min(prev + 1, totalPages)
+                                            setCurrentPage((p) =>
+                                                Math.min(totalPages, p + 1),
                                             )
                                         }
                                         disabled={currentPage === totalPages}
                                     >
-                                        {t('deviceManagement.nextPage')}
+                                        Next
                                     </Button>
                                 </div>
                             </div>
@@ -568,81 +458,17 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                     <DialogContent className="sm:max-w-[500px]">
                         <DialogHeader>
                             <DialogTitle>
-                                {t('rackManagement.createRack')}
+                                {t('rackTypeManagement.addRackType')}
                             </DialogTitle>
                             <DialogDescription>
-                                {t('rackManagement.addNewRack')}
+                                {t('rackTypeManagement.addNewRackType')}
                             </DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleCreateSubmit}>
                             <div className="grid gap-4 py-4">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="room_id">
-                                        {t('rackManagement.room')} *
-                                    </Label>
-                                    <Select
-                                        value={form.room_id}
-                                        onValueChange={(value) =>
-                                            setForm({
-                                                ...form,
-                                                room_id: value,
-                                            })
-                                        }
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder={t('rackManagement.selectRoom')} />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {rooms.map((room) => (
-                                                <SelectItem
-                                                    key={room.id}
-                                                    value={room.id.toString()}
-                                                >
-                                                    {room.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors?.room_id && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.room_id}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="rack_type_id">
-                                        {t('rackManagement.rackType')}
-                                    </Label>
-                                    <Select
-                                        value={form.rack_type_id}
-                                        onValueChange={(value) =>
-                                            setForm({
-                                                ...form,
-                                                rack_type_id: value,
-                                            })
-                                        }
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder={t('rackManagement.selectRackType')} />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">
-                                                {t('rackManagement.noRackType')}
-                                            </SelectItem>
-                                            {rackTypes.map((type) => (
-                                                <SelectItem
-                                                    key={type.id}
-                                                    value={type.id.toString()}
-                                                >
-                                                    {type.name} ({type.u_count}U)
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="grid gap-2">
                                     <Label htmlFor="name">
-                                        {t('rackManagement.name')} *
+                                        {t('rackTypeManagement.name')} *
                                     </Label>
                                     <Input
                                         id="name"
@@ -653,7 +479,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                                 name: e.target.value,
                                             })
                                         }
-                                        placeholder={t('rackManagement.name')}
+                                        placeholder={t('rackTypeManagement.name')}
                                     />
                                     {errors?.name && (
                                         <p className="text-sm text-destructive">
@@ -663,7 +489,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="u_count">
-                                        {t('rackManagement.uCount')} *
+                                        {t('rackTypeManagement.uCount')} *
                                     </Label>
                                     <Input
                                         id="u_count"
@@ -679,7 +505,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                                 ) || 42,
                                             })
                                         }
-                                        placeholder={t('rackManagement.uCount')}
+                                        placeholder={t('rackTypeManagement.uCount')}
                                     />
                                     {errors?.u_count && (
                                         <p className="text-sm text-destructive">
@@ -689,7 +515,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="power">
-                                        {t('rackManagement.power')} *
+                                        {t('rackTypeManagement.power')} *
                                     </Label>
                                     <Input
                                         id="power"
@@ -701,10 +527,10 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                                 ...form,
                                                 power: parseInt(
                                                     e.target.value,
-                                                ) || 0,
+                                                ) || 5000,
                                             })
                                         }
-                                        placeholder={t('rackManagement.power')}
+                                        placeholder={t('rackTypeManagement.power')}
                                     />
                                     {errors?.power && (
                                         <p className="text-sm text-destructive">
@@ -713,33 +539,8 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                     )}
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="device_count">
-                                        {t('rackManagement.deviceCount')} *
-                                    </Label>
-                                    <Input
-                                        id="device_count"
-                                        type="number"
-                                        min="0"
-                                        value={form.device_count}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                            setForm({
-                                                ...form,
-                                                device_count: parseInt(
-                                                    e.target.value,
-                                                ) || 0,
-                                            })
-                                        }
-                                        placeholder={t('rackManagement.deviceCount')}
-                                    />
-                                    {errors?.device_count && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.device_count}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="grid gap-2">
                                     <Label htmlFor="description">
-                                        {t('rackManagement.description')}
+                                        {t('rackTypeManagement.description')}
                                     </Label>
                                     <Textarea
                                         id="description"
@@ -750,7 +551,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                                 description: e.target.value,
                                             })
                                         }
-                                        placeholder={t('rackManagement.description')}
+                                        placeholder={t('rackTypeManagement.description')}
                                         rows={3}
                                     />
                                     {errors?.description && (
@@ -766,10 +567,10 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                     variant="outline"
                                     onClick={closeCreateDialog}
                                 >
-                                    {t('rackManagement.cancel')}
+                                    {t('rackTypeManagement.cancel')}
                                 </Button>
                                 <Button type="submit">
-                                    {t('rackManagement.createRack')}
+                                    {t('rackTypeManagement.createRackType')}
                                 </Button>
                             </DialogFooter>
                         </form>
@@ -783,81 +584,17 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                     <DialogContent className="sm:max-w-[500px]">
                         <DialogHeader>
                             <DialogTitle>
-                                {t('rackManagement.editRack')}
+                                {t('rackTypeManagement.editRackType')}
                             </DialogTitle>
                             <DialogDescription>
-                                {t('rackManagement.updateRack')}
+                                {t('rackTypeManagement.updateRackType')}
                             </DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleEditSubmit}>
                             <div className="grid gap-4 py-4">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="edit-room_id">
-                                        {t('rackManagement.room')} *
-                                    </Label>
-                                    <Select
-                                        value={form.room_id}
-                                        onValueChange={(value) =>
-                                            setForm({
-                                                ...form,
-                                                room_id: value,
-                                            })
-                                        }
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder={t('rackManagement.selectRoom')} />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {rooms.map((room) => (
-                                                <SelectItem
-                                                    key={room.id}
-                                                    value={room.id.toString()}
-                                                >
-                                                    {room.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors?.room_id && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.room_id}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="edit-rack_type_id">
-                                        {t('rackManagement.rackType')}
-                                    </Label>
-                                    <Select
-                                        value={form.rack_type_id}
-                                        onValueChange={(value) =>
-                                            setForm({
-                                                ...form,
-                                                rack_type_id: value,
-                                            })
-                                        }
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder={t('rackManagement.selectRackType')} />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">
-                                                {t('rackManagement.noRackType')}
-                                            </SelectItem>
-                                            {rackTypes.map((type) => (
-                                                <SelectItem
-                                                    key={type.id}
-                                                    value={type.id.toString()}
-                                                >
-                                                    {type.name} ({type.u_count}U)
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="grid gap-2">
                                     <Label htmlFor="edit-name">
-                                        {t('rackManagement.name')} *
+                                        {t('rackTypeManagement.name')} *
                                     </Label>
                                     <Input
                                         id="edit-name"
@@ -868,7 +605,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                                 name: e.target.value,
                                             })
                                         }
-                                        placeholder={t('rackManagement.name')}
+                                        placeholder={t('rackTypeManagement.name')}
                                     />
                                     {errors?.name && (
                                         <p className="text-sm text-destructive">
@@ -878,7 +615,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="edit-u_count">
-                                        {t('rackManagement.uCount')} *
+                                        {t('rackTypeManagement.uCount')} *
                                     </Label>
                                     <Input
                                         id="edit-u_count"
@@ -894,7 +631,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                                 ) || 42,
                                             })
                                         }
-                                        placeholder={t('rackManagement.uCount')}
+                                        placeholder={t('rackTypeManagement.uCount')}
                                     />
                                     {errors?.u_count && (
                                         <p className="text-sm text-destructive">
@@ -904,7 +641,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="edit-power">
-                                        {t('rackManagement.power')} *
+                                        {t('rackTypeManagement.power')} *
                                     </Label>
                                     <Input
                                         id="edit-power"
@@ -916,10 +653,10 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                                 ...form,
                                                 power: parseInt(
                                                     e.target.value,
-                                                ) || 0,
+                                                ) || 5000,
                                             })
                                         }
-                                        placeholder={t('rackManagement.power')}
+                                        placeholder={t('rackTypeManagement.power')}
                                     />
                                     {errors?.power && (
                                         <p className="text-sm text-destructive">
@@ -928,33 +665,8 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                     )}
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="edit-device_count">
-                                        {t('rackManagement.deviceCount')} *
-                                    </Label>
-                                    <Input
-                                        id="edit-device_count"
-                                        type="number"
-                                        min="0"
-                                        value={form.device_count}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                            setForm({
-                                                ...form,
-                                                device_count: parseInt(
-                                                    e.target.value,
-                                                ) || 0,
-                                            })
-                                        }
-                                        placeholder={t('rackManagement.deviceCount')}
-                                    />
-                                    {errors?.device_count && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.device_count}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="grid gap-2">
                                     <Label htmlFor="edit-description">
-                                        {t('rackManagement.description')}
+                                        {t('rackTypeManagement.description')}
                                     </Label>
                                     <Textarea
                                         id="edit-description"
@@ -965,7 +677,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                                 description: e.target.value,
                                             })
                                         }
-                                        placeholder={t('rackManagement.description')}
+                                        placeholder={t('rackTypeManagement.description')}
                                         rows={3}
                                     />
                                     {errors?.description && (
@@ -981,117 +693,13 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                     variant="outline"
                                     onClick={closeEditDialog}
                                 >
-                                    {t('rackManagement.cancel')}
+                                    {t('rackTypeManagement.cancel')}
                                 </Button>
                                 <Button type="submit">
-                                    {t('rackManagement.updateRack')}
+                                    {t('rackTypeManagement.updateRackType')}
                                 </Button>
                             </DialogFooter>
                         </form>
-                    </DialogContent>
-                </Dialog>
-
-                <Dialog
-                    open={isDetailDialogOpen}
-                    onOpenChange={setIsDetailDialogOpen}
-                >
-                    <DialogContent className="sm:max-w-[600px]">
-                        <DialogHeader>
-                            <DialogTitle>
-                                {t('rackManagement.rackDetails')}
-                            </DialogTitle>
-                            <DialogDescription>
-                                {viewingRack?.name}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <Label className="text-sm font-medium">
-                                        {t('rackManagement.room')}
-                                    </Label>
-                                    <div className="mt-1 text-sm">
-                                        {viewingRack?.room?.name || '-'}
-                                    </div>
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium">
-                                        {t('rackManagement.name')}
-                                    </Label>
-                                    <div className="mt-1 text-sm">
-                                        {viewingRack?.name}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-3 gap-4">
-                                <div>
-                                    <Label className="text-sm font-medium">
-                                        {t('rackManagement.uCount')}
-                                    </Label>
-                                    <div className="mt-1 text-sm">
-                                        {viewingRack?.u_count}U
-                                    </div>
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium">
-                                        {t('rackManagement.power')}
-                                    </Label>
-                                    <div className="mt-1 text-sm">
-                                        {viewingRack?.power}W
-                                    </div>
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium">
-                                        {t('rackManagement.deviceCount')}
-                                    </Label>
-                                    <div className="mt-1 text-sm">
-                                        {viewingRack?.device_count}
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium">
-                                    {t('rackManagement.description')}
-                                </Label>
-                                <div className="mt-1 text-sm">
-                                    {viewingRack?.description || '-'}
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <Label className="text-sm font-medium">
-                                        {t('rackManagement.created')}
-                                    </Label>
-                                    <div className="mt-1 text-sm">
-                                        {viewingRack?.created_at
-                                            ? new Date(
-                                                  viewingRack.created_at,
-                                              ).toLocaleString()
-                                            : '-'}
-                                    </div>
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium">
-                                        {t('common.updated')}
-                                    </Label>
-                                    <div className="mt-1 text-sm">
-                                        {viewingRack?.updated_at
-                                            ? new Date(
-                                                  viewingRack.updated_at,
-                                              ).toLocaleString()
-                                            : '-'}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button
-                                type="button"
-                                onClick={closeDetailDialog}
-                            >
-                                {t('common.close')}
-                            </Button>
-                        </DialogFooter>
                     </DialogContent>
                 </Dialog>
 
@@ -1102,10 +710,10 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>
-                                {t('rackManagement.confirmDelete')}
+                                {t('rackTypeManagement.confirmDelete')}
                             </DialogTitle>
                             <DialogDescription>
-                                {t('rackManagement.deleteWarning')}
+                                {t('rackTypeManagement.deleteWarning')}
                             </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>
@@ -1114,14 +722,82 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                 variant="outline"
                                 onClick={cancelDelete}
                             >
-                                {t('rackManagement.cancel')}
+                                {t('rackTypeManagement.cancel')}
                             </Button>
                             <Button
                                 type="button"
                                 variant="destructive"
                                 onClick={confirmDelete}
                             >
-                                {t('common.delete')}
+                                {t('rackTypeManagement.delete')}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog
+                    open={isDetailDialogOpen}
+                    onOpenChange={setIsDetailDialogOpen}
+                >
+                    <DialogContent className="sm:max-w-[500px]">
+                        <DialogHeader>
+                            <DialogTitle>
+                                {t('rackTypeManagement.rackTypeDetails')}
+                            </DialogTitle>
+                        </DialogHeader>
+                        {viewingRackType && (
+                            <div className="grid gap-4 py-4">
+                                <div className="grid gap-2">
+                                    <Label>
+                                        {t('rackTypeManagement.name')}
+                                    </Label>
+                                    <p className="text-sm font-medium">
+                                        {viewingRackType.name}
+                                    </p>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>
+                                        {t('rackTypeManagement.uCount')}
+                                    </Label>
+                                    <p className="text-sm font-medium">
+                                        {viewingRackType.u_count}U
+                                    </p>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>
+                                        {t('rackTypeManagement.power')}
+                                    </Label>
+                                    <p className="text-sm font-medium">
+                                        {viewingRackType.power}W
+                                    </p>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>
+                                        {t('rackTypeManagement.description')}
+                                    </Label>
+                                    <p className="text-sm text-muted-foreground">
+                                        {viewingRackType.description || '-'}
+                                    </p>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>
+                                        {t('rackTypeManagement.created')}
+                                    </Label>
+                                    <p className="text-sm text-muted-foreground">
+                                        {new Date(
+                                            viewingRackType.created_at,
+                                        ).toLocaleString()}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={closeDetailDialog}
+                            >
+                                {t('rackTypeManagement.cancel')}
                             </Button>
                         </DialogFooter>
                     </DialogContent>

@@ -19,6 +19,7 @@
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RackController;
+use App\Http\Controllers\RackTypeController;
 use App\Http\Controllers\DeviceController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -38,6 +39,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('users', UserController::class);
     Route::put('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
     Route::resource('rooms', RoomController::class);
+    Route::resource('rack-types', RackTypeController::class);
     Route::get('racks/visual-edit', [RackController::class, 'visualEdit'])->name('racks.visual-edit');
     Route::resource('racks', RackController::class);
     Route::resource('devices', DeviceController::class);
