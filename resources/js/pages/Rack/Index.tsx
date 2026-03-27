@@ -201,8 +201,11 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
         e.preventDefault();
         if (editingRack) {
             const submitData = {
-                ...form,
+                room_id: form.room_id,
                 rack_type_id: form.rack_type_id === 'none' ? null : (form.rack_type_id || null),
+                name: form.name,
+                device_count: form.device_count,
+                description: form.description,
             };
             router.put(`/racks/${editingRack.id}`, submitData, {
                 onSuccess: () => closeEditDialog(),
@@ -213,12 +216,36 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
     const handleCreateSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const submitData = {
-            ...form,
+            room_id: form.room_id,
             rack_type_id: form.rack_type_id === 'none' ? null : (form.rack_type_id || null),
+            name: form.name,
+            device_count: form.device_count,
+            description: form.description,
         };
         router.post('/racks', submitData, {
             onSuccess: () => closeCreateDialog(),
         });
+    };
+
+    const handleRackTypeChange = (value: string, isEdit = false) => {
+        const typeId = value === 'none' ? null : (value || null);
+        const selectedType = rackTypes.find(t => t.id.toString() === value);
+
+        if (isEdit) {
+            setForm({
+                ...form,
+                rack_type_id: value,
+                u_count: selectedType ? selectedType.u_count : form.u_count,
+                power: selectedType ? selectedType.power : form.power,
+            });
+        } else {
+            setForm({
+                ...form,
+                rack_type_id: value,
+                u_count: selectedType ? selectedType.u_count : 42,
+                power: selectedType ? selectedType.power : 0,
+            });
+        }
     };
 
     const filteredRacks = useMemo(() => {
@@ -616,10 +643,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                     <Select
                                         value={form.rack_type_id}
                                         onValueChange={(value) =>
-                                            setForm({
-                                                ...form,
-                                                rack_type_id: value,
-                                            })
+                                            handleRackTypeChange(value)
                                         }
                                     >
                                         <SelectTrigger>
@@ -831,10 +855,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                     <Select
                                         value={form.rack_type_id}
                                         onValueChange={(value) =>
-                                            setForm({
-                                                ...form,
-                                                rack_type_id: value,
-                                            })
+                                            handleRackTypeChange(value, true)
                                         }
                                     >
                                         <SelectTrigger>

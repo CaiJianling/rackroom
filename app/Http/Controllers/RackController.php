@@ -77,11 +77,18 @@ class RackController extends Controller
             'room_id' => 'required|exists:rooms,id',
             'rack_type_id' => 'nullable|exists:rack_types,id',
             'name' => 'required|string|max:255',
-            'u_count' => 'required|integer|min:1|max:100',
-            'power' => 'required|integer|min:0',
             'device_count' => 'required|integer|min:0',
             'description' => 'nullable|string',
         ]);
+
+        if ($validated['rack_type_id']) {
+            $rackType = RackType::find($validated['rack_type_id']);
+            $validated['u_count'] = $rackType->u_count;
+            $validated['power'] = $rackType->power;
+        } else {
+            $validated['u_count'] = 42;
+            $validated['power'] = 0;
+        }
 
         Rack::create($validated);
 
@@ -106,11 +113,18 @@ class RackController extends Controller
             'room_id' => 'required|exists:rooms,id',
             'rack_type_id' => 'nullable|exists:rack_types,id',
             'name' => 'required|string|max:255',
-            'u_count' => 'required|integer|min:1|max:100',
-            'power' => 'required|integer|min:0',
             'device_count' => 'required|integer|min:0',
             'description' => 'nullable|string',
         ]);
+
+        if ($validated['rack_type_id']) {
+            $rackType = RackType::find($validated['rack_type_id']);
+            $validated['u_count'] = $rackType->u_count;
+            $validated['power'] = $rackType->power;
+        } else {
+            $validated['u_count'] = 42;
+            $validated['power'] = 0;
+        }
 
         $rack->update($validated);
 
