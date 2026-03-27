@@ -1,9 +1,9 @@
 import { Head, router } from '@inertiajs/react';
-import { 
+import {
     Plus,
-    Eye, 
-    Download, 
-    Upload, 
+    Eye,
+    Download,
+    Upload,
     Network,
     Zap,
     Building2,
@@ -76,6 +76,7 @@ interface Props {
     racks: Rack[];
     rooms: Room[];
     devices: Device[];
+    selectedRoom?: string;
     breadcrumbs?: Array<{ title: string; href: string }>;
 }
 
@@ -101,19 +102,19 @@ const categoryColors: Record<string, string> = {
     other: 'bg-slate-500',
 };
 
-export default function RackVisualEdit({ racks, rooms, devices, breadcrumbs = [] }: Props) {
+export default function RackVisualEdit({ racks, rooms, devices, selectedRoom: initialRoom, breadcrumbs = [] }: Props) {
     const { t } = useTranslation();
-    const [selectedRoom, setSelectedRoom] = useState<string>('all');
+    const [selectedRoom, setSelectedRoom] = useState<string>(initialRoom || 'all');
     const [activeCategory, setActiveCategory] = useState<string>('all');
     const [previewMode, setPreviewMode] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [addRackModalOpen, setAddRackModalOpen] = useState(false);
     const [currentEditDevice, setCurrentEditDevice] = useState<{ rackId: number; uIndex: number; device: Device } | null>(null);
-    
+
     const [rackU, setRackU] = useState(42);
     const [rackRows, setRackRows] = useState(1);
     const [rackCols, setRackCols] = useState(2);
-    
+
     const [newRackName, setNewRackName] = useState('');
     const [newRackRoom, setNewRackRoom] = useState('');
 
@@ -208,7 +209,7 @@ export default function RackVisualEdit({ racks, rooms, devices, breadcrumbs = []
 
     const saveEdit = () => {
         if (!currentEditDevice) return;
-        
+
         router.put(`/devices/${currentEditDevice.device.id}`, editForm, {
             onSuccess: () => {
                 setEditModalOpen(false);
@@ -219,7 +220,7 @@ export default function RackVisualEdit({ racks, rooms, devices, breadcrumbs = []
 
     const removeDeviceFromRack = () => {
         if (!currentEditDevice) return;
-        
+
         router.put(`/devices/${currentEditDevice.device.id}`, {
             rack_id: null,
             u_position: null,
@@ -236,7 +237,7 @@ export default function RackVisualEdit({ racks, rooms, devices, breadcrumbs = []
             for (let c = 0; c < rackCols; c++) {
                 const name = newRackName || `Rack-${String.fromCharCode(65 + r)}${c + 1}`;
                 const roomId = newRackRoom ? parseInt(newRackRoom) : (rooms[0]?.id || 1);
-                
+
                 router.post('/racks', {
                     room_id: roomId,
                     name: `${name}-${r + 1}-${c + 1}`,
@@ -283,14 +284,14 @@ export default function RackVisualEdit({ racks, rooms, devices, breadcrumbs = []
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('navigation.rackVisualEdit')} />
-            
+
             <div className="flex h-full flex-1 flex-col gap-4 overflow-hidden rounded-xl p-4">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">
                         {t('navigation.rackVisualEdit')}
                     </h1>
                     <div className="flex gap-2">
-                        <Button 
+                        <Button
                             variant={previewMode ? 'default' : 'outline'}
                             onClick={() => setPreviewMode(!previewMode)}
                         >
@@ -363,7 +364,7 @@ export default function RackVisualEdit({ racks, rooms, devices, breadcrumbs = []
                             </div>
                         </CardHeader>
                         <CardContent className="p-0">
-                            <div className="max-h-[calc(100vh-16rem)] overflow-y-auto">
+                            <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 360px)' }}>
                                 <Table>
                                     <TableHeader>
                                         <TableRow className="bg-muted/50">
@@ -381,7 +382,7 @@ export default function RackVisualEdit({ racks, rooms, devices, breadcrumbs = []
                                             </TableRow>
                                         ) : (
                                             filteredDevices.map((device) => (
-                                                <TableRow 
+                                                <TableRow
                                                     key={device.id}
                                                     draggable
                                                     onDragStart={(e) => handleDragStart(e, device)}
@@ -409,25 +410,30 @@ export default function RackVisualEdit({ racks, rooms, devices, breadcrumbs = []
 
                     <Card className="flex-1 overflow-hidden">
                         <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="text-base flex items-center gap-2">
-                                    <Server className="h-4 w-4" />
-                                    {t('visualEdit.rackView')}
-                                </CardTitle>
-                                <span className="text-sm text-muted-foreground">
-                                    {racksData.length} {t('visualEdit.racks')}
+                            <div className="flex flex-col gap-1">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-base flex items-center gap-2">
+                                        <Server className="h-4 w-4" />
+                                        {t('visualEdit.rackView')}
+                                    </CardTitle>
+                                    <span className="text-sm text-muted-foreground">
+                                        {racksData.length} {t('visualEdit.racks')}
+                                    </span>
+                                </div>
+                                <span className="text-xs text-muted-foreground">
+                                    {t('visualEdit.dragHint')}
                                 </span>
                             </div>
                         </CardHeader>
                         <CardContent className="p-0">
-                            <div className="h-[calc(100vh-16rem)] overflow-auto p-4">
+                            <div className="overflow-auto p-4" style={{ maxHeight: 'calc(100vh - 360px)' }}>
                                 {racksData.length === 0 ? (
                                     <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
                                         <Building2 className="mb-4 h-12 w-12 opacity-50" />
                                         <p>{t('visualEdit.noRacksAvailable')}</p>
-                                        <Button 
-                                            variant="outline" 
-                                            size="sm" 
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
                                             className="mt-2"
                                             onClick={() => setAddRackModalOpen(true)}
                                         >
@@ -443,9 +449,9 @@ export default function RackVisualEdit({ racks, rooms, devices, breadcrumbs = []
                                             >
                                                 <div className="flex items-center justify-between rounded-t-lg bg-muted px-3 py-2">
                                                     <span className="font-semibold">{rack.name}</span>
-                                                    <Button 
-                                                        variant="ghost" 
-                                                        size="sm" 
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
                                                         className="h-6 w-6 p-0"
                                                         onClick={() => handlePowerEdit(rack)}
                                                         title={t('visualEdit.editPower')}
@@ -453,7 +459,7 @@ export default function RackVisualEdit({ racks, rooms, devices, breadcrumbs = []
                                                         <Zap className="h-3 w-3 text-yellow-500" />
                                                     </Button>
                                                 </div>
-                                                <div 
+                                                <div
                                                     className="flex flex-col-reverse bg-slate-50 dark:bg-slate-900"
                                                     style={{ minHeight: `${rack.totalU * 24}px`, width: '120px' }}
                                                 >
@@ -476,15 +482,15 @@ export default function RackVisualEdit({ racks, rooms, devices, breadcrumbs = []
                                                                 <div
                                                                     className="flex h-full w-full items-center justify-center truncate px-1 text-[9px] font-medium text-white cursor-pointer"
                                                                     style={{
-                                                                        backgroundColor: slot.device.category === 'server' ? '#3b82f6' : 
-                                                                                         slot.device.category === 'network' ? '#06b6d4' : 
+                                                                        backgroundColor: slot.device.category === 'server' ? '#3b82f6' :
+                                                                                         slot.device.category === 'network' ? '#06b6d4' :
                                                                                          slot.device.category === 'storage' ? '#0ea5e9' : '#64748b'
                                                                     }}
                                                                     onDoubleClick={() => openEditModal(rack.id, uIndex, slot.device!)}
                                                                     title={`${slot.device.name}\n${getCategoryLabel(slot.device.category)} | ${getStatusLabel(slot.device.status)} | ${slot.device.power || 0}W`}
                                                                 >
-                                                                    {slot.device.name.length > 10 
-                                                                        ? slot.device.name.slice(0, 8) + '..' 
+                                                                    {slot.device.name.length > 10
+                                                                        ? slot.device.name.slice(0, 8) + '..'
                                                                         : slot.device.name}
                                                                 </div>
                                                             )}
@@ -506,10 +512,6 @@ export default function RackVisualEdit({ racks, rooms, devices, breadcrumbs = []
                             </div>
                         </CardContent>
                     </Card>
-                </div>
-
-                <div className="text-xs text-muted-foreground">
-                    {t('visualEdit.dragHint')}
                 </div>
             </div>
 

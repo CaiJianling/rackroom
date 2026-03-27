@@ -9,7 +9,7 @@ class RoomController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Room::query();
+        $query = Room::query()->withCount('racks');
 
         $search = $request->input('search');
         if ($search) {
@@ -19,7 +19,7 @@ class RoomController extends Controller
         }
 
         $rooms = $query->latest()->get();
-        
+
         return inertia('Room/Index', compact('rooms'));
     }
 
@@ -33,7 +33,6 @@ class RoomController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'location' => 'required|string|max:255',
-            'rack_count' => 'required|integer|min:0',
             'manager' => 'nullable|string|max:255',
             'description' => 'nullable|string',
         ]);
@@ -58,7 +57,6 @@ class RoomController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'location' => 'required|string|max:255',
-            'rack_count' => 'required|integer|min:0',
             'manager' => 'nullable|string|max:255',
             'description' => 'nullable|string',
         ]);

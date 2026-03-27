@@ -46,7 +46,12 @@ class RackController extends Controller
         $racks = $query->orderBy('room_id')->orderBy('name')->get();
         $devices = Device::whereNull('rack_id')->orWhere('rack_id', 0)->get();
 
-        return inertia('Rack/VisualEdit', compact('racks', 'rooms', 'devices'));
+        return inertia('Rack/VisualEdit', [
+            'racks' => $racks,
+            'rooms' => $rooms,
+            'devices' => $devices,
+            'selectedRoom' => $roomId,
+        ]);
     }
 
     public function create()

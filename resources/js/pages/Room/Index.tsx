@@ -2,6 +2,14 @@
  * @Author: CaiJianling caijianling@outlook.com
  * @Date: 2026-03-26 13:52:19
  * @LastEditors: CaiJianling caijianling@outlook.com
+ * @LastEditTime: 2026-03-27 10:20:59
+ * @FilePath: /rackroom/resources/js/pages/Room/Index.tsx
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
+/*
+ * @Author: CaiJianling caijianling@outlook.com
+ * @Date: 2026-03-26 13:52:19
+ * @LastEditors: CaiJianling caijianling@outlook.com
  * @LastEditTime: 2026-03-26 15:49:47
  * @FilePath: /rackroom/resources/js/pages/Room/Index.tsx
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
@@ -65,7 +73,7 @@ interface Room {
     id: number;
     name: string;
     location: string;
-    rack_count: number;
+    racks_count: number;
     manager: string | null;
     description: string | null;
     created_at: string;
@@ -90,7 +98,6 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
     const [form, setForm] = useState({
         name: '',
         location: '',
-        rack_count: 0,
         manager: '',
         description: '',
     });
@@ -126,7 +133,6 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
         setForm({
             name: room.name,
             location: room.location,
-            rack_count: room.rack_count,
             manager: room.manager || '',
             description: room.description || '',
         });
@@ -139,7 +145,6 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
         setForm({
             name: '',
             location: '',
-            rack_count: 0,
             manager: '',
             description: '',
         });
@@ -159,7 +164,6 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
         setForm({
             name: '',
             location: '',
-            rack_count: 0,
             manager: '',
             description: '',
         });
@@ -171,7 +175,6 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
         setForm({
             name: '',
             location: '',
-            rack_count: 0,
             manager: '',
             description: '',
         });
@@ -454,7 +457,7 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
                                                 <div className="flex items-center gap-2">
                                                     <Server className="h-4 w-4 text-muted-foreground" />
                                                     <span className="font-semibold">
-                                                        {room.rack_count}
+                                                        {room.racks_count}
                                                     </span>
                                                 </div>
                                             </TableCell>
@@ -615,31 +618,6 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
                                     )}
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="rack_count">
-                                        {t('roomManagement.rackCount')} *
-                                    </Label>
-                                    <Input
-                                        id="rack_count"
-                                        type="number"
-                                        min="0"
-                                        value={form.rack_count}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                            setForm({
-                                                ...form,
-                                                rack_count: parseInt(
-                                                    e.target.value,
-                                                ) || 0,
-                                            })
-                                        }
-                                        placeholder={t('roomManagement.rackCount')}
-                                    />
-                                    {errors?.rack_count && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.rack_count}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="grid gap-2">
                                     <Label htmlFor="manager">
                                         {t('roomManagement.manager')}
                                     </Label>
@@ -757,31 +735,6 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
                                     )}
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="edit-rack_count">
-                                        {t('roomManagement.rackCount')} *
-                                    </Label>
-                                    <Input
-                                        id="edit-rack_count"
-                                        type="number"
-                                        min="0"
-                                        value={form.rack_count}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                            setForm({
-                                                ...form,
-                                                rack_count: parseInt(
-                                                    e.target.value,
-                                                ) || 0,
-                                            })
-                                        }
-                                        placeholder={t('roomManagement.rackCount')}
-                                    />
-                                    {errors?.rack_count && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.rack_count}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="grid gap-2">
                                     <Label htmlFor="edit-manager">
                                         {t('roomManagement.manager')}
                                     </Label>
@@ -879,7 +832,7 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
                                         {t('roomManagement.rackCount')}
                                     </Label>
                                     <div className="mt-1 text-sm">
-                                        {viewingRoom?.rack_count}
+                                        {viewingRoom?.racks_count}
                                     </div>
                                 </div>
                                 <div>
