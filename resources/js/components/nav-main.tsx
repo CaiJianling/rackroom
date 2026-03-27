@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import type { InertiaLinkProps } from '@inertiajs/react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
@@ -20,6 +20,13 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
     const { t } = useTranslation();
     const { isCurrentUrl } = useCurrentUrl();
 
+    const handleClick = (e: React.MouseEvent<HTMLAnchorElement | Element>, href: string) => {
+        if (isCurrentUrl(href)) {
+            e.preventDefault();
+            router.reload({ only: [] });
+        }
+    };
+
     return (
         <SidebarGroup className="px-2 py-0">
             <SidebarGroupLabel>{t('navigation.platform')}</SidebarGroupLabel>
@@ -34,7 +41,11 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                                 isActive={isCurrentUrl(item.href || '')}
                                 tooltip={{ children: item.title }}
                             >
-                                <Link href={item.href || '#'} prefetch>
+                                <Link
+                                    href={item.href || '#'}
+                                    prefetch
+                                    onClick={(e) => item.href && handleClick(e, String(item.href))}
+                                >
                                     {item.icon && <item.icon />}
                                     <span>{item.title}</span>
                                 </Link>
@@ -50,6 +61,13 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
 function CollapsibleNavItem({ item, isCurrentUrl }: { item: NavItem; isCurrentUrl: (href: NonNullable<InertiaLinkProps['href']>) => boolean }) {
     const hasActiveChild = item.items?.some(subItem => subItem.href && isCurrentUrl(subItem.href));
     const [isOpen, setIsOpen] = useState(hasActiveChild);
+
+    const handleClick = (e: React.MouseEvent<HTMLAnchorElement | Element>, href: string) => {
+        if (isCurrentUrl(href)) {
+            e.preventDefault();
+            router.reload({ only: [] });
+        }
+    };
 
     return (
         <>
@@ -70,7 +88,11 @@ function CollapsibleNavItem({ item, isCurrentUrl }: { item: NavItem; isCurrentUr
                                 asChild
                                 isActive={subItem.href ? isCurrentUrl(subItem.href) : false}
                             >
-                                <Link href={subItem.href || '#'} prefetch>
+                                <Link
+                                    href={subItem.href || '#'}
+                                    prefetch
+                                    onClick={(e) => subItem.href && handleClick(e, String(subItem.href))}
+                                >
                                     <span>{subItem.title}</span>
                                 </Link>
                             </SidebarMenuSubButton>

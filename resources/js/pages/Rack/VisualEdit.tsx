@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
     DialogFooter,
@@ -67,6 +68,23 @@ interface Rack {
     devices?: Device[];
 }
 
+interface DeviceType {
+    id: number;
+    name: string;
+    icon: string | null;
+}
+
+interface DeviceLibraryItem {
+    id: number;
+    device_type_id: number;
+    name: string;
+    model: string | null;
+    manufacturer: string | null;
+    u_height: number;
+    power: number;
+    device_type?: DeviceType;
+}
+
 interface Room {
     id: number;
     name: string;
@@ -76,6 +94,8 @@ interface Props {
     racks: Rack[];
     rooms: Room[];
     devices: Device[];
+    deviceLibrary: DeviceLibraryItem[];
+    deviceTypes: DeviceType[];
     selectedRoom?: string;
     breadcrumbs?: Array<{ title: string; href: string }>;
 }
@@ -102,13 +122,14 @@ const categoryColors: Record<string, string> = {
     other: 'bg-slate-500',
 };
 
-export default function RackVisualEdit({ racks, rooms, devices, selectedRoom: initialRoom, breadcrumbs = [] }: Props) {
+export default function RackVisualEdit({ racks, rooms, devices, deviceLibrary, deviceTypes, selectedRoom: initialRoom, breadcrumbs = [] }: Props) {
     const { t } = useTranslation();
     const [selectedRoom, setSelectedRoom] = useState<string>(initialRoom || 'all');
     const [activeCategory, setActiveCategory] = useState<string>('all');
     const [previewMode, setPreviewMode] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [addRackModalOpen, setAddRackModalOpen] = useState(false);
+    const [addDeviceModalOpen, setAddDeviceModalOpen] = useState(false);
     const [currentEditDevice, setCurrentEditDevice] = useState<{ rackId: number; uIndex: number; device: Device } | null>(null);
 
     const [rackU, setRackU] = useState(42);
@@ -125,6 +146,17 @@ export default function RackVisualEdit({ racks, rooms, devices, selectedRoom: in
         serial_number: '',
         power: 0,
         status: 'offline',
+    });
+
+    const [selectedDeviceType, setSelectedDeviceType] = useState<string>('');
+    const [addDeviceForm, setAddDeviceForm] = useState({
+        device_library_id: undefined as string | undefined,
+        name: '',
+        u_position: 1,
+        rack_id: undefined as string | undefined,
+        ip_address: '',
+        connection_type: '',
+        status: 'offline' as string,
     });
 
     const racksData: RackDisplay[] = useMemo(() => {
@@ -159,6 +191,53 @@ export default function RackVisualEdit({ racks, rooms, devices, selectedRoom: in
             return true;
         });
     }, [unassignedDevices, activeCategory]);
+
+    const filteredDeviceLibraryByType = useMemo(() => {
+        if (!selectedDeviceType) return [];
+        return deviceLibrary.filter(item => item.device_type_id.toString() === selectedDeviceType);
+    }, [deviceLibrary, selectedDeviceType]);
+
+    const handleDeviceLibraryChange = (value: string) => {
+        const selectedLib = deviceLibrary.find(item => item.id.toString() === value);
+        setAddDeviceForm({
+            ...addDeviceForm,
+            device_library_id: value,
+            name: selectedLib ? selectedLib.name : addDeviceForm.name,
+        });
+    };
+
+    const handleDeviceTypeChange = (value: string) => {
+        setSelectedDeviceType(value);
+        setAddDeviceForm(prev => ({
+            ...prev,
+            device_library_id: undefined,
+        }));
+    };
+
+    const handleAddDevice = (e: React.FormEvent) => {
+        e.preventDefault();
+        router.post('/devices', {
+            ...addDeviceForm,
+            rack_id: addDeviceForm.rack_id ? parseInt(addDeviceForm.rack_id) : null,
+            device_library_id: addDeviceForm.device_library_id ? parseInt(addDeviceForm.device_library_id) : null,
+            u_position: parseInt(addDeviceForm.u_position.toString()) || 1,
+        }, {
+            onSuccess: () => {
+                setAddDeviceModalOpen(false);
+                setAddDeviceForm({
+                    device_library_id: undefined,
+                    name: '',
+                    u_position: 1,
+                    rack_id: undefined,
+                    ip_address: '',
+                    connection_type: '',
+                    status: 'offline',
+                });
+                setSelectedDeviceType('');
+                router.reload({ only: ['racks', 'devices'] });
+            }
+        });
+    };
 
     const handleRoomChange = (roomId: string) => {
         setSelectedRoom(roomId);
@@ -266,7 +345,7 @@ export default function RackVisualEdit({ racks, rooms, devices, selectedRoom: in
     };
 
     const getCategoryLabel = (category: string) => {
-        return t(`visualEdit.${category}`);
+        return t(`${category}`);
     };
 
     const getStatusLabel = (status: string) => {
@@ -345,7 +424,7 @@ export default function RackVisualEdit({ racks, rooms, devices, selectedRoom: in
                                     <HardDrive className="h-4 w-4" />
                                     {t('visualEdit.deviceLibrary')}
                                 </CardTitle>
-                                <Button variant="ghost" size="sm" className="h-7 text-xs">
+                                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setAddDeviceModalOpen(true)}>
                                     + {t('visualEdit.addDevice')}
                                 </Button>
                             </div>
@@ -519,6 +598,7 @@ export default function RackVisualEdit({ racks, rooms, devices, selectedRoom: in
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('visualEdit.editDevice')}</DialogTitle>
+                        <DialogDescription>{t('visualEdit.editDeviceDesc')}</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
@@ -596,6 +676,7 @@ export default function RackVisualEdit({ racks, rooms, devices, selectedRoom: in
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('visualEdit.quickAddRacks')}</DialogTitle>
+                        <DialogDescription>{t('visualEdit.quickAddRacksDesc')}</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
@@ -667,6 +748,125 @@ export default function RackVisualEdit({ racks, rooms, devices, selectedRoom: in
                             {t('visualEdit.generate')}
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={addDeviceModalOpen} onOpenChange={setAddDeviceModalOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>{t('deviceManagement.newDevice')}</DialogTitle>
+                        <DialogDescription>{t('deviceManagement.addDeviceDesc')}</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleAddDevice}>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="add-device-type" className="text-right">
+                                    {t('deviceLibrary.type')} *
+                                </Label>
+                                <Select value={selectedDeviceType} onValueChange={handleDeviceTypeChange}>
+                                    <SelectTrigger id="add-device-type" className="col-span-3">
+                                        <SelectValue placeholder={t('deviceLibrary.selectType')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {deviceTypes.map((type) => (
+                                            <SelectItem key={type.id} value={type.id.toString()}>
+                                                {type.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="add-device-library" className="text-right">
+                                    {t('deviceLibrary.name')} *
+                                </Label>
+                                <Select value={addDeviceForm.device_library_id} onValueChange={handleDeviceLibraryChange} disabled={!selectedDeviceType}>
+                                    <SelectTrigger id="add-device-library" className="col-span-3">
+                                        <SelectValue placeholder={t('deviceLibrary.selectDevice')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {filteredDeviceLibraryByType.map((lib) => (
+                                            <SelectItem key={lib.id} value={lib.id.toString()}>
+                                                {lib.name} ({lib.manufacturer} {lib.model})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="add-rack" className="text-right">
+                                    {t('deviceManagement.rack')}
+                                </Label>
+                                <Select value={addDeviceForm.rack_id} onValueChange={(value) => setAddDeviceForm({ ...addDeviceForm, rack_id: value === 'none' ? undefined : value })}>
+                                    <SelectTrigger id="add-rack" className="col-span-3">
+                                        <SelectValue placeholder={t('deviceManagement.selectRack')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">{t('deviceManagement.noRack')}</SelectItem>
+                                        {racks.map((rack) => (
+                                            <SelectItem key={rack.id} value={rack.id.toString()}>
+                                                {rack.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="add-u_position" className="text-right">
+                                    {t('deviceManagement.uPosition')} *
+                                </Label>
+                                <Input
+                                    id="add-u_position"
+                                    type="number"
+                                    min="1"
+                                    value={addDeviceForm.u_position}
+                                    onChange={(e) => setAddDeviceForm({ ...addDeviceForm, u_position: parseInt(e.target.value) || 1 })}
+                                    className="col-span-3"
+                                    required
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="add-ip" className="text-right">
+                                    {t('deviceManagement.ipAddress')}
+                                </Label>
+                                <Input
+                                    id="add-ip"
+                                    value={addDeviceForm.ip_address}
+                                    onChange={(e) => setAddDeviceForm({ ...addDeviceForm, ip_address: e.target.value })}
+                                    className="col-span-3"
+                                    placeholder="192.168.1.1"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="add-status" className="text-right">
+                                    {t('deviceManagement.status')} *
+                                </Label>
+                                <Select value={addDeviceForm.status} onValueChange={(value) => setAddDeviceForm({ ...addDeviceForm, status: value })}>
+                                    <SelectTrigger id="add-status" className="col-span-3">
+                                        <SelectValue placeholder={t('deviceManagement.selectStatus')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="online">{t('deviceManagement.statuses.online')}</SelectItem>
+                                        <SelectItem value="offline">{t('deviceManagement.statuses.offline')}</SelectItem>
+                                        <SelectItem value="maintenance">{t('deviceManagement.statuses.maintenance')}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setAddDeviceModalOpen(false)}>
+                                {t('common.cancel')}
+                            </Button>
+                            <Button type="submit" disabled={!selectedDeviceType || !addDeviceForm.device_library_id}>
+                                {t('common.create')}
+                            </Button>
+                        </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
         </AppLayout>

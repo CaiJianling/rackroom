@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Device;
 use App\Models\Rack;
+use App\Models\DeviceLibrary;
+use App\Models\DeviceType;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -11,14 +13,15 @@ class DeviceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Device::with('rack');
+        $query = Device::with(['rack', 'deviceLibrary', 'deviceLibrary.deviceType']);
 
         $search = $request->input('search');
         if ($search) {
             $query->where('name', 'like', "%{$search}%")
                   ->orWhere('model', 'like', "%{$search}%")
                   ->orWhere('manufacturer', 'like', "%{$search}%")
-                  ->orWhere('serial_number', 'like', "%{$search}%");
+                  ->orWhere('serial_number', 'like', "%{$search}%")
+                  ->orWhere('ip_address', 'like', "%{$search}%");
         }
 
         $categoryFilter = $request->input('category');
@@ -33,8 +36,10 @@ class DeviceController extends Controller
 
         $devices = $query->latest()->get();
         $racks = Rack::all();
-        
-        return inertia('Device/Index', compact('devices', 'racks'));
+        $deviceLibrary = DeviceLibrary::with('deviceType')->get();
+        $deviceTypes = DeviceType::all();
+
+        return inertia('Device/Index', compact('devices', 'racks', 'deviceLibrary', 'deviceTypes'));
     }
 
     public function create()
@@ -47,16 +52,34 @@ class DeviceController extends Controller
     {
         $validated = $request->validate([
             'rack_id' => 'nullable|exists:racks,id',
+            'device_library_id' => 'nullable|exists:device_library,id',
             'name' => 'required|string|max:255',
-            'category' => 'required|string|in:server,network,storage,other',
+            'category' => 'nullable|string|in:server,network,storage,other',
             'model' => 'nullable|string|max:255',
             'manufacturer' => 'nullable|string|max:255',
-            'serial_number' => 'nullable|string|max:255',
             'u_position' => 'required|integer|min:1|max:100',
-            'power' => 'required|integer|min:0',
+            'connection_type' => 'nullable|string|max:255',
+            'ip_address' => 'nullable|string|max:255',
             'status' => 'required|string|in:online,offline,maintenance',
             'description' => 'nullable|string',
         ]);
+
+        if (!empty($validated['device_library_id'])) {
+            $deviceLibrary = DeviceLibrary::with('deviceType')->find($validated['device_library_id']);
+            if ($deviceLibrary) {
+                $validated['power'] = $deviceLibrary->power;
+                $validated['serial_number'] = $deviceLibrary->serial_number;
+                $validated['model'] = $deviceLibrary->model;
+                $validated['manufacturer'] = $deviceLibrary->manufacturer;
+                if ($deviceLibrary->deviceType) {
+                    $validated['category'] = $deviceLibrary->deviceType->name;
+                }
+            }
+        } else {
+            $validated['power'] = 0;
+            $validated['serial_number'] = null;
+            $validated['category'] = $validated['category'] ?? 'other';
+        }
 
         Device::create($validated);
 
@@ -78,16 +101,34 @@ class DeviceController extends Controller
     {
         $validated = $request->validate([
             'rack_id' => 'nullable|exists:racks,id',
+            'device_library_id' => 'nullable|exists:device_library,id',
             'name' => 'required|string|max:255',
-            'category' => 'required|string|in:server,network,storage,other',
+            'category' => 'nullable|string|in:server,network,storage,other',
             'model' => 'nullable|string|max:255',
             'manufacturer' => 'nullable|string|max:255',
-            'serial_number' => 'nullable|string|max:255',
             'u_position' => 'required|integer|min:1|max:100',
-            'power' => 'required|integer|min:0',
+            'connection_type' => 'nullable|string|max:255',
+            'ip_address' => 'nullable|string|max:255',
             'status' => 'required|string|in:online,offline,maintenance',
             'description' => 'nullable|string',
         ]);
+
+        if (!empty($validated['device_library_id'])) {
+            $deviceLibrary = DeviceLibrary::with('deviceType')->find($validated['device_library_id']);
+            if ($deviceLibrary) {
+                $validated['power'] = $deviceLibrary->power;
+                $validated['serial_number'] = $deviceLibrary->serial_number;
+                $validated['model'] = $deviceLibrary->model;
+                $validated['manufacturer'] = $deviceLibrary->manufacturer;
+                if ($deviceLibrary->deviceType) {
+                    $validated['category'] = $deviceLibrary->deviceType->name;
+                }
+            }
+        } else {
+            $validated['power'] = 0;
+            $validated['serial_number'] = null;
+            $validated['category'] = $validated['category'] ?? 'other';
+        }
 
         $device->update($validated);
 
@@ -111,7 +152,7 @@ class DeviceController extends Controller
         $callback = function () use ($devices) {
             $file = fopen('php://output', 'w');
             fputcsv($file, ['ID', 'Name', 'Category', 'Model', 'Manufacturer', 'Serial Number', 'Rack', 'U Position', 'Power (W)', 'Status', 'Description', 'Created At']);
-            
+
             foreach ($devices as $device) {
                 fputcsv($file, [
                     $device->id,
@@ -128,7 +169,7 @@ class DeviceController extends Controller
                     $device->created_at,
                 ]);
             }
-            
+
             fclose($file);
         };
 
@@ -144,7 +185,7 @@ class DeviceController extends Controller
         $file = $request->file('file');
         $path = $file->getRealPath();
         $handle = fopen($path, 'r');
-        
+
         $header = fgetcsv($handle);
         $imported = 0;
         $errors = 0;

@@ -10,8 +10,6 @@ import {
     Upload,
     Eye,
     Cpu,
-    HardDrive,
-    Network,
     ShieldCheck,
     AlertCircle,
 } from 'lucide-react';
@@ -63,36 +61,48 @@ interface Rack {
     name: string;
 }
 
+interface DeviceType {
+    id: number;
+    name: string;
+    icon: string | null;
+}
+
+interface DeviceLibraryItem {
+    id: number;
+    device_type_id: number;
+    name: string;
+    model: string | null;
+    manufacturer: string | null;
+    u_height: number;
+    power: number;
+    device_type?: DeviceType;
+}
+
 interface Device {
     id: number;
     rack_id: number | null;
+    device_library_id: number | null;
     name: string;
-    category: string;
-    model: string | null;
-    manufacturer: string | null;
     serial_number: string | null;
     u_position: number;
-    power: number;
+    connection_type: string | null;
+    ip_address: string | null;
     status: string;
     description: string | null;
     created_at: string;
     updated_at: string;
     rack?: Rack;
+    device_library?: DeviceLibraryItem;
 }
 
 interface Props {
     devices: Device[];
     racks: Rack[];
+    deviceLibrary: DeviceLibraryItem[];
+    deviceTypes: DeviceType[];
     breadcrumbs?: Array<{ title: string; href: string }>;
     message?: string;
 }
-
-const categories = [
-    { value: 'server', label: 'deviceManagement.categories.server' },
-    { value: 'network', label: 'deviceManagement.categories.network' },
-    { value: 'storage', label: 'deviceManagement.categories.storage' },
-    { value: 'other', label: 'deviceManagement.categories.other' },
-];
 
 const statuses = [
     { value: 'online', label: 'deviceManagement.statuses.online' },
@@ -100,7 +110,14 @@ const statuses = [
     { value: 'maintenance', label: 'deviceManagement.statuses.maintenance' },
 ];
 
-export default function DeviceIndex({ devices, racks, breadcrumbs = [], message }: Props) {
+const connectionTypes = [
+    { value: 'network', label: '网络' },
+    { value: 'kvm', label: 'KVM' },
+    { value: 'usb', label: 'USB' },
+    { value: 'other', label: '其他' },
+];
+
+export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes, breadcrumbs = [], message }: Props) {
     const { t } = useTranslation();
     const { errors } = usePage().props as PageProps;
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -112,23 +129,36 @@ export default function DeviceIndex({ devices, racks, breadcrumbs = [], message 
     const [viewingDevice, setViewingDevice] = useState<Device | null>(null);
     const [editingDevice, setEditingDevice] = useState<Device | null>(null);
     const [importFile, setImportFile] = useState<File | null>(null);
+    const [selectedDeviceType, setSelectedDeviceType] = useState<string>('');
     const [form, setForm] = useState({
-        rack_id: '',
+        rack_id: undefined as string | undefined,
+        device_library_id: undefined as string | undefined,
         name: '',
-        category: 'server',
-        model: '',
-        manufacturer: '',
-        serial_number: '',
         u_position: 1,
-        power: 0,
+        connection_type: '',
+        ip_address: '',
         status: 'online',
         description: '',
     });
     const [searchTerm, setSearchTerm] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+
+    const filteredDeviceLibraryByType = useMemo(() => {
+        if (!selectedDeviceType) return [];
+        return deviceLibrary.filter(item => item.device_type_id.toString() === selectedDeviceType);
+    }, [deviceLibrary, selectedDeviceType]);
+
+    const getDeviceTypeName = (deviceTypeId: number) => {
+        const type = deviceTypes.find(t => t.id === deviceTypeId);
+        return type ? type.name : '-';
+    };
+
+    const getDeviceLibraryInfo = (deviceLibraryId: number | null) => {
+        if (!deviceLibraryId) return null;
+        return deviceLibrary.find(item => item.id === deviceLibraryId);
+    };
 
     const handleDelete = (deviceId: number) => {
         setDeletingDeviceId(deviceId);
@@ -151,38 +181,41 @@ export default function DeviceIndex({ devices, racks, breadcrumbs = [], message 
         setDeletingDeviceId(null);
     };
 
+    const resetForm = () => ({
+        rack_id: undefined as string | undefined,
+        device_library_id: undefined as string | undefined,
+        name: '',
+        u_position: 1,
+        connection_type: '',
+        ip_address: '',
+        status: 'online',
+        description: '',
+    });
+
     const openEditDialog = (device: Device) => {
         setEditingDevice(device);
         setForm({
-            rack_id: device.rack_id ? device.rack_id.toString() : '',
+            rack_id: device.rack_id ? device.rack_id.toString() : undefined,
+            device_library_id: device.device_library_id ? device.device_library_id.toString() : undefined,
             name: device.name,
-            category: device.category,
-            model: device.model || '',
-            manufacturer: device.manufacturer || '',
-            serial_number: device.serial_number || '',
             u_position: device.u_position,
-            power: device.power,
+            connection_type: device.connection_type || '',
+            ip_address: device.ip_address || '',
             status: device.status,
             description: device.description || '',
         });
+        const deviceLib = device.device_library;
+        if (deviceLib) {
+            setSelectedDeviceType(deviceLib.device_type_id.toString());
+        }
         setIsEditDialogOpen(true);
     };
 
     const closeEditDialog = () => {
         setIsEditDialogOpen(false);
         setEditingDevice(null);
-        setForm({
-            rack_id: '',
-            name: '',
-            category: 'server',
-            model: '',
-            manufacturer: '',
-            serial_number: '',
-            u_position: 1,
-            power: 0,
-            status: 'online',
-            description: '',
-        });
+        setSelectedDeviceType('');
+        setForm(resetForm());
     };
 
     const openDetailDialog = (device: Device) => {
@@ -196,41 +229,43 @@ export default function DeviceIndex({ devices, racks, breadcrumbs = [], message 
     };
 
     const openCreateDialog = () => {
-        setForm({
-            rack_id: '',
-            name: '',
-            category: 'server',
-            model: '',
-            manufacturer: '',
-            serial_number: '',
-            u_position: 1,
-            power: 0,
-            status: 'online',
-            description: '',
-        });
+        setSelectedDeviceType('');
+        setForm(resetForm());
         setIsCreateDialogOpen(true);
     };
 
     const closeCreateDialog = () => {
         setIsCreateDialogOpen(false);
+        setSelectedDeviceType('');
+        setForm(resetForm());
+    };
+
+    const handleDeviceLibraryChange = (value: string) => {
+        const selectedLib = deviceLibrary.find(item => item.id.toString() === value);
         setForm({
-            rack_id: '',
-            name: '',
-            category: 'server',
-            model: '',
-            manufacturer: '',
-            serial_number: '',
-            u_position: 1,
-            power: 0,
-            status: 'online',
-            description: '',
+            ...form,
+            device_library_id: value,
+            name: selectedLib ? selectedLib.name : form.name,
         });
+    };
+
+    const handleDeviceTypeChange = (value: string) => {
+        setSelectedDeviceType(value);
+        setForm(prev => ({
+            ...prev,
+            device_library_id: '',
+        }));
     };
 
     const handleEditSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (editingDevice) {
-            router.put(`/devices/${editingDevice.id}`, form, {
+            router.put(`/devices/${editingDevice.id}`, {
+                ...form,
+                rack_id: form.rack_id ? parseInt(form.rack_id) : null,
+                device_library_id: form.device_library_id ? parseInt(form.device_library_id) : null,
+                u_position: parseInt(form.u_position as unknown as string) || 1,
+            }, {
                 onSuccess: () => closeEditDialog(),
             });
         }
@@ -238,7 +273,12 @@ export default function DeviceIndex({ devices, racks, breadcrumbs = [], message 
 
     const handleCreateSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        router.post('/devices', form, {
+        router.post('/devices', {
+            ...form,
+            rack_id: form.rack_id ? parseInt(form.rack_id) : null,
+            device_library_id: form.device_library_id ? parseInt(form.device_library_id) : null,
+            u_position: parseInt(form.u_position.toString()) || 1,
+        }, {
             onSuccess: () => closeCreateDialog(),
         });
     };
@@ -266,22 +306,17 @@ export default function DeviceIndex({ devices, racks, breadcrumbs = [], message 
             const matchesSearch =
                 searchTerm === '' ||
                 device.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (device.model &&
-                    device.model.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                (device.manufacturer &&
-                    device.manufacturer.toLowerCase().includes(searchTerm.toLowerCase())) ||
                 (device.serial_number &&
-                    device.serial_number.toLowerCase().includes(searchTerm.toLowerCase()));
-
-            const matchesCategory =
-                categoryFilter === 'all' || device.category === categoryFilter;
+                    device.serial_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                (device.ip_address &&
+                    device.ip_address.toLowerCase().includes(searchTerm.toLowerCase()));
 
             const matchesStatus =
                 statusFilter === 'all' || device.status === statusFilter;
 
-            return matchesSearch && matchesCategory && matchesStatus;
+            return matchesSearch && matchesStatus;
         });
-    }, [devices, searchTerm, categoryFilter, statusFilter]);
+    }, [devices, searchTerm, statusFilter]);
 
     const paginatedDevices = useMemo(() => {
         const startIndex = (currentPage - 1) * itemsPerPage;
@@ -297,22 +332,8 @@ export default function DeviceIndex({ devices, racks, breadcrumbs = [], message 
 
     const clearFilters = () => {
         setSearchTerm('');
-        setCategoryFilter('all');
         setStatusFilter('all');
         setCurrentPage(1);
-    };
-
-    const getCategoryIcon = (category: string) => {
-        switch (category) {
-            case 'server':
-                return <Server className="h-4 w-4" />;
-            case 'network':
-                return <Network className="h-4 w-4" />;
-            case 'storage':
-                return <HardDrive className="h-4 w-4" />;
-            default:
-                return <Cpu className="h-4 w-4" />;
-        }
     };
 
     const getStatusIcon = (status: string) => {
@@ -322,32 +343,7 @@ export default function DeviceIndex({ devices, racks, breadcrumbs = [], message 
             case 'offline':
                 return <AlertCircle className="h-4 w-4 text-red-500" />;
             case 'maintenance':
-                return <AlertCircle className="h-4 w-4 text-yellow-500" />;
-            default:
-                return <AlertCircle className="h-4 w-4" />;
-        }
-    };
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'online':
-                return (
-                    <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                        {t('deviceManagement.statuses.online')}
-                    </span>
-                );
-            case 'offline':
-                return (
-                    <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
-                        {t('deviceManagement.statuses.offline')}
-                    </span>
-                );
-            case 'maintenance':
-                return (
-                    <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
-                        {t('deviceManagement.statuses.maintenance')}
-                    </span>
-                );
+                return <Cpu className="h-4 w-4 text-yellow-500" />;
             default:
                 return null;
         }
@@ -362,21 +358,15 @@ export default function DeviceIndex({ devices, racks, breadcrumbs = [], message 
                         {t('deviceManagement.title')}
                     </h1>
                     <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            onClick={handleExport}
-                        >
+                        <Button variant="outline" onClick={handleExport}>
                             <Download className="mr-2 h-4 w-4" />
                             {t('deviceManagement.export')}
                         </Button>
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsImportDialogOpen(true)}
-                        >
+                        <Button variant="outline" onClick={() => setIsImportDialogOpen(true)}>
                             <Upload className="mr-2 h-4 w-4" />
                             {t('deviceManagement.import')}
                         </Button>
-                        <Button onClick={openCreateDialog}>
+                        <Button onClick={openCreateDialog} disabled={deviceTypes.length === 0 || deviceLibrary.length === 0}>
                             <Plus className="mr-2 h-4 w-4" />
                             {t('deviceManagement.addDevice')}
                         </Button>
@@ -384,7 +374,7 @@ export default function DeviceIndex({ devices, racks, breadcrumbs = [], message 
                 </div>
 
                 {message && (
-                    <div className="rounded-md bg-green-100 p-3 text-sm text-green-800">
+                    <div className="rounded-md bg-green-50 p-3 text-sm text-green-800">
                         {message}
                     </div>
                 )}
@@ -416,28 +406,6 @@ export default function DeviceIndex({ devices, racks, breadcrumbs = [], message 
 
                     <div className="flex gap-2">
                         <Select
-                            value={categoryFilter}
-                            onValueChange={(value) => {
-                                setCategoryFilter(value);
-                                setCurrentPage(1);
-                            }}
-                        >
-                            <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder={t('deviceManagement.allCategories')} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">
-                                    {t('deviceManagement.allCategories')}
-                                </SelectItem>
-                                {categories.map((cat) => (
-                                    <SelectItem key={cat.value} value={cat.value}>
-                                        {t(cat.label)}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-
-                        <Select
                             value={statusFilter}
                             onValueChange={(value) => {
                                 setStatusFilter(value);
@@ -467,6 +435,18 @@ export default function DeviceIndex({ devices, racks, breadcrumbs = [], message 
                     </div>
                 )}
 
+                {deviceTypes.length === 0 && (
+                    <div className="rounded-md bg-yellow-50 border border-yellow-200 p-4 text-sm text-yellow-800">
+                        {t('deviceLibrary.pleaseCreateTypeFirst')}
+                    </div>
+                )}
+
+                {deviceTypes.length > 0 && deviceLibrary.length === 0 && (
+                    <div className="rounded-md bg-yellow-50 border border-yellow-200 p-4 text-sm text-yellow-800">
+                        {t('deviceLibrary.pleaseCreateDeviceFirst')}
+                    </div>
+                )}
+
                 <Card className="flex-1">
                     <CardHeader>
                         <div className="flex items-center justify-between">
@@ -490,33 +470,36 @@ export default function DeviceIndex({ devices, racks, breadcrumbs = [], message 
                                 <TableRow className="bg-muted/50">
                                     <TableHead className="h-10 px-4">
                                         <div className="flex items-center gap-2">
-                                            <Cpu className="h-4 w-4" />
+                                            <Server className="h-4 w-4" />
                                             {t('deviceManagement.name')}
                                         </div>
                                     </TableHead>
                                     <TableHead className="h-10 px-4">
-                                        {t('deviceManagement.category')}
+                                        <div className="flex items-center gap-2">
+                                            <Cpu className="h-4 w-4" />
+                                            {t('deviceManagement.category')}
+                                        </div>
                                     </TableHead>
                                     <TableHead className="h-10 px-4">
                                         {t('deviceManagement.model')}
                                     </TableHead>
                                     <TableHead className="h-10 px-4">
-                                        {t('deviceManagement.manufacturer')}
+                                        {t('deviceManagement.serialNumber')}
                                     </TableHead>
                                     <TableHead className="h-10 px-4">
-                                        {t('deviceManagement.rack')}
+                                        <div className="flex items-center gap-2">
+                                            <Server className="h-4 w-4" />
+                                            {t('deviceManagement.rack')}
+                                        </div>
                                     </TableHead>
                                     <TableHead className="h-10 px-4">
                                         {t('deviceManagement.uPosition')}
                                     </TableHead>
                                     <TableHead className="h-10 px-4">
-                                        {t('deviceManagement.power')}
+                                        {t('deviceManagement.ipAddress')}
                                     </TableHead>
                                     <TableHead className="h-10 px-4">
                                         {t('deviceManagement.status')}
-                                    </TableHead>
-                                    <TableHead className="h-10 px-4">
-                                        {t('deviceManagement.created')}
                                     </TableHead>
                                     <TableHead className="h-10 px-4 text-right">
                                         {t('deviceManagement.actions')}
@@ -527,1013 +510,627 @@ export default function DeviceIndex({ devices, racks, breadcrumbs = [], message 
                                 {filteredDevices.length === 0 ? (
                                     <TableRow>
                                         <TableCell
-                                            colSpan={10}
+                                            colSpan={9}
                                             className="py-8 text-center text-muted-foreground"
                                         >
-                                            {searchTerm ||
-                                            categoryFilter !== 'all' ||
-                                            statusFilter !== 'all' ? (
+                                            {searchTerm || statusFilter !== 'all' ? (
                                                 <div className="flex flex-col items-center gap-2">
                                                     <Search className="h-8 w-8 text-muted-foreground/50" />
                                                     <p>
-                                                        {t(
-                                                            'deviceManagement.noDevicesFound',
-                                                        )}
+                                                        {t('deviceManagement.noDevicesFound')}
                                                     </p>
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={clearFilters}
                                                     >
-                                                        {t(
-                                                            'deviceManagement.clearFilters',
-                                                        )}
+                                                        {t('deviceManagement.clearFilters')}
                                                     </Button>
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col items-center gap-2">
                                                     <Plus className="h-8 w-8 text-muted-foreground/50" />
                                                     <p>
-                                                        {t(
-                                                            'deviceManagement.noDevices',
-                                                        )}
+                                                        {t('deviceManagement.noDevices')}
                                                     </p>
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={openCreateDialog}
                                                     >
-                                                        {t(
-                                                            'deviceManagement.addFirstDevice',
-                                                        )}
+                                                        {t('deviceManagement.addFirstDevice')}
                                                     </Button>
                                                 </div>
                                             )}
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    paginatedDevices.map((device) => (
-                                        <TableRow
-                                            key={device.id}
-                                            className="border-b border-border/50 transition-colors hover:bg-muted/30"
-                                        >
-                                            <TableCell className="px-4 py-3 font-medium">
-                                                {device.name}
-                                            </TableCell>
-                                            <TableCell className="px-4 py-3">
-                                                <div className="flex items-center gap-2">
-                                                    {getCategoryIcon(device.category)}
-                                                    <span className="font-semibold">
-                                                        {t(
-                                                            `deviceManagement.categories.${device.category}`,
-                                                        )}
-                                                    </span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-3">
-                                                {device.model || '-'}
-                                            </TableCell>
-                                            <TableCell className="px-4 py-3">
-                                                {device.manufacturer || '-'}
-                                            </TableCell>
-                                            <TableCell className="px-4 py-3">
-                                                {device.rack?.name || '-'}
-                                            </TableCell>
-                                            <TableCell className="px-4 py-3">
-                                                <span className="font-semibold">
+                                    paginatedDevices.map((device) => {
+                                        const deviceLib = getDeviceLibraryInfo(device.device_library_id);
+                                        return (
+                                            <TableRow
+                                                key={device.id}
+                                                className="border-b border-border/50 transition-colors hover:bg-muted/30"
+                                            >
+                                                <TableCell className="px-4 py-3 font-medium">
+                                                    {device.name}
+                                                </TableCell>
+                                                <TableCell className="px-4 py-3">
+                                                    {deviceLib?.device_type ? getDeviceTypeName(deviceLib.device_type_id) : '-'}
+                                                </TableCell>
+                                                <TableCell className="px-4 py-3 text-muted-foreground">
+                                                    {deviceLib ? `${deviceLib.manufacturer || ''} ${deviceLib.model || ''}`.trim() || '-' : '-'}
+                                                </TableCell>
+                                                <TableCell className="px-4 py-3 text-muted-foreground">
+                                                    {device.serial_number || '-'}
+                                                </TableCell>
+                                                <TableCell className="px-4 py-3">
+                                                    {device.rack ? device.rack.name : t('deviceManagement.noRack')}
+                                                </TableCell>
+                                                <TableCell className="px-4 py-3">
                                                     {device.u_position}U
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-3">
-                                                <span className="font-semibold">
-                                                    {device.power}W
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-3">
-                                                {getStatusBadge(device.status)}
-                                            </TableCell>
-                                            <TableCell className="px-4 py-3">
-                                                {new Date(
-                                                    device.created_at,
-                                                ).toLocaleDateString()}
-                                            </TableCell>
-                                            <TableCell className="px-4 py-3 text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            openDetailDialog(device)
-                                                        }
-                                                        className="h-8 w-8 p-0"
-                                                    >
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            openEditDialog(device)
-                                                        }
-                                                        className="h-8 w-8 p-0"
-                                                    >
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            handleDelete(device.id)
-                                                        }
-                                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
+                                                </TableCell>
+                                                <TableCell className="px-4 py-3 text-muted-foreground">
+                                                    {device.ip_address || '-'}
+                                                </TableCell>
+                                                <TableCell className="px-4 py-3">
+                                                    <div className="flex items-center gap-2">
+                                                        {getStatusIcon(device.status)}
+                                                        <span>{t(`deviceManagement.statuses.${device.status}`)}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="px-4 py-3 text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => openDetailDialog(device)}
+                                                            className="h-8 w-8 p-0"
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => openEditDialog(device)}
+                                                            className="h-8 w-8 p-0"
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleDelete(device.id)}
+                                                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })
                                 )}
                             </TableBody>
                         </Table>
-
                         {totalPages > 1 && (
-                            <div className="flex items-center justify-between border-t px-4 py-3">
-                                <div className="text-sm text-muted-foreground">
-                                    {t('deviceManagement.devicesCount', {
-                                        filtered: filteredDevices.length,
-                                        total: devices.length,
-                                    })}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() =>
-                                            setCurrentPage((prev) =>
-                                                Math.max(prev - 1, 1)
-                                            )
-                                        }
-                                        disabled={currentPage === 1}
-                                    >
-                                        {t('deviceManagement.previousPage')}
-                                    </Button>
-                                    <span className="text-sm">
-                                        {currentPage} / {totalPages}
-                                    </span>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() =>
-                                            setCurrentPage((prev) =>
-                                                Math.min(prev + 1, totalPages)
-                                            )
-                                        }
-                                        disabled={currentPage === totalPages}
-                                    >
-                                        {t('deviceManagement.nextPage')}
-                                    </Button>
-                                </div>
+                            <div className="flex items-center justify-end space-x-2 border-t px-4 py-4">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                >
+                                    {t('deviceManagement.previousPage')}
+                                </Button>
+                                <span className="text-sm text-muted-foreground">
+                                    {currentPage} / {totalPages}
+                                </span>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(currentPage + 1)}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    {t('deviceManagement.nextPage')}
+                                </Button>
                             </div>
                         )}
                     </CardContent>
                 </Card>
+            </div>
 
-                <Dialog
-                    open={isCreateDialogOpen}
-                    onOpenChange={setIsCreateDialogOpen}
-                >
-                    <DialogContent className="sm:max-w-[600px]">
-                        <DialogHeader>
-                            <DialogTitle>
-                                {t('deviceManagement.createDevice')}
-                            </DialogTitle>
-                            <DialogDescription>
-                                {t('deviceManagement.addNewDevice')}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleCreateSubmit}>
-                            <div className="grid gap-4 py-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="name">
-                                        {t('deviceManagement.name')} *
-                                    </Label>
-                                    <Input
-                                        id="name"
-                                        value={form.name}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                            setForm({
-                                                ...form,
-                                                name: e.target.value,
-                                            })
-                                        }
-                                        placeholder={t('deviceManagement.name')}
-                                    />
-                                    {errors?.name && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.name}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="category">
-                                            {t('deviceManagement.category')} *
-                                        </Label>
-                                        <Select
-                                            value={form.rack_id}
-                                            onValueChange={(value) =>
-                                                setForm({
-                                                    ...form,
-                                                    rack_id: value === 'none' ? '' : value,
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder={t('deviceManagement.selectCategory')} />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {categories.map((cat) => (
-                                                    <SelectItem
-                                                        key={cat.value}
-                                                        value={cat.value}
-                                                    >
-                                                        {t(cat.label)}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        {errors?.category && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.category}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="status">
-                                            {t('deviceManagement.status')} *
-                                        </Label>
-                                        <Select
-                                            value={form.status}
-                                            onValueChange={(value) =>
-                                                setForm({
-                                                    ...form,
-                                                    status: value,
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder={t('deviceManagement.selectStatus')} />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {statuses.map((status) => (
-                                                    <SelectItem
-                                                        key={status.value}
-                                                        value={status.value}
-                                                    >
-                                                        {t(status.label)}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        {errors?.status && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.status}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="model">
-                                            {t('deviceManagement.model')}
-                                        </Label>
-                                        <Input
-                                            id="model"
-                                            value={form.model}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                                setForm({
-                                                    ...form,
-                                                    model: e.target.value,
-                                                })
-                                            }
-                                            placeholder={t('deviceManagement.model')}
-                                        />
-                                        {errors?.model && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.model}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="manufacturer">
-                                            {t('deviceManagement.manufacturer')}
-                                        </Label>
-                                        <Input
-                                            id="manufacturer"
-                                            value={form.manufacturer}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                                setForm({
-                                                    ...form,
-                                                    manufacturer: e.target.value,
-                                                })
-                                            }
-                                            placeholder={t('deviceManagement.manufacturer')}
-                                        />
-                                        {errors?.manufacturer && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.manufacturer}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="serial_number">
-                                            {t('deviceManagement.serialNumber')}
-                                        </Label>
-                                        <Input
-                                            id="serial_number"
-                                            value={form.serial_number}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                                setForm({
-                                                    ...form,
-                                                    serial_number: e.target.value,
-                                                })
-                                            }
-                                            placeholder={t('deviceManagement.serialNumber')}
-                                        />
-                                        {errors?.serial_number && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.serial_number}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="rack_id">
-                                            {t('deviceManagement.rack')}
-                                        </Label>
-                                        <Select
-                                            value={form.rack_id}
-                                            onValueChange={(value) =>
-                                                setForm({
-                                                    ...form,
-                                                    rack_id: value === 'none' ? '' : value,
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder={t('deviceManagement.selectRack')} />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="none">
-                                                    {t('deviceManagement.noRack')}
-                                                </SelectItem>
-                                                {racks.map((rack) => (
-                                                    <SelectItem
-                                                        key={rack.id}
-                                                        value={rack.id.toString()}
-                                                    >
-                                                        {rack.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        {errors?.rack_id && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.rack_id}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="u_position">
-                                            {t('deviceManagement.uPosition')} *
-                                        </Label>
-                                        <Input
-                                            id="u_position"
-                                            type="number"
-                                            min="1"
-                                            max="100"
-                                            value={form.u_position}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                                setForm({
-                                                    ...form,
-                                                    u_position: parseInt(
-                                                        e.target.value,
-                                                    ) || 1,
-                                                })
-                                            }
-                                            placeholder={t('deviceManagement.uPosition')}
-                                        />
-                                        {errors?.u_position && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.u_position}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="power">
-                                            {t('deviceManagement.power')} *
-                                        </Label>
-                                        <Input
-                                            id="power"
-                                            type="number"
-                                            min="0"
-                                            value={form.power}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                                setForm({
-                                                    ...form,
-                                                    power: parseInt(
-                                                        e.target.value,
-                                                    ) || 0,
-                                                })
-                                            }
-                                            placeholder={t('deviceManagement.power')}
-                                        />
-                                        {errors?.power && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.power}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="description">
-                                        {t('deviceManagement.description')}
-                                    </Label>
-                                    <Textarea
-                                        id="description"
-                                        value={form.description}
-                                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                                            setForm({
-                                                ...form,
-                                                description: e.target.value,
-                                            })
-                                        }
-                                        placeholder={t('deviceManagement.description')}
-                                        rows={3}
-                                    />
-                                    {errors?.description && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.description}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={closeCreateDialog}
-                                >
-                                    {t('deviceManagement.cancel')}
-                                </Button>
-                                <Button type="submit">
-                                    {t('deviceManagement.createDevice')}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
-
-                <Dialog
-                    open={isEditDialogOpen}
-                    onOpenChange={setIsEditDialogOpen}
-                >
-                    <DialogContent className="sm:max-w-[600px]">
-                        <DialogHeader>
-                            <DialogTitle>
-                                {t('deviceManagement.editDevice')}
-                            </DialogTitle>
-                            <DialogDescription>
-                                {t('deviceManagement.updateDevice')}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleEditSubmit}>
-                            <div className="grid gap-4 py-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="edit-name">
-                                        {t('deviceManagement.name')} *
-                                    </Label>
-                                    <Input
-                                        id="edit-name"
-                                        value={form.name}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                            setForm({
-                                                ...form,
-                                                name: e.target.value,
-                                            })
-                                        }
-                                        placeholder={t('deviceManagement.name')}
-                                    />
-                                    {errors?.name && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.name}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="edit-category">
-                                            {t('deviceManagement.category')} *
-                                        </Label>
-                                        <Select
-                                            value={form.category}
-                                            onValueChange={(value) =>
-                                                setForm({
-                                                    ...form,
-                                                    category: value,
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder={t('deviceManagement.selectCategory')} />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {categories.map((cat) => (
-                                                    <SelectItem
-                                                        key={cat.value}
-                                                        value={cat.value}
-                                                    >
-                                                        {t(cat.label)}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        {errors?.category && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.category}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="edit-status">
-                                            {t('deviceManagement.status')} *
-                                        </Label>
-                                        <Select
-                                            value={form.status}
-                                            onValueChange={(value) =>
-                                                setForm({
-                                                    ...form,
-                                                    status: value,
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder={t('deviceManagement.selectStatus')} />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {statuses.map((status) => (
-                                                    <SelectItem
-                                                        key={status.value}
-                                                        value={status.value}
-                                                    >
-                                                        {t(status.label)}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        {errors?.status && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.status}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="edit-model">
-                                            {t('deviceManagement.model')}
-                                        </Label>
-                                        <Input
-                                            id="edit-model"
-                                            value={form.model}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                                setForm({
-                                                    ...form,
-                                                    model: e.target.value,
-                                                })
-                                            }
-                                            placeholder={t('deviceManagement.model')}
-                                        />
-                                        {errors?.model && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.model}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="edit-manufacturer">
-                                            {t('deviceManagement.manufacturer')}
-                                        </Label>
-                                        <Input
-                                            id="edit-manufacturer"
-                                            value={form.manufacturer}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                                setForm({
-                                                    ...form,
-                                                    manufacturer: e.target.value,
-                                                })
-                                            }
-                                            placeholder={t('deviceManagement.manufacturer')}
-                                        />
-                                        {errors?.manufacturer && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.manufacturer}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="edit-serial_number">
-                                            {t('deviceManagement.serialNumber')}
-                                        </Label>
-                                        <Input
-                                            id="edit-serial_number"
-                                            value={form.serial_number}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                                setForm({
-                                                    ...form,
-                                                    serial_number: e.target.value,
-                                                })
-                                            }
-                                            placeholder={t('deviceManagement.serialNumber')}
-                                        />
-                                        {errors?.serial_number && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.serial_number}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="edit-rack_id">
-                                            {t('deviceManagement.rack')}
-                                        </Label>
-                                        <Select
-                                            value={form.rack_id}
-                                            onValueChange={(value) =>
-                                                setForm({
-                                                    ...form,
-                                                    rack_id: value === 'none' ? '' : value,
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder={t('deviceManagement.selectRack')} />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="none">
-                                                    {t('deviceManagement.noRack')}
-                                                </SelectItem>
-                                                {racks.map((rack) => (
-                                                    <SelectItem
-                                                        key={rack.id}
-                                                        value={rack.id.toString()}
-                                                    >
-                                                        {rack.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        {errors?.rack_id && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.rack_id}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="edit-u_position">
-                                            {t('deviceManagement.uPosition')} *
-                                        </Label>
-                                        <Input
-                                            id="edit-u_position"
-                                            type="number"
-                                            min="1"
-                                            max="100"
-                                            value={form.u_position}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                                setForm({
-                                                    ...form,
-                                                    u_position: parseInt(
-                                                        e.target.value,
-                                                    ) || 1,
-                                                })
-                                            }
-                                            placeholder={t('deviceManagement.uPosition')}
-                                        />
-                                        {errors?.u_position && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.u_position}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="edit-power">
-                                            {t('deviceManagement.power')} *
-                                        </Label>
-                                        <Input
-                                            id="edit-power"
-                                            type="number"
-                                            min="0"
-                                            value={form.power}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                                setForm({
-                                                    ...form,
-                                                    power: parseInt(
-                                                        e.target.value,
-                                                    ) || 0,
-                                                })
-                                            }
-                                            placeholder={t('deviceManagement.power')}
-                                        />
-                                        {errors?.power && (
-                                            <p className="text-sm text-destructive">
-                                                {errors.power}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="edit-description">
-                                        {t('deviceManagement.description')}
-                                    </Label>
-                                    <Textarea
-                                        id="edit-description"
-                                        value={form.description}
-                                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                                            setForm({
-                                                ...form,
-                                                description: e.target.value,
-                                            })
-                                        }
-                                        placeholder={t('deviceManagement.description')}
-                                        rows={3}
-                                    />
-                                    {errors?.description && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.description}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={closeEditDialog}
-                                >
-                                    {t('deviceManagement.cancel')}
-                                </Button>
-                                <Button type="submit">
-                                    {t('deviceManagement.updateDevice')}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
-
-                <Dialog
-                    open={isDetailDialogOpen}
-                    onOpenChange={setIsDetailDialogOpen}
-                >
-                    <DialogContent className="sm:max-w-[600px]">
-                        <DialogHeader>
-                            <DialogTitle>
-                                {t('deviceManagement.deviceDetails')}
-                            </DialogTitle>
-                            <DialogDescription>
-                                {viewingDevice?.name}
-                            </DialogDescription>
-                        </DialogHeader>
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>{t('deviceManagement.newDevice')}</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateSubmit}>
                         <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <Label className="text-sm font-medium">
-                                        {t('deviceManagement.name')}
-                                    </Label>
-                                    <div className="mt-1 text-sm">
-                                        {viewingDevice?.name}
-                                    </div>
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium">
-                                        {t('deviceManagement.category')}
-                                    </Label>
-                                    <div className="mt-1 text-sm">
-                                        {viewingDevice &&
-                                            t(
-                                                `deviceManagement.categories.${viewingDevice.category}`,
-                                            )}
-                                    </div>
-                                </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="device_type" className="text-right">
+                                    {t('deviceLibrary.type')} *
+                                </Label>
+                                <Select
+                                    value={selectedDeviceType}
+                                    onValueChange={handleDeviceTypeChange}
+                                >
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder={t('deviceLibrary.selectType')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {deviceTypes.map((type) => (
+                                            <SelectItem key={type.id} value={type.id.toString()}>
+                                                {type.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <Label className="text-sm font-medium">
-                                        {t('deviceManagement.model')}
-                                    </Label>
-                                    <div className="mt-1 text-sm">
-                                        {viewingDevice?.model || '-'}
-                                    </div>
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium">
-                                        {t('deviceManagement.manufacturer')}
-                                    </Label>
-                                    <div className="mt-1 text-sm">
-                                        {viewingDevice?.manufacturer || '-'}
-                                    </div>
-                                </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="device_library_id" className="text-right">
+                                    {t('deviceLibrary.name')} *
+                                </Label>
+                                <Select
+                                    value={form.device_library_id}
+                                    onValueChange={handleDeviceLibraryChange}
+                                    disabled={!selectedDeviceType}
+                                >
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder={t('deviceLibrary.selectType')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {filteredDeviceLibraryByType.map((lib) => (
+                                            <SelectItem key={lib.id} value={lib.id.toString()}>
+                                                {lib.name} ({lib.manufacturer} {lib.model})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <Label className="text-sm font-medium">
-                                        {t('deviceManagement.serialNumber')}
-                                    </Label>
-                                    <div className="mt-1 text-sm">
-                                        {viewingDevice?.serial_number || '-'}
-                                    </div>
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium">
-                                        {t('deviceManagement.rack')}
-                                    </Label>
-                                    <div className="mt-1 text-sm">
-                                        {viewingDevice?.rack?.name || '-'}
-                                    </div>
-                                </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="rack_id" className="text-right">
+                                    {t('deviceManagement.rack')}
+                                </Label>
+                                <Select
+                                    value={form.rack_id}
+                                    onValueChange={(value) => setForm({ ...form, rack_id: value === 'none' ? undefined : value })}
+                                >
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder={t('deviceManagement.selectRack')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">
+                                            {t('deviceManagement.noRack')}
+                                        </SelectItem>
+                                        {racks.map((rack) => (
+                                            <SelectItem key={rack.id} value={rack.id.toString()}>
+                                                {rack.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
-                            <div className="grid grid-cols-3 gap-4">
-                                <div>
-                                    <Label className="text-sm font-medium">
-                                        {t('deviceManagement.uPosition')}
-                                    </Label>
-                                    <div className="mt-1 text-sm">
-                                        {viewingDevice?.u_position}U
-                                    </div>
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium">
-                                        {t('deviceManagement.power')}
-                                    </Label>
-                                    <div className="mt-1 text-sm">
-                                        {viewingDevice?.power}W
-                                    </div>
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium">
-                                        {t('deviceManagement.status')}
-                                    </Label>
-                                    <div className="mt-1 text-sm">
-                                        {viewingDevice &&
-                                            getStatusBadge(viewingDevice.status)}
-                                    </div>
-                                </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="u_position" className="text-right">
+                                    {t('deviceManagement.uPosition')} *
+                                </Label>
+                                <Input
+                                    id="u_position"
+                                    type="number"
+                                    min="1"
+                                    value={form.u_position}
+                                    onChange={(e) => setForm({ ...form, u_position: parseInt(e.target.value) || 1 })}
+                                    className="col-span-3"
+                                    required
+                                />
                             </div>
-                            <div>
-                                <Label className="text-sm font-medium">
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="ip_address" className="text-right">
+                                    {t('deviceManagement.ipAddress')}
+                                </Label>
+                                <Input
+                                    id="ip_address"
+                                    value={form.ip_address}
+                                    onChange={(e) => setForm({ ...form, ip_address: e.target.value })}
+                                    className="col-span-3"
+                                    placeholder="192.168.1.1"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="connection_type" className="text-right">
+                                    {t('deviceManagement.connectionType')}
+                                </Label>
+                                <Select
+                                    value={form.connection_type}
+                                    onValueChange={(value) => setForm({ ...form, connection_type: value })}
+                                >
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="选择连接方式" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {connectionTypes.map((type) => (
+                                            <SelectItem key={type.value} value={type.value}>
+                                                {type.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="status" className="text-right">
+                                    {t('deviceManagement.status')} *
+                                </Label>
+                                <Select
+                                    value={form.status}
+                                    onValueChange={(value) => setForm({ ...form, status: value })}
+                                >
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder={t('deviceManagement.selectStatus')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {statuses.map((status) => (
+                                            <SelectItem key={status.value} value={status.value}>
+                                                {t(status.label)}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="description" className="text-right">
                                     {t('deviceManagement.description')}
                                 </Label>
-                                <div className="mt-1 text-sm">
-                                    {viewingDevice?.description || '-'}
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <Label className="text-sm font-medium">
-                                        {t('deviceManagement.created')}
-                                    </Label>
-                                    <div className="mt-1 text-sm">
-                                        {viewingDevice?.created_at
-                                            ? new Date(
-                                                  viewingDevice.created_at,
-                                              ).toLocaleString()
-                                            : '-'}
-                                    </div>
-                                </div>
-                                <div>
-                                    <Label className="text-sm font-medium">
-                                        {t('common.updated')}
-                                    </Label>
-                                    <div className="mt-1 text-sm">
-                                        {viewingDevice?.updated_at
-                                            ? new Date(
-                                                  viewingDevice.updated_at,
-                                              ).toLocaleString()
-                                            : '-'}
-                                    </div>
-                                </div>
+                                <Textarea
+                                    id="description"
+                                    value={form.description}
+                                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                                    className="col-span-3"
+                                />
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button
-                                type="button"
-                                onClick={closeDetailDialog}
-                            >
-                                {t('common.close')}
+                            <Button type="button" variant="outline" onClick={closeCreateDialog}>
+                                {t('common.cancel')}
+                            </Button>
+                            <Button type="submit" disabled={!selectedDeviceType || !form.device_library_id}>
+                                {t('common.create')}
                             </Button>
                         </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                    </form>
+                </DialogContent>
+            </Dialog>
 
-                <Dialog
-                    open={isDeleteDialogOpen}
-                    onOpenChange={setIsDeleteDialogOpen}
-                >
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>
-                                {t('deviceManagement.confirmDelete')}
-                            </DialogTitle>
-                            <DialogDescription>
-                                {t('deviceManagement.deleteWarning')}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={cancelDelete}
-                            >
-                                {t('deviceManagement.cancel')}
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="destructive"
-                                onClick={confirmDelete}
-                            >
-                                {t('common.delete')}
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-
-                <Dialog
-                    open={isImportDialogOpen}
-                    onOpenChange={setIsImportDialogOpen}
-                >
-                    <DialogContent className="sm:max-w-[500px]">
-                        <DialogHeader>
-                            <DialogTitle>
-                                {t('deviceManagement.import')}
-                            </DialogTitle>
-                            <DialogDescription>
-                                {t('deviceManagement.importDescription')}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleImport}>
-                            <div className="grid gap-4 py-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="file">
-                                        {t('deviceManagement.selectFile')} *
-                                    </Label>
-                                    <Input
-                                        id="file"
-                                        type="file"
-                                        accept=".csv,.txt"
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) {
-                                                setImportFile(file);
-                                            }
-                                        }}
-                                    />
-                                    {errors?.file && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.file}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="rounded-md bg-muted p-3 text-sm">
-                                    <p className="font-medium mb-2">
-                                        {t('deviceManagement.importFormat')}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {t('deviceManagement.importFormatDescription')}
-                                    </p>
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setIsImportDialogOpen(false)}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>{t('deviceManagement.editDevice')}</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleEditSubmit}>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-device_type" className="text-right">
+                                    {t('deviceLibrary.type')} *
+                                </Label>
+                                <Select
+                                    value={selectedDeviceType}
+                                    onValueChange={handleDeviceTypeChange}
                                 >
-                                    {t('deviceManagement.cancel')}
-                                </Button>
-                                <Button type="submit" disabled={!importFile}>
-                                    {t('deviceManagement.import')}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
-            </div>
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder={t('deviceLibrary.selectType')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {deviceTypes.map((type) => (
+                                            <SelectItem key={type.id} value={type.id.toString()}>
+                                                {type.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-device_library_id" className="text-right">
+                                    {t('deviceLibrary.name')} *
+                                </Label>
+                                <Select
+                                    value={form.device_library_id}
+                                    onValueChange={handleDeviceLibraryChange}
+                                    disabled={!selectedDeviceType}
+                                >
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder={t('deviceLibrary.selectType')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {filteredDeviceLibraryByType.map((lib) => (
+                                            <SelectItem key={lib.id} value={lib.id.toString()}>
+                                                {lib.name} ({lib.manufacturer} {lib.model})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-rack_id" className="text-right">
+                                    {t('deviceManagement.rack')}
+                                </Label>
+                                <Select
+                                    value={form.rack_id}
+                                    onValueChange={(value) => setForm({ ...form, rack_id: value === 'none' ? undefined : value })}
+                                >
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder={t('deviceManagement.selectRack')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">
+                                            {t('deviceManagement.noRack')}
+                                        </SelectItem>
+                                        {racks.map((rack) => (
+                                            <SelectItem key={rack.id} value={rack.id.toString()}>
+                                                {rack.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-ip_address" className="text-right">
+                                    {t('deviceManagement.ipAddress')}
+                                </Label>
+                                <Input
+                                    id="edit-ip_address"
+                                    value={form.ip_address}
+                                    onChange={(e) => setForm({ ...form, ip_address: e.target.value })}
+                                    className="col-span-3"
+                                    placeholder="192.168.1.1"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-connection_type" className="text-right">
+                                    {t('deviceManagement.connectionType')}
+                                </Label>
+                                <Select
+                                    value={form.connection_type}
+                                    onValueChange={(value) => setForm({ ...form, connection_type: value })}
+                                >
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="选择连接方式" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {connectionTypes.map((type) => (
+                                            <SelectItem key={type.value} value={type.value}>
+                                                {type.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-status" className="text-right">
+                                    {t('deviceManagement.status')} *
+                                </Label>
+                                <Select
+                                    value={form.status}
+                                    onValueChange={(value) => setForm({ ...form, status: value })}
+                                >
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder={t('deviceManagement.selectStatus')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {statuses.map((status) => (
+                                            <SelectItem key={status.value} value={status.value}>
+                                                {t(status.label)}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-description" className="text-right">
+                                    {t('deviceManagement.description')}
+                                </Label>
+                                <Textarea
+                                    id="edit-description"
+                                    value={form.description}
+                                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                                    className="col-span-3"
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={closeEditDialog}>
+                                {t('common.cancel')}
+                            </Button>
+                            <Button type="submit" disabled={!selectedDeviceType || !form.device_library_id}>
+                                {t('common.save')}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('deviceManagement.confirmDelete')}</DialogTitle>
+                        <DialogDescription>
+                            {t('deviceManagement.deleteWarning')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={cancelDelete}>
+                            {t('common.cancel')}
+                        </Button>
+                        <Button variant="destructive" onClick={confirmDelete}>
+                            {t('common.delete')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('deviceManagement.deviceDetails')}</DialogTitle>
+                    </DialogHeader>
+                    {viewingDevice && (
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceManagement.name')}
+                                </Label>
+                                <span className="col-span-3">{viewingDevice.name}</span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceLibrary.type')}
+                                </Label>
+                                <span className="col-span-3">
+                                    {viewingDevice.device_library?.device_type
+                                        ? getDeviceTypeName(viewingDevice.device_library.device_type_id)
+                                        : '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceLibrary.model')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground">
+                                    {viewingDevice.device_library
+                                        ? `${viewingDevice.device_library.manufacturer || ''} ${viewingDevice.device_library.model || ''}`.trim() || '-'
+                                        : '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceManagement.serialNumber')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground">
+                                    {viewingDevice.serial_number || '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceManagement.rack')}
+                                </Label>
+                                <span className="col-span-3">
+                                    {viewingDevice.rack ? viewingDevice.rack.name : t('deviceManagement.noRack')}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceManagement.uPosition')}
+                                </Label>
+                                <span className="col-span-3">{viewingDevice.u_position}U</span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceLibrary.power')}
+                                </Label>
+                                <span className="col-span-3">
+                                    {viewingDevice.device_library ? `${viewingDevice.device_library.power}W` : '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceManagement.ipAddress')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground">
+                                    {viewingDevice.ip_address || '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceManagement.connectionType')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground">
+                                    {viewingDevice.connection_type || '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceManagement.status')}
+                                </Label>
+                                <span className="col-span-3">
+                                    {t(`deviceManagement.statuses.${viewingDevice.status}`)}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceManagement.description')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground">
+                                    {viewingDevice.description || '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceManagement.created')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground">
+                                    {new Date(viewingDevice.created_at).toLocaleString()}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={closeDetailDialog}>
+                            {t('common.close')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('deviceManagement.import')}</DialogTitle>
+                        <DialogDescription>
+                            {t('deviceManagement.importDescription')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleImport}>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="file" className="text-right">
+                                    {t('deviceManagement.selectFile')}
+                                </Label>
+                                <Input
+                                    id="file"
+                                    type="file"
+                                    accept=".csv"
+                                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                                    className="col-span-3"
+                                />
+                            </div>
+                            <div className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
+                                <p className="font-medium">{t('deviceManagement.importFormat')}</p>
+                                <p>{t('deviceManagement.importFormatDescription')}</p>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setIsImportDialogOpen(false)}>
+                                {t('common.cancel')}
+                            </Button>
+                            <Button type="submit" disabled={!importFile}>
+                                {t('deviceManagement.import')}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }
