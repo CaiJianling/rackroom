@@ -376,6 +376,7 @@
         "power": "Power",
         "deviceCount": "Device Count",
         "description": "Description",
+        "autoFilledFromRackType": "Auto-filled from rack type",
         "created": "Created",
         "actions": "Actions",
         "allRooms": "All Rooms",

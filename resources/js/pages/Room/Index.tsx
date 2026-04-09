@@ -564,7 +564,7 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
                     open={isCreateDialogOpen}
                     onOpenChange={setIsCreateDialogOpen}
                 >
-                    <DialogContent className="sm:max-w-[500px]">
+                    <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col sm:max-w-[500px]">
                         <DialogHeader>
                             <DialogTitle>
                                 {t('roomManagement.createRoom')}
@@ -573,8 +573,8 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
                                 {t('roomManagement.addNewRoom')}
                             </DialogDescription>
                         </DialogHeader>
-                        <form onSubmit={handleCreateSubmit}>
-                            <div className="grid gap-4 py-4">
+                        <form onSubmit={handleCreateSubmit} className="flex flex-col flex-1 overflow-hidden">
+                            <div className="grid gap-4 py-4 overflow-y-auto px-1" style={{ maxHeight: 'calc(90vh - 220px)' }}>
                                 <div className="grid gap-2">
                                     <Label htmlFor="name">
                                         {t('roomManagement.name')} *
@@ -681,7 +681,7 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
                     open={isEditDialogOpen}
                     onOpenChange={setIsEditDialogOpen}
                 >
-                    <DialogContent className="sm:max-w-[500px]">
+                    <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col sm:max-w-[500px]">
                         <DialogHeader>
                             <DialogTitle>
                                 {t('roomManagement.editRoom')}
@@ -690,8 +690,8 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
                                 {t('roomManagement.updateRoom')}
                             </DialogDescription>
                         </DialogHeader>
-                        <form onSubmit={handleEditSubmit}>
-                            <div className="grid gap-4 py-4">
+                        <form onSubmit={handleEditSubmit} className="flex flex-col flex-1 overflow-hidden">
+                            <div className="grid gap-4 py-4 overflow-y-auto px-1" style={{ maxHeight: 'calc(90vh - 220px)' }}>
                                 <div className="grid gap-2">
                                     <Label htmlFor="edit-name">
                                         {t('roomManagement.name')} *

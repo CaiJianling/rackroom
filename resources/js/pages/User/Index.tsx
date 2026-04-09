@@ -32,6 +32,7 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
@@ -486,7 +487,7 @@ export default function UserIndex({ users, breadcrumbs = [] }: Props) {
 
             {/* Create User Dialog */}
             <Dialog open={isCreateDialogOpen} onOpenChange={closeCreateDialog}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>
                             {t('userManagement.createNewUser')}
@@ -495,83 +496,85 @@ export default function UserIndex({ users, breadcrumbs = [] }: Props) {
                             {t('userManagement.addNewUser')}
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleCreateSubmit} className="space-y-4">
-                        <div>
-                            <Label htmlFor="create-name">
-                                {t('userManagement.name')}
-                            </Label>
-                            <Input
-                                id="create-name"
-                                type="text"
-                                value={form.name}
-                                onChange={(e) =>
-                                    setForm({ ...form, name: e.target.value })
-                                }
-                                required
-                            />
+                    <form onSubmit={handleCreateSubmit} className="flex flex-col flex-1 overflow-hidden">
+                        <div className="space-y-4 overflow-y-auto px-1" style={{ maxHeight: 'calc(90vh - 220px)' }}>
+                            <div>
+                                <Label htmlFor="create-name">
+                                    {t('userManagement.name')}
+                                </Label>
+                                <Input
+                                    id="create-name"
+                                    type="text"
+                                    value={form.name}
+                                    onChange={(e) =>
+                                        setForm({ ...form, name: e.target.value })
+                                    }
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="create-email">
+                                    {t('userManagement.email')}
+                                </Label>
+                                <Input
+                                    id="create-email"
+                                    type="email"
+                                    value={form.email}
+                                    onChange={(e) =>
+                                        setForm({ ...form, email: e.target.value })
+                                    }
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="create-password">
+                                    {t('userManagement.password')}
+                                </Label>
+                                <Input
+                                    id="create-password"
+                                    type="password"
+                                    value={form.password}
+                                    onChange={(e) =>
+                                        setForm({
+                                            ...form,
+                                            password: e.target.value,
+                                        })
+                                    }
+                                    required
+                                />
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="create-is_active"
+                                    checked={form.is_active}
+                                    onCheckedChange={(checked) =>
+                                        setForm({
+                                            ...form,
+                                            is_active: checked as boolean,
+                                        })
+                                    }
+                                />
+                                <Label htmlFor="create-is_active">
+                                    {t('userManagement.active')}
+                                </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="create-is_admin"
+                                    checked={form.is_admin}
+                                    onCheckedChange={(checked) =>
+                                        setForm({
+                                            ...form,
+                                            is_admin: checked as boolean,
+                                        })
+                                    }
+                                />
+                                <Label htmlFor="create-is_admin">
+                                    {t('userManagement.admin')}
+                                </Label>
+                            </div>
                         </div>
-                        <div>
-                            <Label htmlFor="create-email">
-                                {t('userManagement.email')}
-                            </Label>
-                            <Input
-                                id="create-email"
-                                type="email"
-                                value={form.email}
-                                onChange={(e) =>
-                                    setForm({ ...form, email: e.target.value })
-                                }
-                                required
-                            />
-                        </div>
-                        <div>
-                            <Label htmlFor="create-password">
-                                {t('userManagement.password')}
-                            </Label>
-                            <Input
-                                id="create-password"
-                                type="password"
-                                value={form.password}
-                                onChange={(e) =>
-                                    setForm({
-                                        ...form,
-                                        password: e.target.value,
-                                    })
-                                }
-                                required
-                            />
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="create-is_active"
-                                checked={form.is_active}
-                                onCheckedChange={(checked) =>
-                                    setForm({
-                                        ...form,
-                                        is_active: checked as boolean,
-                                    })
-                                }
-                            />
-                            <Label htmlFor="create-is_active">
-                                {t('userManagement.active')}
-                            </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="create-is_admin"
-                                checked={form.is_admin}
-                                onCheckedChange={(checked) =>
-                                    setForm({
-                                        ...form,
-                                        is_admin: checked as boolean,
-                                    })
-                                }
-                            />
-                            <Label htmlFor="create-is_admin">
-                                {t('userManagement.admin')}
-                            </Label>
-                        </div>
-                        <div className="flex justify-end gap-2">
+                        <DialogFooter className="flex justify-end gap-2 mt-4">
                             <Button
                                 type="button"
                                 variant="outline"
@@ -582,14 +585,14 @@ export default function UserIndex({ users, breadcrumbs = [] }: Props) {
                             <Button type="submit">
                                 {t('userManagement.createUser')}
                             </Button>
-                        </div>
+                        </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
 
             {/* Edit User Dialog */}
             <Dialog open={isEditDialogOpen} onOpenChange={closeEditDialog}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>
                             {t('userManagement.editUser')}
@@ -598,92 +601,94 @@ export default function UserIndex({ users, breadcrumbs = [] }: Props) {
                             {t('userManagement.updateUserInfo')}
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleEditSubmit} className="space-y-4">
-                        <div>
-                            <Label htmlFor="edit-name">
-                                {t('userManagement.name')}
-                            </Label>
-                            <Input
-                                id="edit-name"
-                                type="text"
-                                value={form.name}
-                                onChange={(e) =>
-                                    setForm({ ...form, name: e.target.value })
-                                }
-                                required
-                            />
+                    <form onSubmit={handleEditSubmit} className="flex flex-col flex-1 overflow-hidden">
+                        <div className="space-y-4 overflow-y-auto px-1" style={{ maxHeight: 'calc(90vh - 220px)' }}>
+                            <div>
+                                <Label htmlFor="edit-name">
+                                    {t('userManagement.name')}
+                                </Label>
+                                <Input
+                                    id="edit-name"
+                                    type="text"
+                                    value={form.name}
+                                    onChange={(e) =>
+                                        setForm({ ...form, name: e.target.value })
+                                    }
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="edit-email">
+                                    {t('userManagement.email')}
+                                </Label>
+                                <Input
+                                    id="edit-email"
+                                    type="email"
+                                    value={form.email}
+                                    onChange={(e) =>
+                                        setForm({ ...form, email: e.target.value })
+                                    }
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="edit-password">
+                                    {t('userManagement.newPassword')}
+                                </Label>
+                                <Input
+                                    id="edit-password"
+                                    type="password"
+                                    value={form.password}
+                                    onChange={(e) =>
+                                        setForm({
+                                            ...form,
+                                            password: e.target.value,
+                                        })
+                                    }
+                                    placeholder={t(
+                                        'userManagement.passwordPlaceholder',
+                                    )}
+                                />
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="edit-is_active"
+                                    checked={!!form.is_active}
+                                    disabled={editingUser?.id === currentUserId}
+                                    onCheckedChange={(checked) =>
+                                        setForm({
+                                            ...form,
+                                            is_active: checked as boolean,
+                                        })
+                                    }
+                                    className="disabled:opacity-50 disabled:cursor-not-allowed"
+                                />
+                                <Label htmlFor="edit-is_active" className={editingUser?.id === currentUserId ? "text-muted-foreground" : ""}>
+                                    {t('userManagement.active')}
+                                    {editingUser?.id === currentUserId && (
+                                        <span className="ml-2 text-xs text-muted-foreground">
+                                            ({t('userManagement.cannotChangeOwnStatus')})
+                                        </span>
+                                    )}
+                                </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="edit-is_admin"
+                                    checked={!!form.is_admin}
+                                    onCheckedChange={(checked) =>
+                                        setForm({
+                                            ...form,
+                                            is_admin: checked as boolean,
+                                        })
+                                    }
+                                />
+                                <Label htmlFor="edit-is_admin">
+                                    {t('userManagement.admin')}
+                                </Label>
+                            </div>
                         </div>
-                        <div>
-                            <Label htmlFor="edit-email">
-                                {t('userManagement.email')}
-                            </Label>
-                            <Input
-                                id="edit-email"
-                                type="email"
-                                value={form.email}
-                                onChange={(e) =>
-                                    setForm({ ...form, email: e.target.value })
-                                }
-                                required
-                            />
-                        </div>
-                        <div>
-                            <Label htmlFor="edit-password">
-                                {t('userManagement.newPassword')}
-                            </Label>
-                            <Input
-                                id="edit-password"
-                                type="password"
-                                value={form.password}
-                                onChange={(e) =>
-                                    setForm({
-                                        ...form,
-                                        password: e.target.value,
-                                    })
-                                }
-                                placeholder={t(
-                                    'userManagement.passwordPlaceholder',
-                                )}
-                            />
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="edit-is_active"
-                                checked={!!form.is_active}
-                                disabled={editingUser?.id === currentUserId}
-                                onCheckedChange={(checked) =>
-                                    setForm({
-                                        ...form,
-                                        is_active: checked as boolean,
-                                    })
-                                }
-                                className="disabled:opacity-50 disabled:cursor-not-allowed"
-                            />
-                            <Label htmlFor="edit-is_active" className={editingUser?.id === currentUserId ? "text-muted-foreground" : ""}>
-                                {t('userManagement.active')}
-                                {editingUser?.id === currentUserId && (
-                                    <span className="ml-2 text-xs text-muted-foreground">
-                                        ({t('userManagement.cannotChangeOwnStatus')})
-                                    </span>
-                                )}
-                            </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="edit-is_admin"
-                                checked={!!form.is_admin}
-                                onCheckedChange={(checked) =>
-                                    setForm({
-                                        ...form,
-                                        is_admin: checked as boolean,
-                                    })
-                                }
-                            />
-                            <Label htmlFor="edit-is_admin">
-                                {t('userManagement.admin')}
-                            </Label>
-                        </div>
-                        <div className="flex justify-end gap-2">
+                        <DialogFooter className="flex justify-end gap-2 mt-4">
                             <Button
                                 type="button"
                                 variant="outline"
@@ -694,7 +699,7 @@ export default function UserIndex({ users, breadcrumbs = [] }: Props) {
                             <Button type="submit">
                                 {t('userManagement.updateUser')}
                             </Button>
-                        </div>
+                        </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>

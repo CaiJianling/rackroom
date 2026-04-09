@@ -376,6 +376,7 @@
         "power": "功率",
         "deviceCount": "设备数",
         "description": "描述",
+        "autoFilledFromRackType": "根据机柜类型自动填充",
         "created": "创建时间",
         "actions": "操作",
         "allRooms": "所有机房",

@@ -549,15 +549,15 @@ export default function DeviceLibraryIndex({ deviceLibrary, deviceTypes, breadcr
             </div>
 
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col">
                     <DialogHeader>
                         <DialogTitle>{t('deviceLibrary.add')}</DialogTitle>
                         <DialogDescription>
                             {t('deviceLibrary.addDesc')}
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleCreateSubmit}>
-                        <div className="grid gap-4 py-4">
+                    <form onSubmit={handleCreateSubmit} className="flex flex-col flex-1 overflow-hidden">
+                        <div className="grid gap-4 py-4 overflow-y-auto px-1" style={{ maxHeight: 'calc(90vh - 220px)' }}>
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="device_type_id" className="text-right">
                                     {t('deviceLibrary.type')}
@@ -675,15 +675,15 @@ export default function DeviceLibraryIndex({ deviceLibrary, deviceTypes, breadcr
             </Dialog>
 
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col">
                     <DialogHeader>
                         <DialogTitle>{t('deviceLibrary.edit')}</DialogTitle>
                         <DialogDescription>
                             {t('deviceLibrary.editDesc')}
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleEditSubmit}>
-                        <div className="grid gap-4 py-4">
+                    <form onSubmit={handleEditSubmit} className="flex flex-col flex-1 overflow-hidden">
+                        <div className="grid gap-4 py-4 overflow-y-auto px-1" style={{ maxHeight: 'calc(90vh - 220px)' }}>
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="edit-device_type_id" className="text-right">
                                     {t('deviceLibrary.type')}

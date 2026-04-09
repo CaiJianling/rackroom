@@ -592,7 +592,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                     open={isCreateDialogOpen}
                     onOpenChange={setIsCreateDialogOpen}
                 >
-                    <DialogContent className="sm:max-w-[500px]">
+                    <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col sm:max-w-[500px]">
                         <DialogHeader>
                             <DialogTitle>
                                 {t('rackManagement.createRack')}
@@ -601,8 +601,8 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                 {t('rackManagement.addNewRack')}
                             </DialogDescription>
                         </DialogHeader>
-                        <form onSubmit={handleCreateSubmit}>
-                            <div className="grid gap-4 py-4">
+                        <form onSubmit={handleCreateSubmit} className="flex flex-col flex-1 overflow-hidden">
+                            <div className="grid gap-4 py-4 overflow-y-auto px-1" style={{ maxHeight: 'calc(90vh - 220px)' }}>
                                 <div className="grid gap-2">
                                     <Label htmlFor="room_id">
                                         {t('rackManagement.room')} *
@@ -687,79 +687,45 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="u_count">
-                                        {t('rackManagement.uCount')} *
+                                        {t('rackManagement.uCount')}
                                     </Label>
                                     <Input
                                         id="u_count"
                                         type="number"
-                                        min="1"
-                                        max="100"
                                         value={form.u_count}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                            setForm({
-                                                ...form,
-                                                u_count: parseInt(
-                                                    e.target.value,
-                                                ) || 42,
-                                            })
-                                        }
-                                        placeholder={t('rackManagement.uCount')}
+                                        disabled
+                                        className="bg-muted"
                                     />
-                                    {errors?.u_count && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.u_count}
-                                        </p>
-                                    )}
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('rackManagement.autoFilledFromRackType')}
+                                    </p>
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="power">
-                                        {t('rackManagement.power')} *
+                                        {t('rackManagement.power')}
                                     </Label>
                                     <Input
                                         id="power"
                                         type="number"
-                                        min="0"
                                         value={form.power}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                            setForm({
-                                                ...form,
-                                                power: parseInt(
-                                                    e.target.value,
-                                                ) || 0,
-                                            })
-                                        }
-                                        placeholder={t('rackManagement.power')}
+                                        disabled
+                                        className="bg-muted"
                                     />
-                                    {errors?.power && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.power}
-                                        </p>
-                                    )}
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('rackManagement.autoFilledFromRackType')}
+                                    </p>
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="device_count">
-                                        {t('rackManagement.deviceCount')} *
+                                        {t('rackManagement.deviceCount')}
                                     </Label>
                                     <Input
                                         id="device_count"
                                         type="number"
-                                        min="0"
                                         value={form.device_count}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                            setForm({
-                                                ...form,
-                                                device_count: parseInt(
-                                                    e.target.value,
-                                                ) || 0,
-                                            })
-                                        }
-                                        placeholder={t('rackManagement.deviceCount')}
+                                        disabled
+                                        className="bg-muted"
                                     />
-                                    {errors?.device_count && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.device_count}
-                                        </p>
-                                    )}
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="description">
@@ -804,7 +770,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                     open={isEditDialogOpen}
                     onOpenChange={setIsEditDialogOpen}
                 >
-                    <DialogContent className="sm:max-w-[500px]">
+                    <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col sm:max-w-[500px]">
                         <DialogHeader>
                             <DialogTitle>
                                 {t('rackManagement.editRack')}
@@ -813,8 +779,8 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                 {t('rackManagement.updateRack')}
                             </DialogDescription>
                         </DialogHeader>
-                        <form onSubmit={handleEditSubmit}>
-                            <div className="grid gap-4 py-4">
+                        <form onSubmit={handleEditSubmit} className="flex flex-col flex-1 overflow-hidden">
+                            <div className="grid gap-4 py-4 overflow-y-auto px-1" style={{ maxHeight: 'calc(90vh - 220px)' }}>
                                 <div className="grid gap-2">
                                     <Label htmlFor="edit-room_id">
                                         {t('rackManagement.room')} *
@@ -899,79 +865,45 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="edit-u_count">
-                                        {t('rackManagement.uCount')} *
+                                        {t('rackManagement.uCount')}
                                     </Label>
                                     <Input
                                         id="edit-u_count"
                                         type="number"
-                                        min="1"
-                                        max="100"
                                         value={form.u_count}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                            setForm({
-                                                ...form,
-                                                u_count: parseInt(
-                                                    e.target.value,
-                                                ) || 42,
-                                            })
-                                        }
-                                        placeholder={t('rackManagement.uCount')}
+                                        disabled
+                                        className="bg-muted"
                                     />
-                                    {errors?.u_count && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.u_count}
-                                        </p>
-                                    )}
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('rackManagement.autoFilledFromRackType')}
+                                    </p>
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="edit-power">
-                                        {t('rackManagement.power')} *
+                                        {t('rackManagement.power')}
                                     </Label>
                                     <Input
                                         id="edit-power"
                                         type="number"
-                                        min="0"
                                         value={form.power}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                            setForm({
-                                                ...form,
-                                                power: parseInt(
-                                                    e.target.value,
-                                                ) || 0,
-                                            })
-                                        }
-                                        placeholder={t('rackManagement.power')}
+                                        disabled
+                                        className="bg-muted"
                                     />
-                                    {errors?.power && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.power}
-                                        </p>
-                                    )}
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('rackManagement.autoFilledFromRackType')}
+                                    </p>
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="edit-device_count">
-                                        {t('rackManagement.deviceCount')} *
+                                        {t('rackManagement.deviceCount')}
                                     </Label>
                                     <Input
                                         id="edit-device_count"
                                         type="number"
-                                        min="0"
                                         value={form.device_count}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                            setForm({
-                                                ...form,
-                                                device_count: parseInt(
-                                                    e.target.value,
-                                                ) || 0,
-                                            })
-                                        }
-                                        placeholder={t('rackManagement.deviceCount')}
+                                        disabled
+                                        className="bg-muted"
                                     />
-                                    {errors?.device_count && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.device_count}
-                                        </p>
-                                    )}
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="edit-description">

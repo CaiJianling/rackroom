@@ -738,7 +738,7 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
         if (editForm.connection_type) updateData.connection_type = editForm.connection_type;
         if (editForm.serial_number) updateData.serial_number = editForm.serial_number;
 
-        router.put(`/devices/${currentEditDevice.device.id}`, updateData, {
+        router.put(`/devices/${currentEditDevice.device.id}`, updateData as any, {
             preserveState: false,
             preserveScroll: true,
             onSuccess: () => {
