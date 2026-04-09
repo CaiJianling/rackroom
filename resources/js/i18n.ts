@@ -17,6 +17,8 @@ i18n.use(LanguageDetector)
         lng: 'zh',
         interpolation: {
             escapeValue: false,
+            prefix: '{',
+            suffix: '}',
         },
         detection: {
             order: ['cookie', 'localStorage', 'navigator'],

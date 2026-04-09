@@ -322,7 +322,7 @@
         "newPassword": "新密码",
         "passwordPlaceholder": "留空以保持当前密码",
         "confirmDelete": "您确定要删除此用户吗？",
-        "usersCount": "{{filtered}} / {{total}} 用户",
+        "usersCount": "{filtered} / {total} 用户",
         "updateUserInfo": "更新用户信息",
         "createUser": "创建用户",
         "createNewUser": "创建新用户",
@@ -361,7 +361,7 @@
         "cancel": "取消",
         "confirmDelete": "您确定要删除此机房吗？",
         "deleteWarning": "您确定要删除此机房吗？此操作无法撤销。",
-        "roomsCount": "{{filtered}} / {{total}} 机房",
+        "roomsCount": "{filtered} / {total} 机房",
         "roomDetails": "机房详情"
     },
     "rackManagement": {
@@ -396,7 +396,7 @@
         "cancel": "取消",
         "confirmDelete": "您确定要删除此机柜吗？",
         "deleteWarning": "您确定要删除此机柜吗？此操作无法撤销。",
-        "racksCount": "{{filtered}} / {{total}} 机柜",
+        "racksCount": "{filtered} / {total} 机柜",
         "rackDetails": "机柜详情"
     },
     "rackTypeManagement": {
@@ -425,7 +425,7 @@
         "confirmDelete": "您确定要删除此机柜类型吗？",
         "deleteWarning": "您确定要删除此机柜类型吗？此操作无法撤销。",
         "delete": "删除",
-        "rackTypesCount": "{{filtered}} / {{total}} 机柜类型",
+        "rackTypesCount": "{filtered} / {total} 机柜类型",
         "rackTypeDetails": "机柜类型详情",
         "rackTypeDetailsDesc": "查看机柜类型的详细信息"
     },
@@ -480,7 +480,7 @@
         "cancel": "取消",
         "confirmDelete": "您确定要删除此设备吗？",
         "deleteWarning": "您确定要删除此设备吗？此操作无法撤销。",
-        "devicesCount": "{{filtered}} / {{total}} 设备",
+        "devicesCount": "{filtered} / {total} 设备",
         "deviceDetails": "设备详情",
         "deviceDetailsDesc": "查看设备的详细信息",
         "export": "导出",
@@ -509,7 +509,7 @@
         "searchPlaceholder": "按名称搜索...",
         "noResults": "未找到符合您条件的设备类型",
         "empty": "未找到设备类型，请添加第一个设备类型",
-        "count": "{{filtered}} / {{total}} 设备类型",
+        "count": "{filtered} / {total} 设备类型",
         "edit": "编辑设备类型",
         "editDesc": "编辑设备类型信息",
         "delete": "删除设备类型",
@@ -542,7 +542,7 @@
         "selectType": "选择设备类型",
         "noResults": "未找到符合条件的设备",
         "empty": "设备库为空，请添加第一个设备",
-        "count": "{{filtered}} / {{total}} 设备",
+        "count": "{filtered} / {total} 设备",
         "edit": "编辑设备",
         "editDesc": "编辑设备信息",
         "delete": "删除设备",
