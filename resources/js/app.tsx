@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client';
 import '../css/app.css';
 import { initializeTheme } from './hooks/use-appearance';
 import { initializeLocale } from './hooks/use-locale';
+import { ToastProvider } from './components/ui/toast';
 import './i18n';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
@@ -21,7 +22,9 @@ createInertiaApp({
 
         root.render(
             <StrictMode>
-                <App {...props} />
+                <ToastProvider>
+                    <App {...props} />
+                </ToastProvider>
             </StrictMode>,
         );
     },

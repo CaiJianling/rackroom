@@ -223,7 +223,7 @@
         "online": "在线",
         "offline": "离线",
         "maintenance": "维护中",
-        "removeFromRack": "从机柜移除",
+        "removeFromRack": "删除设备",
         "quickAddRacks": "快速添加机柜",
         "quickAddRacksDesc": "批量添加多个机柜到系统中",
         "room": "机房",
@@ -235,7 +235,16 @@
         "willGenerate": "将生成 {rows} x {cols} = {total} 个机柜",
         "generate": "生成",
         "enterMaxPower": "输入最大功率 (W)",
-        "uheight": "U高"
+        "uheight": "U高",
+        "toast": {
+            "positionOccupied": "该U位已被占用",
+            "insufficientSpace": "需要 {need}U 空间，但从位置 {position} 开始只有 {available}U 可用",
+            "exceedsBoundary": "超出机柜边界，无法放置到 U{position}",
+            "deviceRemoved": "设备已从机柜移除",
+            "deviceAdded": "设备已添加到机柜",
+            "deviceUpdated": "设备信息已更新",
+            "deviceDeleted": "设备已删除"
+        }
     },
     "deleteAccount": {
         "title": "删除账户",
@@ -460,6 +469,7 @@
         "noDevices": "未找到设备",
         "addFirstDevice": "添加第一个设备",
         "editDevice": "编辑设备",
+        "editDeviceDesc": "编辑设备的基本信息",
         "updateDevice": "更新设备",
         "newDevice": "新设备",
         "newDeviceDesc": "从设备库中添加新设备到系统中",
@@ -516,6 +526,7 @@
         "list": "设备库列表",
         "description": "设备详情",
         "name": "设备名称",
+        "selectDevice": "选择设备",
         "type": "设备类型",
         "model": "型号",
         "manufacturer": "制造商",

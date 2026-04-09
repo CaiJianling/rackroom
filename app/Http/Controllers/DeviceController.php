@@ -58,7 +58,7 @@ class DeviceController extends Controller
             'category' => 'nullable|string|in:server,network,storage,other',
             'model' => 'nullable|string|max:255',
             'manufacturer' => 'nullable|string|max:255',
-            'u_position' => 'required|integer|min:1|max:100',
+            'u_position' => 'nullable|integer|min:1|max:100',
             'connection_type' => 'nullable|string|max:255',
             'ip_address' => 'nullable|string|max:255',
             'status' => 'required|string|in:online,offline,maintenance',
@@ -113,7 +113,7 @@ class DeviceController extends Controller
             'category' => 'nullable|string|in:server,network,storage,other',
             'model' => 'nullable|string|max:255',
             'manufacturer' => 'nullable|string|max:255',
-            'u_position' => 'required|integer|min:1|max:100',
+            'u_position' => 'nullable|integer|min:1|max:100',
             'connection_type' => 'nullable|string|max:255',
             'ip_address' => 'nullable|string|max:255',
             'status' => 'required|string|in:online,offline,maintenance',
@@ -146,9 +146,14 @@ class DeviceController extends Controller
         return redirect()->route('devices.index');
     }
 
-    public function destroy(Device $device)
+    public function destroy(Device $device, Request $request)
     {
         $device->delete();
+
+        // 如果是 Inertia 请求（如可视化编辑页面），返回 back() 避免跳转
+        if ($request->header('X-Inertia')) {
+            return back();
+        }
 
         return redirect()->route('devices.index');
     }

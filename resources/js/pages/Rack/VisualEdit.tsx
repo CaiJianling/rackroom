@@ -45,6 +45,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useToast } from '@/components/ui/toast';
 import AppLayout from '@/layouts/app-layout';
 
 interface Device {
@@ -61,6 +62,8 @@ interface Device {
     description: string | null;
     device_library_id: number | null;
     device_library?: DeviceLibraryItem;
+    ip_address: string | null;
+    connection_type: string | null;
 }
 
 interface Rack {
@@ -134,6 +137,7 @@ interface RackDisplay {
 
 export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceTypes, selectedRoom: initialRoom, breadcrumbs = [] }: Props) {
     const { t } = useTranslation();
+    const { showToast } = useToast();
     const [selectedRoom, setSelectedRoom] = useState<string>(initialRoom || 'all');
     const [activeCategory, setActiveCategory] = useState<string>('all');
     const [previewMode, setPreviewMode] = useState(false);
@@ -156,6 +160,8 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
         serial_number: '',
         power: 0,
         status: 'offline',
+        ip_address: '',
+        connection_type: '',
     });
 
     const [selectedDeviceType, setSelectedDeviceType] = useState<string>('');
@@ -172,6 +178,7 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
     // 拖动状态
     const [draggingDevice, setDraggingDevice] = useState<{ device: Device | DeviceLibraryItem; type: 'existing' | 'library' } | null>(null);
     const [dragPreviewPosition, setDragPreviewPosition] = useState<{ rackId: number; uPosition: number; uHeight: number } | null>(null);
+    const [isDraggingOverLibrary, setIsDraggingOverLibrary] = useState(false);
 
     // 调试：监听全局拖拽事件
     useEffect(() => {
@@ -386,6 +393,7 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
     const handleDragEnd = () => {
         setDraggingDevice(null);
         setDragPreviewPosition(null);
+        setIsDraggingOverLibrary(false);
     };
 
     const handleDrop = (e: React.DragEvent, rackId: number, uPosition: number) => {
@@ -482,7 +490,14 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
         // U位是从下到上编号的，设备放在uPosition时，向上占据uHeight个U位
         const maxRequiredU = uPosition + uHeight - 1;
         if (maxRequiredU > targetRack.totalU) {
-            alert(`Cannot place device: need ${uHeight}U space, but only ${targetRack.totalU - uPosition + 1}U available from position ${uPosition}`);
+            showToast(
+                t('visualEdit.toast.insufficientSpace', {
+                    need: uHeight,
+                    available: targetRack.totalU - uPosition + 1,
+                    position: uPosition,
+                }),
+                'warning'
+            );
             setDraggingDevice(null);
             setDragPreviewPosition(null);
             return;
@@ -492,7 +507,10 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
         for (let i = 0; i < uHeight; i++) {
             const checkU = uPosition + i;
             if (checkU > targetRack.totalU) {
-                alert(`Cannot place device: exceeds rack boundary at U${checkU}`);
+                showToast(
+                    t('visualEdit.toast.exceedsBoundary', { position: checkU }),
+                    'warning'
+                );
                 setDraggingDevice(null);
                 setDragPreviewPosition(null);
                 return;
@@ -506,7 +524,7 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
                     continue;
                 }
                 // 否则不允许放置
-                alert('U-position is already occupied');
+                showToast(t('visualEdit.toast.positionOccupied'), 'warning');
                 setDraggingDevice(null);
                 setDragPreviewPosition(null);
                 return;
@@ -539,11 +557,12 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
                 preserveScroll: true,
                 onSuccess: () => {
                     console.log('Device created successfully');
+                    showToast(t('visualEdit.toast.deviceAdded'), 'success');
                     router.reload({ only: ['racks', 'devices'] });
                 },
                 onError: (errors) => {
                     console.error('Failed to create device:', errors);
-                    alert('Failed to create device: ' + JSON.stringify(errors));
+                    showToast('Failed to create device: ' + JSON.stringify(errors), 'error');
                 }
             });
         } else if (deviceType === 'existing' && draggingDeviceId) {
@@ -562,11 +581,12 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
                 preserveScroll: true,
                 onSuccess: () => {
                     console.log('Device updated successfully');
+                    showToast(t('visualEdit.toast.deviceUpdated'), 'success');
                     router.reload({ only: ['racks', 'devices'] });
                 },
                 onError: (errors) => {
                     console.error('Failed to update device:', errors);
-                    alert('Failed to update device: ' + JSON.stringify(errors));
+                    showToast('Failed to update device: ' + JSON.stringify(errors), 'error');
                 }
             });
         }
@@ -578,25 +598,38 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
 
     const handleLibraryDrop = (e: React.DragEvent) => {
         e.preventDefault();
-        const deviceType = e.dataTransfer.getData('deviceType');
+        e.stopPropagation();
+
+        const deviceType = draggingDevice?.type;
+
+        console.log('Library drop - deviceType:', deviceType);
 
         if (deviceType === 'existing') {
             const deviceId = parseInt(e.dataTransfer.getData('deviceId'));
-            if (isNaN(deviceId)) return;
+            if (isNaN(deviceId)) {
+                console.error('Invalid device ID');
+                setDraggingDevice(null);
+                setDragPreviewPosition(null);
+                setIsDraggingOverLibrary(false);
+                return;
+            }
 
             const deviceName = e.dataTransfer.getData('deviceName');
-            const deviceStatus = e.dataTransfer.getData('deviceStatus');
 
-            router.put(`/devices/${deviceId}`, {
-                rack_id: null,
-                u_position: null,
-                name: deviceName,
-                status: deviceStatus,
-            }, {
+            console.log('Deleting device via library drop:', { deviceId, deviceName });
+
+            // 直接删除设备记录
+            router.delete(`/devices/${deviceId}`, {
                 preserveState: false,
                 preserveScroll: true,
                 onSuccess: () => {
+                    console.log('Device deleted successfully');
+                    showToast(t('visualEdit.toast.deviceDeleted'), 'success');
                     router.reload({ only: ['racks', 'devices'] });
+                },
+                onError: (errors) => {
+                    console.error('Failed to delete device:', errors);
+                    showToast('Failed to delete device: ' + JSON.stringify(errors), 'error');
                 }
             });
         }
@@ -604,11 +637,26 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
         // 清除拖拽状态
         setDraggingDevice(null);
         setDragPreviewPosition(null);
+        setIsDraggingOverLibrary(false);
     };
 
     const handleLibraryDragOver = (e: React.DragEvent) => {
         e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
+        e.stopPropagation();
+
+        // 根据拖拽类型设置效果：现有设备可以移回设备库（move），库设备不能拖回自己
+        if (draggingDevice?.type === 'existing') {
+            e.dataTransfer.dropEffect = 'move';
+            setIsDraggingOverLibrary(true);
+        } else {
+            e.dataTransfer.dropEffect = 'none';
+            setIsDraggingOverLibrary(false);
+        }
+    };
+
+    const handleLibraryDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDraggingOverLibrary(false);
     };
 
     const handleDragOver = (e: React.DragEvent, rackId: number, uPosition: number) => {
@@ -670,6 +718,8 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
             serial_number: device.serial_number || '',
             power: device.power,
             status: device.status,
+            ip_address: device.ip_address || '',
+            connection_type: device.connection_type || '',
         });
         setEditModalOpen(true);
     };
@@ -677,10 +727,28 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
     const saveEdit = () => {
         if (!currentEditDevice) return;
 
-        router.put(`/devices/${currentEditDevice.device.id}`, editForm, {
+        // 只发送非空值，避免覆盖 device_library 自动填充的字段
+        const updateData: Record<string, unknown> = {
+            name: editForm.name,
+            status: editForm.status,
+        };
+
+        // 可选字段只有在有值时才发送
+        if (editForm.ip_address) updateData.ip_address = editForm.ip_address;
+        if (editForm.connection_type) updateData.connection_type = editForm.connection_type;
+        if (editForm.serial_number) updateData.serial_number = editForm.serial_number;
+
+        router.put(`/devices/${currentEditDevice.device.id}`, updateData, {
+            preserveState: false,
+            preserveScroll: true,
             onSuccess: () => {
                 setEditModalOpen(false);
+                showToast(t('visualEdit.toast.deviceUpdated'), 'success');
                 router.reload({ only: ['racks', 'devices'] });
+            },
+            onError: (errors) => {
+                console.error('Failed to update device:', errors);
+                showToast('Failed to save: ' + JSON.stringify(errors), 'error');
             }
         });
     };
@@ -688,13 +756,22 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
     const removeDeviceFromRack = () => {
         if (!currentEditDevice) return;
 
-        router.put(`/devices/${currentEditDevice.device.id}`, {
-            rack_id: null,
-            u_position: null,
-        }, {
+        console.log('Deleting device:', currentEditDevice.device.id);
+
+        // 直接删除设备记录
+        router.delete(`/devices/${currentEditDevice.device.id}`, {
+            preserveState: false,
+            preserveScroll: true,
             onSuccess: () => {
+                console.log('Device deleted successfully');
                 setEditModalOpen(false);
+                setCurrentEditDevice(null);
+                showToast(t('visualEdit.toast.deviceDeleted'), 'success');
                 router.reload({ only: ['racks', 'devices'] });
+            },
+            onError: (errors) => {
+                console.error('Failed to delete device:', errors);
+                showToast('Failed to delete: ' + JSON.stringify(errors), 'error');
             }
         });
     };
@@ -819,15 +896,17 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
 
                 <div className="flex flex-1 gap-4 overflow-hidden">
                     <Card
-                        className="w-80 flex-shrink-0"
+                        className={`w-80 flex-shrink-0 transition-colors ${isDraggingOverLibrary ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-400 dark:border-blue-600' : ''}`}
                         onDragOver={handleLibraryDragOver}
+                        onDragLeave={handleLibraryDragLeave}
                         onDrop={handleLibraryDrop}
                     >
                         <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
-                                <CardTitle className="text-base flex items-center gap-2">
+                                <CardTitle className={`text-base flex items-center gap-2 ${isDraggingOverLibrary ? 'text-blue-600 dark:text-blue-400' : ''}`}>
                                     <HardDrive className="h-4 w-4" />
                                     {t('visualEdit.deviceLibrary')}
+                                    {isDraggingOverLibrary && <span className="text-xs font-normal ml-2">(释放以移除)</span>}
                                 </CardTitle>
                                 <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setAddDeviceModalOpen(true)}>
                                     + {t('visualEdit.addDevice')}
@@ -1086,12 +1165,12 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
             </div>
 
             <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col">
                     <DialogHeader>
                         <DialogTitle>{t('visualEdit.editDevice')}</DialogTitle>
                         <DialogDescription>{t('visualEdit.editDeviceDesc')}</DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
+                    <div className="grid gap-4 py-4 overflow-y-auto px-1" style={{ maxHeight: 'calc(90vh - 180px)' }}>
                         <div className="grid gap-2">
                             <Label htmlFor="name">{t('visualEdit.name')}</Label>
                             <Input
@@ -1148,6 +1227,24 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
                                     <SelectItem value="maintenance">{t('visualEdit.maintenance')}</SelectItem>
                                 </SelectContent>
                             </Select>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="ip_address">{t('deviceManagement.ipAddress')}</Label>
+                            <Input
+                                id="ip_address"
+                                value={editForm.ip_address}
+                                onChange={(e) => setEditForm({ ...editForm, ip_address: e.target.value })}
+                                placeholder="192.168.1.1"
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="connection_type">{t('deviceManagement.connectionType')}</Label>
+                            <Input
+                                id="connection_type"
+                                value={editForm.connection_type}
+                                onChange={(e) => setEditForm({ ...editForm, connection_type: e.target.value })}
+                                placeholder="SSH/RDP/IPMI"
+                            />
                         </div>
                     </div>
                     <DialogFooter className="flex gap-2">

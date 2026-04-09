@@ -217,6 +217,7 @@
         "dragHint": "Double-click device to edit • Click power icon to edit rack power • Drag devices to rack positions",
         "dragToRack": "Drag to rack",
         "editDevice": "Edit Device",
+        "editDeviceDesc": "Edit the basic information of the device",
         "model": "Model",
         "manufacturer": "Manufacturer",
         "serialNumber": "Serial Number",
@@ -224,7 +225,7 @@
         "online": "Online",
         "offline": "Offline",
         "maintenance": "Maintenance",
-        "removeFromRack": "Remove from Rack",
+        "removeFromRack": "Delete Device",
         "quickAddRacks": "Quick Add Racks",
         "room": "Room",
         "rackNamePrefix": "Rack Name Prefix",
@@ -234,7 +235,16 @@
         "cols": "Cols",
         "willGenerate": "Will generate {rows} x {cols} = {total} racks",
         "generate": "Generate",
-        "enterMaxPower": "Enter max power (W)"
+        "enterMaxPower": "Enter max power (W)",
+        "toast": {
+            "positionOccupied": "U-position is already occupied",
+            "insufficientSpace": "Need {need}U space, but only {available}U available from position {position}",
+            "exceedsBoundary": "Exceeds rack boundary at U{position}",
+            "deviceRemoved": "Device removed from rack",
+            "deviceAdded": "Device added to rack",
+            "deviceUpdated": "Device information updated",
+            "deviceDeleted": "Device deleted"
+        }
     },
     "deleteAccount": {
         "title": "Delete account",
@@ -515,6 +525,7 @@
         "list": "Device Library List",
         "description": "Manage device library in the system",
         "name": "Device Name",
+        "selectDevice": "Select Device",
         "type": "Device Type",
         "model": "Model",
         "manufacturer": "Manufacturer",
