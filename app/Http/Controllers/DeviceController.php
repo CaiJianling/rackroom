@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Device;
-use App\Models\Rack;
 use App\Models\DeviceLibrary;
 use App\Models\DeviceType;
+use App\Models\Rack;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -18,10 +18,10 @@ class DeviceController extends Controller
         $search = $request->input('search');
         if ($search) {
             $query->where('name', 'like', "%{$search}%")
-                  ->orWhere('model', 'like', "%{$search}%")
-                  ->orWhere('manufacturer', 'like', "%{$search}%")
-                  ->orWhere('serial_number', 'like', "%{$search}%")
-                  ->orWhere('ip_address', 'like', "%{$search}%");
+                ->orWhere('model', 'like', "%{$search}%")
+                ->orWhere('manufacturer', 'like', "%{$search}%")
+                ->orWhere('serial_number', 'like', "%{$search}%")
+                ->orWhere('ip_address', 'like', "%{$search}%");
         }
 
         $categoryFilter = $request->input('category');
@@ -45,6 +45,7 @@ class DeviceController extends Controller
     public function create()
     {
         $racks = Rack::all();
+
         return inertia('Device/Create', compact('racks'));
     }
 
@@ -64,7 +65,7 @@ class DeviceController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        if (!empty($validated['device_library_id'])) {
+        if (! empty($validated['device_library_id'])) {
             $deviceLibrary = DeviceLibrary::with('deviceType')->find($validated['device_library_id']);
             if ($deviceLibrary) {
                 $validated['power'] = $deviceLibrary->power;
@@ -83,6 +84,11 @@ class DeviceController extends Controller
 
         Device::create($validated);
 
+        // 如果是 Inertia 请求（如可视化编辑页面），返回 back() 避免跳转
+        if ($request->header('X-Inertia')) {
+            return back();
+        }
+
         return redirect()->route('devices.index');
     }
 
@@ -94,6 +100,7 @@ class DeviceController extends Controller
     public function edit(Device $device)
     {
         $racks = Rack::all();
+
         return inertia('Device/Edit', compact('device', 'racks'));
     }
 
@@ -113,7 +120,7 @@ class DeviceController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        if (!empty($validated['device_library_id'])) {
+        if (! empty($validated['device_library_id'])) {
             $deviceLibrary = DeviceLibrary::with('deviceType')->find($validated['device_library_id']);
             if ($deviceLibrary) {
                 $validated['power'] = $deviceLibrary->power;
@@ -132,12 +139,17 @@ class DeviceController extends Controller
 
         $device->update($validated);
 
+        if ($request->header('X-Inertia')) {
+            return back();
+        }
+
         return redirect()->route('devices.index');
     }
 
     public function destroy(Device $device)
     {
         $device->delete();
+
         return redirect()->route('devices.index');
     }
 

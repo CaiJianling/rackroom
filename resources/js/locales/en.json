@@ -178,6 +178,7 @@
         "devices": "Devices",
         "deviceLibrary": "Device Library",
         "deviceDetails": "Device Details",
+        "deviceDetailsDesc": "View detailed information of the device",
         "deviceImport": "Device Import",
         "monitorReports": "Monitor/Reports",
         "monitor": "Real-time Monitor",
@@ -186,7 +187,8 @@
         "system": "System",
         "backup": "Data Backup/Restore",
         "error404": "404 Page",
-        "error403": "Access Denied"
+        "error403": "Access Denied",
+        "uheight": "U Height"
     },
     "visualEdit": {
         "editMode": "Edit Mode",
@@ -213,6 +215,7 @@
         "noRacksAvailable": "No racks available",
         "editPower": "Edit power",
         "dragHint": "Double-click device to edit • Click power icon to edit rack power • Drag devices to rack positions",
+        "dragToRack": "Drag to rack",
         "editDevice": "Edit Device",
         "model": "Model",
         "manufacturer": "Manufacturer",
@@ -413,7 +416,8 @@
         "deleteWarning": "Are you sure you want to delete this rack type? This action cannot be undone.",
         "delete": "Delete",
         "rackTypesCount": "{{filtered}} of {{total}} rack types",
-        "rackTypeDetails": "Rack Type Details"
+        "rackTypeDetails": "Rack Type Details",
+        "rackTypeDetailsDesc": "View detailed information of the rack type"
     },
     "deviceManagement": {
         "title": "Device Management",
@@ -455,8 +459,10 @@
         "noDevices": "No devices found",
         "addFirstDevice": "Add first device",
         "editDevice": "Edit Device",
+        "editDeviceDesc": "Edit the basic information of the device",
         "updateDevice": "Update Device",
         "newDevice": "New Device",
+        "newDeviceDesc": "Add a new device from the device library to the system",
         "createDevice": "Create Device",
         "addNewDevice": "Add a new device to the system",
         "backToDevices": "Back to Devices",
@@ -465,6 +471,7 @@
         "deleteWarning": "Are you sure you want to delete this device? This action cannot be undone.",
         "devicesCount": "{{filtered}} of {{total}} devices",
         "deviceDetails": "Device Details",
+        "deviceDetailsDesc": "View detailed information of the device",
         "export": "Export",
         "import": "Import",
         "importDescription": "Import device data from CSV file",
@@ -479,6 +486,7 @@
     "deviceTypeManagement": {
         "title": "Device Type Management",
         "add": "Add Device Type",
+        "addDesc": "Add a new device type to the system",
         "list": "Device Type List",
         "description": "Manage device types in the system",
         "name": "Type Name",
@@ -492,15 +500,18 @@
         "empty": "No device types found, please add the first device type",
         "count": "{{filtered}} / {{total}} Device Types",
         "edit": "Edit Device Type",
+        "editDesc": "Edit device type information",
         "delete": "Delete Device Type",
         "deleteConfirm": "Are you sure you want to delete this device type? This action cannot be undone.",
         "details": "Device Type Details",
+        "detailsDesc": "View detailed information of the device type",
         "pleaseCreateTypeFirst": "Please create a device type first",
         "addFirst": "Add first device type"
     },
     "deviceLibrary": {
         "title": "Device Library Management",
         "add": "Add Device",
+        "addDesc": "Add a new device to the system",
         "list": "Device Library List",
         "description": "Manage device library in the system",
         "name": "Device Name",
@@ -522,9 +533,11 @@
         "clearFilters": "Clear filters",
         "count": "{{filtered}} / {{total}} Devices",
         "edit": "Edit Device",
+        "editDesc": "Edit the device information",
         "delete": "Delete Device",
         "deleteConfirm": "Are you sure you want to delete this device? This action cannot be undone.",
         "details": "Device Details",
+        "detailsDesc": "View detailed information of the device",
         "pleaseCreateTypeFirst": "Please create a device type first",
         "pleaseCreateDeviceFirst": "Please add a device in the device library first",
         "addFirst": "Add first device",

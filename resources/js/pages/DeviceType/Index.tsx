@@ -443,6 +443,9 @@ export default function DeviceTypeIndex({ deviceTypes, breadcrumbs = [] }: Props
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('deviceTypeManagement.add')}</DialogTitle>
+                        <DialogDescription>
+                            {t('deviceTypeManagement.addDesc')}
+                        </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleCreateSubmit}>
                         <div className="grid gap-4 py-4">
@@ -503,6 +506,9 @@ export default function DeviceTypeIndex({ deviceTypes, breadcrumbs = [] }: Props
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('deviceTypeManagement.edit')}</DialogTitle>
+                        <DialogDescription>
+                            {t('deviceTypeManagement.editDesc')}
+                        </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleEditSubmit}>
                         <div className="grid gap-4 py-4">
@@ -582,6 +588,9 @@ export default function DeviceTypeIndex({ deviceTypes, breadcrumbs = [] }: Props
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('deviceTypeManagement.details')}</DialogTitle>
+                        <DialogDescription>
+                            {t('deviceTypeManagement.detailsDesc')}
+                        </DialogDescription>
                     </DialogHeader>
                     {viewingDeviceType && (
                         <div className="grid gap-4 py-4">

@@ -552,6 +552,9 @@ export default function DeviceLibraryIndex({ deviceLibrary, deviceTypes, breadcr
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('deviceLibrary.add')}</DialogTitle>
+                        <DialogDescription>
+                            {t('deviceLibrary.addDesc')}
+                        </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleCreateSubmit}>
                         <div className="grid gap-4 py-4">
@@ -675,6 +678,9 @@ export default function DeviceLibraryIndex({ deviceLibrary, deviceTypes, breadcr
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('deviceLibrary.edit')}</DialogTitle>
+                        <DialogDescription>
+                            {t('deviceLibrary.editDesc')}
+                        </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleEditSubmit}>
                         <div className="grid gap-4 py-4">
@@ -817,6 +823,9 @@ export default function DeviceLibraryIndex({ deviceLibrary, deviceTypes, breadcr
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('deviceLibrary.details')}</DialogTitle>
+                        <DialogDescription>
+                            {t('deviceLibrary.detailsDesc')}
+                        </DialogDescription>
                     </DialogHeader>
                     {viewingItem && (
                         <div className="grid gap-4 py-4">

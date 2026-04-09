@@ -177,6 +177,7 @@
         "deviceList": "设备列表管理",
         "devices": "设备",
         "deviceDetails": "设备详情",
+        "deviceDetailsDesc": "查看设备的详细信息",
         "deviceImport": "设备导入",
         "monitorReports": "监控/报表",
         "monitor": "实时监控",
@@ -212,6 +213,7 @@
         "noRacksAvailable": "没有可用的机柜",
         "editPower": "编辑功率",
         "dragHint": "双击设备编辑 • 点击功率图标编辑机柜功率 • 拖拽设备到机柜位置",
+        "dragToRack": "拖拽到机柜",
         "editDevice": "编辑设备",
         "editDeviceDesc": "编辑设备的基本信息",
         "model": "型号",
@@ -232,7 +234,8 @@
         "cols": "列数",
         "willGenerate": "将生成 {rows} x {cols} = {total} 个机柜",
         "generate": "生成",
-        "enterMaxPower": "输入最大功率 (W)"
+        "enterMaxPower": "输入最大功率 (W)",
+        "uheight": "U高"
     },
     "deleteAccount": {
         "title": "删除账户",
@@ -414,7 +417,8 @@
         "deleteWarning": "您确定要删除此机柜类型吗？此操作无法撤销。",
         "delete": "删除",
         "rackTypesCount": "{{filtered}} / {{total}} 机柜类型",
-        "rackTypeDetails": "机柜类型详情"
+        "rackTypeDetails": "机柜类型详情",
+        "rackTypeDetailsDesc": "查看机柜类型的详细信息"
     },
     "deviceManagement": {
         "title": "设备列表管理",
@@ -458,6 +462,7 @@
         "editDevice": "编辑设备",
         "updateDevice": "更新设备",
         "newDevice": "新设备",
+        "newDeviceDesc": "从设备库中添加新设备到系统中",
         "createDevice": "创建设备",
         "addNewDevice": "向系统添加新设备",
         "addDeviceDesc": "从设备库中添加新设备到系统中",
@@ -467,6 +472,7 @@
         "deleteWarning": "您确定要删除此设备吗？此操作无法撤销。",
         "devicesCount": "{{filtered}} / {{total}} 设备",
         "deviceDetails": "设备详情",
+        "deviceDetailsDesc": "查看设备的详细信息",
         "export": "导出",
         "import": "导入",
         "importDescription": "从CSV文件导入设备数据",
@@ -481,6 +487,7 @@
     "deviceTypeManagement": {
         "title": "设备类型管理",
         "add": "添加设备类型",
+        "addDesc": "向系统添加新的设备类型",
         "list": "设备类型列表",
         "description": "设备类型详情",
         "name": "类型名称",
@@ -494,15 +501,18 @@
         "empty": "未找到设备类型，请添加第一个设备类型",
         "count": "{{filtered}} / {{total}} 设备类型",
         "edit": "编辑设备类型",
+        "editDesc": "编辑设备类型信息",
         "delete": "删除设备类型",
         "deleteConfirm": "您确定要删除此设备类型吗？此操作无法撤销。",
         "details": "设备类型详情",
+        "detailsDesc": "查看设备类型的详细信息",
         "pleaseCreateTypeFirst": "请先创建设备类型",
         "addFirst": "添加第一个设备类型"
     },
     "deviceLibrary": {
         "title": "设备库管理",
         "add": "添加设备",
+        "addDesc": "向系统添加新设备",
         "list": "设备库列表",
         "description": "设备详情",
         "name": "设备名称",
@@ -523,9 +533,11 @@
         "empty": "设备库为空，请添加第一个设备",
         "count": "{{filtered}} / {{total}} 设备",
         "edit": "编辑设备",
+        "editDesc": "编辑设备信息",
         "delete": "删除设备",
         "deleteConfirm": "您确定要删除此设备吗？此操作无法撤销。",
         "details": "设备详情",
+        "detailsDesc": "查看设备的详细信息",
         "pleaseCreateTypeFirst": "请先创建设备类型",
         "pleaseCreateDeviceFirst": "请先在设备库中添加设备",
         "addFirst": "添加第一个设备",

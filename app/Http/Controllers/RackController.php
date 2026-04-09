@@ -1,21 +1,21 @@
 <?php
+
 /*
  * @Author: CaiJianling caijianling@outlook.com
  * @Date: 2026-03-26 15:14:27
  * @LastEditors: CaiJianling caijianling@outlook.com
- * @LastEditTime: 2026-03-27 23:40:24
+ * @LastEditTime: 2026-03-30 17:25:40
  * @FilePath: /rackroom/app/Http/Controllers/RackController.php
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 
 namespace App\Http\Controllers;
 
-use App\Models\Rack;
-use App\Models\Room;
-use App\Models\Device;
-use App\Models\RackType;
 use App\Models\DeviceLibrary;
 use App\Models\DeviceType;
+use App\Models\Rack;
+use App\Models\RackType;
+use App\Models\Room;
 use Illuminate\Http\Request;
 
 class RackController extends Controller
@@ -27,9 +27,9 @@ class RackController extends Controller
         $search = $request->input('search');
         if ($search) {
             $query->where('name', 'like', "%{$search}%")
-                  ->orWhereHas('room', function ($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  });
+                ->orWhereHas('room', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                });
         }
 
         $roomFilter = $request->input('room');
@@ -49,21 +49,19 @@ class RackController extends Controller
         $rooms = Room::all();
 
         $roomId = $request->input('room_id');
-        $query = Rack::with(['room', 'devices']);
+        $query = Rack::with(['room', 'devices.deviceLibrary']);
 
         if ($roomId) {
             $query->where('room_id', $roomId);
         }
 
         $racks = $query->orderBy('room_id')->orderBy('name')->get();
-        $devices = Device::whereNull('rack_id')->orWhere('rack_id', 0)->get();
         $deviceLibrary = DeviceLibrary::with('deviceType')->get();
         $deviceTypes = DeviceType::all();
 
         return inertia('Rack/VisualEdit', [
             'racks' => $racks,
             'rooms' => $rooms,
-            'devices' => $devices,
             'deviceLibrary' => $deviceLibrary,
             'deviceTypes' => $deviceTypes,
             'selectedRoom' => $roomId,
@@ -74,6 +72,7 @@ class RackController extends Controller
     {
         $rooms = Room::all();
         $rackTypes = RackType::all();
+
         return inertia('Rack/Create', compact('rooms', 'rackTypes'));
     }
 
@@ -110,6 +109,7 @@ class RackController extends Controller
     {
         $rooms = Room::all();
         $rackTypes = RackType::all();
+
         return inertia('Rack/Edit', compact('rack', 'rooms', 'rackTypes'));
     }
 
@@ -140,6 +140,7 @@ class RackController extends Controller
     public function destroy(Rack $rack)
     {
         $rack->delete();
+
         return redirect()->route('racks.index');
     }
 }

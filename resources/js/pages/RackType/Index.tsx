@@ -744,6 +744,9 @@ export default function RackTypeIndex({ rackTypes, breadcrumbs = [] }: Props) {
                             <DialogTitle>
                                 {t('rackTypeManagement.rackTypeDetails')}
                             </DialogTitle>
+                            <DialogDescription>
+                                {t('rackTypeManagement.rackTypeDetailsDesc')}
+                            </DialogDescription>
                         </DialogHeader>
                         {viewingRackType && (
                             <div className="grid gap-4 py-4">

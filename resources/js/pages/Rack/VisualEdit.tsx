@@ -11,8 +11,12 @@ import {
     Save,
     Server,
     Trash2,
+    Layers,
+    Monitor,
+    Database,
+    Cpu,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,6 +59,8 @@ interface Device {
     power: number;
     status: string;
     description: string | null;
+    device_library_id: number | null;
+    device_library?: DeviceLibraryItem;
 }
 
 interface Rack {
@@ -65,7 +71,12 @@ interface Rack {
     power: number;
     device_count: number;
     room?: Room;
-    devices?: Device[];
+    devices?: DeviceWithLibrary[];
+}
+
+interface DeviceWithLibrary extends Device {
+    device_library_id: number | null;
+    device_library?: DeviceLibraryItem;
 }
 
 interface DeviceType {
@@ -93,7 +104,6 @@ interface Room {
 interface Props {
     racks: Rack[];
     rooms: Room[];
-    devices: Device[];
     deviceLibrary: DeviceLibraryItem[];
     deviceTypes: DeviceType[];
     selectedRoom?: string;
@@ -103,6 +113,11 @@ interface Props {
 interface RackSlot {
     deviceId: number | null;
     device?: Device | null;
+    uHeight: number;
+    isStart: boolean;
+    uPosition: number;
+    isOccupied: boolean; // 标记该U位是否被占用
+    parentDeviceId?: number | null; // 如果该U位是被多U设备占用的，记录父设备ID
 }
 
 interface RackDisplay {
@@ -115,14 +130,9 @@ interface RackDisplay {
     curPower: number;
 }
 
-const categoryColors: Record<string, string> = {
-    server: 'bg-blue-500',
-    network: 'bg-cyan-500',
-    storage: 'bg-sky-400',
-    other: 'bg-slate-500',
-};
 
-export default function RackVisualEdit({ racks, rooms, devices, deviceLibrary, deviceTypes, selectedRoom: initialRoom, breadcrumbs = [] }: Props) {
+
+export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceTypes, selectedRoom: initialRoom, breadcrumbs = [] }: Props) {
     const { t } = useTranslation();
     const [selectedRoom, setSelectedRoom] = useState<string>(initialRoom || 'all');
     const [activeCategory, setActiveCategory] = useState<string>('all');
@@ -159,38 +169,133 @@ export default function RackVisualEdit({ racks, rooms, devices, deviceLibrary, d
         status: 'offline' as string,
     });
 
+    // 拖动状态
+    const [draggingDevice, setDraggingDevice] = useState<{ device: Device | DeviceLibraryItem; type: 'existing' | 'library' } | null>(null);
+    const [dragPreviewPosition, setDragPreviewPosition] = useState<{ rackId: number; uPosition: number; uHeight: number } | null>(null);
+
+    // 调试：监听全局拖拽事件
+    useEffect(() => {
+        const handleGlobalDragOver = (e: DragEvent) => {
+            // 检查是否拖到了机柜区域
+            const target = e.target as HTMLElement;
+            if (target.closest('[data-rack-slot="true"]')) {
+                console.log('Global dragover on rack slot');
+            }
+        };
+
+        const handleGlobalDrop = (e: DragEvent) => {
+            console.log('Global drop event:', {
+                target: e.target,
+                dataTransfer: {
+                    deviceType: e.dataTransfer?.getData('deviceType'),
+                    deviceLibraryId: e.dataTransfer?.getData('deviceLibraryId'),
+                }
+            });
+        };
+
+        document.addEventListener('dragover', handleGlobalDragOver);
+        document.addEventListener('drop', handleGlobalDrop);
+
+        return () => {
+            document.removeEventListener('dragover', handleGlobalDragOver);
+            document.removeEventListener('drop', handleGlobalDrop);
+        };
+    }, []);
+
     const racksData: RackDisplay[] = useMemo(() => {
         return racks.map(rack => {
-            const slots: RackSlot[] = [];
-            for (let i = 0; i < rack.u_count; i++) {
-                const device = rack.devices?.find(d => d.u_position === i + 1);
-                slots.push({
-                    deviceId: device?.id || null,
-                    device: device || null,
+            const deviceSlots: { uPosition: number; uHeight: number; device: Device }[] = [];
+
+            if (rack.devices) {
+                rack.devices.forEach(device => {
+                    const uHeight = device.device_library?.u_height || 1;
+                    const uPosition = device.u_position;
+
+                    if (uPosition && uPosition > 0 && uPosition <= rack.u_count) {
+                        deviceSlots.push({ uPosition, uHeight, device });
+                    }
                 });
             }
+
+            const occupiedPositions = new Set<number>();
+            deviceSlots.forEach(ds => {
+                for (let i = 0; i < ds.uHeight; i++) {
+                    occupiedPositions.add(ds.uPosition + i);
+                }
+            });
+
+            const finalSlots: RackSlot[] = [];
+            const sortedDevices = deviceSlots.sort((a, b) => a.uPosition - b.uPosition);
+
+            for (let u = 1; u <= rack.u_count; u++) {
+                const currentDevice = sortedDevices.find(d => d.uPosition === u);
+
+                if (currentDevice) {
+                    // 设备起始位置
+                    finalSlots.push({
+                        deviceId: currentDevice.device.id,
+                        device: currentDevice.device,
+                        uHeight: currentDevice.uHeight,
+                        isStart: true,
+                        uPosition: u,
+                        isOccupied: true,
+                        parentDeviceId: null,
+                    });
+                } else if (occupiedPositions.has(u)) {
+                    // 被多U设备占用的位置（非起始位置）
+                    const parentDevice = sortedDevices.find(d => u >= d.uPosition && u < d.uPosition + d.uHeight);
+                    finalSlots.push({
+                        deviceId: null,
+                        device: null,
+                        uHeight: 1,
+                        isStart: false,
+                        uPosition: u,
+                        isOccupied: true,
+                        parentDeviceId: parentDevice?.device.id || null,
+                    });
+                } else {
+                    // 空U位
+                    finalSlots.push({
+                        deviceId: null,
+                        device: null,
+                        uHeight: 1,
+                        isStart: false,
+                        uPosition: u,
+                        isOccupied: false,
+                        parentDeviceId: null,
+                    });
+                }
+            }
+
             return {
                 id: rack.id,
                 name: rack.name,
                 room_id: rack.room_id,
                 totalU: rack.u_count,
-                slots,
+                slots: finalSlots,
                 maxPower: rack.power || 5000,
                 curPower: rack.devices?.reduce((sum, d) => sum + (d.power || 0), 0) || 0,
             };
         });
     }, [racks]);
 
-    const unassignedDevices = useMemo(() => {
-        return devices.filter(d => !d.rack_id);
-    }, [devices]);
+    const libraryDevices = useMemo(() => {
+        return deviceLibrary;
+    }, [deviceLibrary]);
 
     const filteredDevices = useMemo(() => {
-        return unassignedDevices.filter(d => {
-            if (activeCategory !== 'all' && d.category !== activeCategory) return false;
-            return true;
-        });
-    }, [unassignedDevices, activeCategory]);
+        const usedLibraryIds = new Set(
+            racks.flatMap(r => r.devices || [])
+                .map(d => d.device_library_id)
+                .filter((id): id is number => id !== null && id !== undefined)
+        );
+        const availableDevices = libraryDevices.filter(d => !usedLibraryIds.has(d.id));
+
+        if (activeCategory === 'all') {
+            return availableDevices;
+        }
+        return availableDevices.filter(d => d.device_type_id.toString() === activeCategory);
+    }, [libraryDevices, activeCategory, racks]);
 
     const filteredDeviceLibraryByType = useMemo(() => {
         if (!selectedDeviceType) return [];
@@ -250,27 +355,310 @@ export default function RackVisualEdit({ racks, rooms, devices, deviceLibrary, d
 
     const handleDragStart = (e: React.DragEvent, device: Device) => {
         e.dataTransfer.setData('deviceId', device.id.toString());
+        e.dataTransfer.setData('deviceType', 'existing');
+        e.dataTransfer.setData('deviceName', device.name);
+        e.dataTransfer.setData('deviceStatus', device.status);
         e.dataTransfer.effectAllowed = 'move';
+        setDraggingDevice({ device, type: 'existing' });
     };
 
-    const handleDrop = (e: React.DragEvent, rackId: number, uIndex: number) => {
-        e.preventDefault();
-        const deviceId = parseInt(e.dataTransfer.getData('deviceId'));
-        if (isNaN(deviceId)) return;
+    const handleLibraryDragStart = (e: React.DragEvent, libraryItem: DeviceLibraryItem) => {
+        // 设置拖拽数据 - 使用多种方式确保数据能被正确读取
+        const deviceLibraryId = libraryItem.id.toString();
+        const uHeight = (libraryItem.u_height || 1).toString();
 
-        router.put(`/devices/${deviceId}`, {
-            rack_id: rackId,
-            u_position: uIndex + 1,
-        }, {
-            onSuccess: () => {
-                router.reload({ only: ['racks', 'devices'] });
-            }
+        e.dataTransfer.setData('deviceLibraryId', deviceLibraryId);
+        e.dataTransfer.setData('deviceType', 'library');
+        e.dataTransfer.setData('uHeight', uHeight);
+        e.dataTransfer.setData('text/plain', `library:${deviceLibraryId}:${uHeight}`); // 备用数据格式
+
+        e.dataTransfer.effectAllowed = 'copy';
+
+        console.log('Library drag start:', {
+            deviceLibraryId,
+            uHeight,
+            name: libraryItem.name,
         });
+
+        setDraggingDevice({ device: libraryItem, type: 'library' });
     };
 
-    const handleDragOver = (e: React.DragEvent) => {
+    const handleDragEnd = () => {
+        setDraggingDevice(null);
+        setDragPreviewPosition(null);
+    };
+
+    const handleDrop = (e: React.DragEvent, rackId: number, uPosition: number) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        console.log('Drop event triggered:', { rackId, uPosition });
+
+        // 尝试多种方式读取拖拽数据
+        let deviceType = e.dataTransfer.getData('deviceType');
+        let deviceLibraryIdStr = e.dataTransfer.getData('deviceLibraryId');
+        let deviceIdStr = e.dataTransfer.getData('deviceId');
+        let uHeightStr = e.dataTransfer.getData('uHeight');
+
+        // 如果直接读取失败，尝试从备用格式解析
+        if (!deviceType && !deviceLibraryIdStr && !deviceIdStr) {
+            const plainText = e.dataTransfer.getData('text/plain');
+            console.log('Trying plain text format:', plainText);
+            if (plainText && plainText.startsWith('library:')) {
+                const parts = plainText.split(':');
+                if (parts.length >= 3) {
+                    deviceType = 'library';
+                    deviceLibraryIdStr = parts[1];
+                    uHeightStr = parts[2];
+                }
+            }
+        }
+
+        console.log('Drop data received:', {
+            deviceType,
+            deviceLibraryId: deviceLibraryIdStr,
+            deviceId: deviceIdStr,
+            uHeight: uHeightStr,
+        });
+
+        if (!deviceType) {
+            console.error('No device type found in drag data');
+            setDraggingDevice(null);
+            setDragPreviewPosition(null);
+            return;
+        }
+
+        const targetRack = racksData.find(r => r.id === rackId);
+        if (!targetRack) {
+            console.error('Target rack not found:', rackId);
+            setDraggingDevice(null);
+            setDragPreviewPosition(null);
+            return;
+        }
+
+        // 获取正在拖动的设备ID
+        const draggingDeviceId = deviceType === 'existing' && deviceIdStr
+            ? parseInt(deviceIdStr)
+            : null;
+
+        // 获取设备高度
+        let uHeight = 1;
+        let libraryItem: DeviceLibraryItem | undefined;
+
+        if (deviceType === 'library') {
+            if (!deviceLibraryIdStr) {
+                console.error('No device library ID provided');
+                setDraggingDevice(null);
+                setDragPreviewPosition(null);
+                return;
+            }
+
+            const deviceLibraryId = parseInt(deviceLibraryIdStr);
+            if (isNaN(deviceLibraryId)) {
+                console.error('Invalid device library ID:', deviceLibraryIdStr);
+                setDraggingDevice(null);
+                setDragPreviewPosition(null);
+                return;
+            }
+
+            libraryItem = deviceLibrary.find(item => item.id === deviceLibraryId);
+            if (!libraryItem) {
+                console.error('Device library item not found:', deviceLibraryId);
+                setDraggingDevice(null);
+                setDragPreviewPosition(null);
+                return;
+            }
+
+            // 优先从dataTransfer获取u_height，否则从libraryItem获取
+            uHeight = uHeightStr ? parseInt(uHeightStr) : (libraryItem.u_height || 1);
+            console.log('Library item found:', { name: libraryItem.name, uHeight });
+        } else if (deviceType === 'existing' && draggingDeviceId) {
+            // 现有设备：查找设备并获取高度
+            const device = racks.flatMap(r => r.devices || []).find(d => d.id === draggingDeviceId);
+            uHeight = device?.device_library?.u_height || 1;
+            console.log('Existing device found:', { id: draggingDeviceId, uHeight });
+        }
+
+        // U位是从下到上编号的，设备放在uPosition时，向上占据uHeight个U位
+        const maxRequiredU = uPosition + uHeight - 1;
+        if (maxRequiredU > targetRack.totalU) {
+            alert(`Cannot place device: need ${uHeight}U space, but only ${targetRack.totalU - uPosition + 1}U available from position ${uPosition}`);
+            setDraggingDevice(null);
+            setDragPreviewPosition(null);
+            return;
+        }
+
+        // 检查从uPosition向上uHeight个U位是否都被占用
+        for (let i = 0; i < uHeight; i++) {
+            const checkU = uPosition + i;
+            if (checkU > targetRack.totalU) {
+                alert(`Cannot place device: exceeds rack boundary at U${checkU}`);
+                setDraggingDevice(null);
+                setDragPreviewPosition(null);
+                return;
+            }
+
+            const checkSlot = targetRack.slots.find(s => s.uPosition === checkU);
+            if (checkSlot && checkSlot.isOccupied) {
+                // 如果是同一个设备（包括被占用的U位属于该设备），允许放置
+                const slotDeviceId = checkSlot.deviceId || checkSlot.parentDeviceId;
+                if (deviceType === 'existing' && slotDeviceId === draggingDeviceId) {
+                    continue;
+                }
+                // 否则不允许放置
+                alert('U-position is already occupied');
+                setDraggingDevice(null);
+                setDragPreviewPosition(null);
+                return;
+            }
+        }
+
+        if (deviceType === 'library') {
+            // 重新解析设备库ID（确保使用最新值）
+            const deviceLibraryId = parseInt(deviceLibraryIdStr!);
+
+            // 从设备库创建设备时，使用设备库的名称+型号作为设备名称
+            const deviceName = libraryItem!.model
+                ? `${libraryItem!.name} (${libraryItem!.model})`
+                : libraryItem!.name;
+
+            const postData = {
+                name: deviceName,
+                device_library_id: deviceLibraryId,
+                rack_id: rackId,
+                u_position: uPosition,
+                model: libraryItem!.model,
+                manufacturer: libraryItem!.manufacturer,
+                status: 'offline',
+            };
+
+            console.log('Sending POST request to /devices with data:', postData);
+
+            router.post('/devices', postData, {
+                preserveState: false,
+                preserveScroll: true,
+                onSuccess: () => {
+                    console.log('Device created successfully');
+                    router.reload({ only: ['racks', 'devices'] });
+                },
+                onError: (errors) => {
+                    console.error('Failed to create device:', errors);
+                    alert('Failed to create device: ' + JSON.stringify(errors));
+                }
+            });
+        } else if (deviceType === 'existing' && draggingDeviceId) {
+            const deviceName = e.dataTransfer.getData('deviceName');
+            const deviceStatus = e.dataTransfer.getData('deviceStatus');
+
+            console.log('Sending PUT request to update device:', { deviceId: draggingDeviceId, rackId, uPosition });
+
+            router.put(`/devices/${draggingDeviceId}`, {
+                rack_id: rackId,
+                u_position: uPosition,
+                name: deviceName,
+                status: deviceStatus,
+            }, {
+                preserveState: false,
+                preserveScroll: true,
+                onSuccess: () => {
+                    console.log('Device updated successfully');
+                    router.reload({ only: ['racks', 'devices'] });
+                },
+                onError: (errors) => {
+                    console.error('Failed to update device:', errors);
+                    alert('Failed to update device: ' + JSON.stringify(errors));
+                }
+            });
+        }
+
+        // 清除拖拽状态
+        setDraggingDevice(null);
+        setDragPreviewPosition(null);
+    };
+
+    const handleLibraryDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        const deviceType = e.dataTransfer.getData('deviceType');
+
+        if (deviceType === 'existing') {
+            const deviceId = parseInt(e.dataTransfer.getData('deviceId'));
+            if (isNaN(deviceId)) return;
+
+            const deviceName = e.dataTransfer.getData('deviceName');
+            const deviceStatus = e.dataTransfer.getData('deviceStatus');
+
+            router.put(`/devices/${deviceId}`, {
+                rack_id: null,
+                u_position: null,
+                name: deviceName,
+                status: deviceStatus,
+            }, {
+                preserveState: false,
+                preserveScroll: true,
+                onSuccess: () => {
+                    router.reload({ only: ['racks', 'devices'] });
+                }
+            });
+        }
+
+        // 清除拖拽状态
+        setDraggingDevice(null);
+        setDragPreviewPosition(null);
+    };
+
+    const handleLibraryDragOver = (e: React.DragEvent) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDragOver = (e: React.DragEvent, rackId: number, uPosition: number) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // 根据拖拽类型设置正确的 dropEffect
+        if (draggingDevice) {
+            e.dataTransfer.dropEffect = draggingDevice.type === 'library' ? 'copy' : 'move';
+        } else {
+            e.dataTransfer.dropEffect = 'copy';
+        }
+
+        // 调试日志 - 只在每10次调用时打印一次避免刷屏
+        if (Math.random() < 0.05) {
+            console.log('DragOver triggered:', { rackId, uPosition, draggingDevice });
+        }
+
+        const targetRack = racksData.find(r => r.id === rackId);
+        if (!targetRack) return;
+
+        // 使用 draggingDevice state 获取设备高度（dragover事件无法读取dataTransfer）
+        let uHeight = 1;
+        if (draggingDevice) {
+            if (draggingDevice.type === 'library' && 'u_height' in draggingDevice.device) {
+                uHeight = draggingDevice.device.u_height || 1;
+            } else if (draggingDevice.type === 'existing' && 'device_library' in draggingDevice.device) {
+                uHeight = draggingDevice.device.device_library?.u_height || 1;
+            }
+        }
+
+        // U位是从下到上编号的，设备放在uPosition时，向上占据uHeight个U位
+        // 检查设备是否能完整放入机柜
+        const maxRequiredU = uPosition + uHeight - 1;
+        if (maxRequiredU > targetRack.totalU) {
+            // 无法放入，显示红色预览
+            setDragPreviewPosition({
+                rackId,
+                uPosition,
+                uHeight,
+            });
+            return;
+        }
+
+        // 更新预览位置
+        setDragPreviewPosition({
+            rackId,
+            uPosition,
+            uHeight,
+        });
     };
 
     const openEditModal = (rackId: number, uIndex: number, device: Device) => {
@@ -352,13 +740,26 @@ export default function RackVisualEdit({ racks, rooms, devices, deviceLibrary, d
         return t(`visualEdit.${status}`);
     };
 
-    const categories = [
-        { value: 'all', label: t('visualEdit.all') },
-        { value: 'server', label: t('visualEdit.server') },
-        { value: 'network', label: t('visualEdit.network') },
-        { value: 'storage', label: t('visualEdit.storage') },
-        { value: 'other', label: t('visualEdit.other') },
-    ];
+    const getIconForType = (iconName: string | null) => {
+        switch (iconName) {
+            case 'server': return <Monitor className="h-3 w-3" />;
+            case 'network': return <Network className="h-3 w-3" />;
+            case 'storage': return <Database className="h-3 w-3" />;
+            case 'cpu': return <Cpu className="h-3 w-3" />;
+            case 'layers': return <Layers className="h-3 w-3" />;
+            default: return <HardDrive className="h-3 w-3" />;
+        }
+    };
+
+    const categories = useMemo(() => {
+        const baseCategories = [{ value: 'all', label: t('visualEdit.all'), icon: 'all' }];
+        const typeCategories = deviceTypes.map(type => ({
+            value: type.id.toString(),
+            label: type.name,
+            icon: type.icon,
+        }));
+        return [...baseCategories, ...typeCategories];
+    }, [deviceTypes, t]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -417,7 +818,11 @@ export default function RackVisualEdit({ racks, rooms, devices, deviceLibrary, d
                 </div>
 
                 <div className="flex flex-1 gap-4 overflow-hidden">
-                    <Card className="w-80 flex-shrink-0">
+                    <Card
+                        className="w-80 flex-shrink-0"
+                        onDragOver={handleLibraryDragOver}
+                        onDrop={handleLibraryDrop}
+                    >
                         <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-base flex items-center gap-2">
@@ -436,7 +841,9 @@ export default function RackVisualEdit({ racks, rooms, devices, deviceLibrary, d
                                         size="sm"
                                         onClick={() => setActiveCategory(cat.value)}
                                         className="h-6 text-xs px-2"
+                                        title={cat.label}
                                     >
+                                        {cat.icon === 'all' ? <Layers className="h-3 w-3 mr-1" /> : getIconForType(cat.icon || null)}
                                         {cat.label}
                                     </Button>
                                 ))}
@@ -449,34 +856,41 @@ export default function RackVisualEdit({ racks, rooms, devices, deviceLibrary, d
                                         <TableRow className="bg-muted/50">
                                             <TableHead className="h-8 text-xs">{t('visualEdit.name')}</TableHead>
                                             <TableHead className="h-8 text-xs">{t('visualEdit.category')}</TableHead>
+                                            <TableHead className="h-8 text-xs">{t('visualEdit.uheight')}</TableHead>
                                             <TableHead className="h-8 text-xs">{t('visualEdit.power')}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {filteredDevices.length === 0 ? (
                                             <TableRow>
-                                                <TableCell colSpan={3} className="py-8 text-center text-muted-foreground text-sm">
+                                                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground text-sm">
                                                     {t('visualEdit.noUnassignedDevices')}
                                                 </TableCell>
                                             </TableRow>
                                         ) : (
-                                            filteredDevices.map((device) => (
+                                            filteredDevices.map((item) => (
                                                 <TableRow
-                                                    key={device.id}
+                                                    key={item.id}
                                                     draggable
-                                                    onDragStart={(e) => handleDragStart(e, device)}
-                                                    className="cursor-grab border-b border-border/50 transition-colors hover:bg-muted/30"
+                                                    onDragStart={(e) => handleLibraryDragStart(e, item)}
+                                                    onDragEnd={handleDragEnd}
+                                                    className="cursor-grab active:cursor-grabbing border-b border-border/50 transition-colors hover:bg-primary/10 hover:shadow-sm select-none"
+                                                    title={`${item.name} - ${t('visualEdit.dragToRack')}`}
+                                                    style={{ userSelect: 'none' }}
                                                 >
-                                                    <TableCell className="py-2 text-sm font-medium">
-                                                        {device.name}
+                                                    <TableCell className="py-2 px-4 text-sm font-medium">
+                                                        {item.name}
                                                     </TableCell>
-                                                    <TableCell className="py-2">
-                                                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium text-white ${categoryColors[device.category] || 'bg-slate-500'}`}>
-                                                            {getCategoryLabel(device.category)}
+                                                    <TableCell className="py-2 px-4">
+                                                        <span className="inline-flex items-center">
+                                                            {getIconForType(item.device_type?.icon || null)}
                                                         </span>
                                                     </TableCell>
-                                                    <TableCell className="py-2 text-sm text-muted-foreground">
-                                                        {device.power || 0}W
+                                                    <TableCell className="py-2 px-4 text-sm text-muted-foreground">
+                                                        {item.u_height}U
+                                                    </TableCell>
+                                                    <TableCell className="py-2 px-4 text-sm text-muted-foreground">
+                                                        {item.power}W
                                                     </TableCell>
                                                 </TableRow>
                                             ))
@@ -540,48 +954,125 @@ export default function RackVisualEdit({ racks, rooms, devices, deviceLibrary, d
                                                 </div>
                                                 <div
                                                     className="flex flex-col-reverse bg-slate-50 dark:bg-slate-900"
-                                                    style={{ minHeight: `${rack.totalU * 24}px`, width: '120px' }}
+                                                    style={{ minHeight: `${rack.totalU * 24}px`, width: '150px' }}
+                                                    onDragOver={(e) => {
+                                                        e.preventDefault();
+                                                        // 让事件继续传播到子元素
+                                                    }}
+                                                    onDrop={(e) => {
+                                                        // 阻止默认行为，让子元素处理
+                                                        e.preventDefault();
+                                                        console.log('Rack container drop - should not reach here if slot handles it');
+                                                    }}
                                                 >
-                                                    {rack.slots.map((slot, uIndex) => (
-                                                        <div
-                                                            key={uIndex}
-                                                            className="flex h-6 items-center justify-center border-b border-border/50 text-[10px]"
-                                                            onDragOver={handleDragOver}
-                                                            onDrop={(e) => handleDrop(e, rack.id, uIndex)}
-                                                            style={{
-                                                                backgroundColor: slot.device ? undefined : 'transparent'
-                                                            }}
-                                                        >
-                                                            {!slot.device && (
-                                                                <span className="text-muted-foreground">
-                                                                    {rack.totalU - uIndex}
-                                                                </span>
-                                                            )}
-                                                            {slot.device && (
-                                                                <div
-                                                                    className="flex h-full w-full items-center justify-center truncate px-1 text-[9px] font-medium text-white cursor-pointer"
-                                                                    style={{
-                                                                        backgroundColor: slot.device.category === 'server' ? '#3b82f6' :
-                                                                                         slot.device.category === 'network' ? '#06b6d4' :
-                                                                                         slot.device.category === 'storage' ? '#0ea5e9' : '#64748b'
-                                                                    }}
-                                                                    onDoubleClick={() => openEditModal(rack.id, uIndex, slot.device!)}
-                                                                    title={`${slot.device.name}\n${getCategoryLabel(slot.device.category)} | ${getStatusLabel(slot.device.status)} | ${slot.device.power || 0}W`}
-                                                                >
-                                                                    {slot.device.name.length > 10
-                                                                        ? slot.device.name.slice(0, 8) + '..'
-                                                                        : slot.device.name}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    ))}
+                                                    {rack.slots.map((slot, uIndex) => {
+                                                        // 检查是否在拖动预览位置
+                                                        // U位从下到上，设备放在uPosition时向上占据uHeight个U位
+                                                        // 例如：4U设备放在30U，预览范围是30、31、32、33
+                                                        const isDragPreview = dragPreviewPosition &&
+                                                            dragPreviewPosition.rackId === rack.id &&
+                                                            slot.uPosition >= dragPreviewPosition.uPosition &&
+                                                            slot.uPosition < dragPreviewPosition.uPosition + dragPreviewPosition.uHeight;
+
+                                                        const isDragPreviewTop = dragPreviewPosition &&
+                                                            dragPreviewPosition.rackId === rack.id &&
+                                                            slot.uPosition === dragPreviewPosition.uPosition;
+
+                                                        // 检查是否可以放置（设备是否能完整放入机柜）
+                                                        // U位从下到上，检查向上是否有足够空间
+                                                        const canPlace = dragPreviewPosition &&
+                                                            dragPreviewPosition.rackId === rack.id &&
+                                                            dragPreviewPosition.uPosition + dragPreviewPosition.uHeight - 1 <= rack.totalU;
+
+                                                        // 获取父设备（如果是被占用的U位）
+                                                        const parentDevice = slot.parentDeviceId
+                                                            ? rack.slots.find(s => s.deviceId === slot.parentDeviceId)?.device
+                                                            : null;
+
+                                                        return (
+                                                            <div
+                                                                key={uIndex}
+                                                                data-rack-slot="true"
+                                                                data-rack-id={rack.id}
+                                                                data-u-position={slot.uPosition}
+                                                                className={`flex items-center justify-center border-b border-border/50 text-[10px] relative
+                                                                    ${isDragPreview ? (canPlace ? 'bg-green-200 dark:bg-green-900/50' : 'bg-red-200 dark:bg-red-900/50') : ''}
+                                                                    ${slot.device && slot.isStart ? 'cursor-pointer' : ''}
+                                                                    ${slot.isOccupied && !slot.device ? 'bg-slate-200 dark:bg-slate-800' : ''}`}
+                                                                onDragOver={(e) => handleDragOver(e, rack.id, slot.uPosition)}
+                                                                onDrop={(e) => handleDrop(e, rack.id, slot.uPosition)}
+                                                                style={{ height: '24px' }}
+                                                            >
+                                                                {/* 空U位或被占用的U位显示U编号 */}
+                                                                {(!slot.isStart || !slot.device) && (
+                                                                    <span className={`${slot.isOccupied ? 'text-slate-400 dark:text-slate-600' : 'text-muted-foreground'}`}>
+                                                                        {slot.uPosition}
+                                                                    </span>
+                                                                )}
+                                                                {/* 设备起始位置显示设备 */}
+                                                                {slot.device && slot.isStart && (
+                                                                    <>
+                                                                        <div
+                                                                            draggable
+                                                                            onDragStart={(e) => {
+                                                                                // 从设备的任何U位开始拖动，都使用起始U位
+                                                                                handleDragStart(e, slot.device!);
+                                                                            }}
+                                                                            className="flex h-full w-full items-center justify-center truncate px-1 text-[9px] font-medium text-white cursor-grab absolute inset-0 z-10"
+                                                                            style={{
+                                                                                backgroundColor: (slot.device.device_library?.device_type?.name === 'server' || slot.device.category === 'server') ? '#3b82f6' :
+                                                                                    (slot.device.device_library?.device_type?.name === 'network' || slot.device.category === 'network') ? '#06b6d4' :
+                                                                                        (slot.device.device_library?.device_type?.name === 'storage' || slot.device.category === 'storage') ? '#0ea5e9' : '#64748b'
+                                                                            }}
+                                                                            onDoubleClick={() => openEditModal(rack.id, slot.uPosition - 1, slot.device!)}
+                                                                            title={`${slot.device.name}\n${getCategoryLabel(slot.device.device_library?.device_type?.name || slot.device.category || 'other')} | ${getStatusLabel(slot.device.status)} | ${slot.device.device_library?.power || slot.device.power || 0}W`}
+                                                                        >
+                                                                            {slot.device.name.length > 18
+                                                                                ? slot.device.name.slice(0, 16) + '..'
+                                                                                : slot.device.name}
+                                                                        </div>
+                                                                        {/* 显示设备占据的所有U位标识 */}
+                                                                        {slot.uHeight > 1 && (
+                                                                            <div className="absolute right-1 top-1/2 -translate-y-1/2 text-[8px] text-white/70 font-mono z-20">
+                                                                                {slot.uPosition}-{slot.uPosition + slot.uHeight - 1}U
+                                                                            </div>
+                                                                        )}
+                                                                    </>
+                                                                )}
+                                                                {/* 被占用的U位（非起始位置）显示半透明覆盖层，也可以拖动 */}
+                                                                {slot.isOccupied && parentDevice && !slot.device && (
+                                                                    <div
+                                                                        draggable
+                                                                        onDragStart={(e) => {
+                                                                            // 从被占用的U位拖动，使用父设备
+                                                                            handleDragStart(e, parentDevice);
+                                                                        }}
+                                                                        className="absolute inset-0 bg-slate-400/20 dark:bg-slate-600/20 cursor-grab z-5"
+                                                                        title={`${parentDevice.name} (U${slot.uPosition})\n${getCategoryLabel(parentDevice.device_library?.device_type?.name || parentDevice.category || 'other')} | ${getStatusLabel(parentDevice.status)} | ${parentDevice.device_library?.power || parentDevice.power || 0}W`}
+                                                                    />
+                                                                )}
+                                                                {/* 拖动预览时的提示 */}
+                                                                {isDragPreviewTop && draggingDevice && (
+                                                                    <div className={`absolute inset-0 border-2 border-dashed z-30 pointer-events-none ${canPlace ? 'bg-green-500/30 border-green-500' : 'bg-red-500/30 border-red-500'}`}>
+                                                                        <div className={`h-full w-full flex items-center justify-center text-xs font-bold ${canPlace ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                                                                            {draggingDevice.type === 'library' && 'u_height' in draggingDevice.device
+                                                                                ? `${draggingDevice.device.u_height}U`
+                                                                                : (draggingDevice.type === 'existing' && 'device_library' in draggingDevice.device && draggingDevice.device.device_library?.u_height)
+                                                                                    ? `${draggingDevice.device.device_library.u_height}U`
+                                                                                    : '1U'}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                                 <div className="flex items-center justify-between rounded-b-lg bg-muted px-3 py-1.5 text-xs">
                                                     <span className="text-yellow-500">
                                                         {rack.curPower}/{rack.maxPower}W
                                                     </span>
                                                     <span className="text-muted-foreground">
-                                                        {rack.slots.filter(s => s.device).length}/{rack.totalU}U
+                                                        {rack.slots.filter(s => s.isStart && s.device).length}/{rack.totalU}U
                                                     </span>
                                                 </div>
                                             </div>

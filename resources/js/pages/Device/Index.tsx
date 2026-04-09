@@ -644,6 +644,9 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>{t('deviceManagement.newDevice')}</DialogTitle>
+                        <DialogDescription>
+                            {t('deviceManagement.newDeviceDesc')}
+                        </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleCreateSubmit}>
                         <div className="grid gap-4 py-4">
@@ -812,6 +815,9 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>{t('deviceManagement.editDevice')}</DialogTitle>
+                        <DialogDescription>
+                            {t('deviceManagement.editDeviceDesc')}
+                        </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleEditSubmit}>
                         <div className="grid gap-4 py-4">
@@ -984,6 +990,9 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{t('deviceManagement.deviceDetails')}</DialogTitle>
+                        <DialogDescription>
+                            {t('deviceManagement.deviceDetailsDesc')}
+                        </DialogDescription>
                     </DialogHeader>
                     {viewingDevice && (
                         <div className="grid gap-4 py-4">
