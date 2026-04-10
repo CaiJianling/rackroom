@@ -54,6 +54,7 @@ interface DeviceType {
     id: number;
     name: string;
     icon: string | null;
+    color: string | null;
     description: string | null;
     created_at: string;
     updated_at: string;
@@ -103,6 +104,7 @@ export default function DeviceTypeIndex({ deviceTypes, breadcrumbs = [] }: Props
     const [form, setForm] = useState({
         name: '',
         icon: 'server',
+        color: '#3b82f6',
         description: '',
     });
     const [searchTerm, setSearchTerm] = useState('');
@@ -135,6 +137,7 @@ export default function DeviceTypeIndex({ deviceTypes, breadcrumbs = [] }: Props
         setForm({
             name: deviceType.name,
             icon: deviceType.icon || 'server',
+            color: deviceType.color || '#3b82f6',
             description: deviceType.description || '',
         });
         setIsEditDialogOpen(true);
@@ -146,6 +149,7 @@ export default function DeviceTypeIndex({ deviceTypes, breadcrumbs = [] }: Props
         setForm({
             name: '',
             icon: 'server',
+            color: '#3b82f6',
             description: '',
         });
     };
@@ -164,6 +168,7 @@ export default function DeviceTypeIndex({ deviceTypes, breadcrumbs = [] }: Props
         setForm({
             name: '',
             icon: 'server',
+            color: '#3b82f6',
             description: '',
         });
         setIsCreateDialogOpen(true);
@@ -174,6 +179,7 @@ export default function DeviceTypeIndex({ deviceTypes, breadcrumbs = [] }: Props
         setForm({
             name: '',
             icon: 'server',
+            color: '#3b82f6',
             description: '',
         });
     };
@@ -301,6 +307,9 @@ export default function DeviceTypeIndex({ deviceTypes, breadcrumbs = [] }: Props
                                         </div>
                                     </TableHead>
                                     <TableHead className="h-10 px-4">
+                                        {t('deviceTypeManagement.color')}
+                                    </TableHead>
+                                    <TableHead className="h-10 px-4">
                                         {t('deviceTypeManagement.deviceCount')}
                                     </TableHead>
                                     <TableHead className="h-10 px-4">
@@ -318,7 +327,7 @@ export default function DeviceTypeIndex({ deviceTypes, breadcrumbs = [] }: Props
                                 {filteredDeviceTypes.length === 0 ? (
                                     <TableRow>
                                         <TableCell
-                                            colSpan={6}
+                                            colSpan={7}
                                             className="py-8 text-center text-muted-foreground"
                                         >
                                             {searchTerm ? (
@@ -368,6 +377,13 @@ export default function DeviceTypeIndex({ deviceTypes, breadcrumbs = [] }: Props
                                                         <IconComponent className="h-4 w-4" />
                                                         <span>{getIconLabel(deviceType.icon)}</span>
                                                     </div>
+                                                </TableCell>
+                                                <TableCell className="px-4 py-3">
+                                                    <div
+                                                        className="w-6 h-6 rounded-full border border-gray-200 dark:border-gray-600"
+                                                        style={{ backgroundColor: deviceType.color || '#3b82f6' }}
+                                                        title={deviceType.color || '#3b82f6'}
+                                                    />
                                                 </TableCell>
                                                 <TableCell className="px-4 py-3">
                                                     {deviceType.device_library_count || 0}
@@ -479,6 +495,21 @@ export default function DeviceTypeIndex({ deviceTypes, breadcrumbs = [] }: Props
                                 </select>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="color" className="text-right">
+                                    {t('deviceTypeManagement.color')}
+                                </Label>
+                                <div className="col-span-3 flex items-center gap-3">
+                                    <input
+                                        id="color"
+                                        type="color"
+                                        value={form.color}
+                                        onChange={(e) => setForm({ ...form, color: e.target.value })}
+                                        className="h-10 w-20 rounded-md border border-input cursor-pointer"
+                                    />
+                                    <span className="text-sm text-muted-foreground">{form.color}</span>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="description" className="text-right">
                                     {t('deviceTypeManagement.description')}
                                 </Label>
@@ -540,6 +571,21 @@ export default function DeviceTypeIndex({ deviceTypes, breadcrumbs = [] }: Props
                                         </option>
                                     ))}
                                 </select>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-color" className="text-right">
+                                    {t('deviceTypeManagement.color')}
+                                </Label>
+                                <div className="col-span-3 flex items-center gap-3">
+                                    <input
+                                        id="edit-color"
+                                        type="color"
+                                        value={form.color}
+                                        onChange={(e) => setForm({ ...form, color: e.target.value })}
+                                        className="h-10 w-20 rounded-md border border-input cursor-pointer"
+                                    />
+                                    <span className="text-sm text-muted-foreground">{form.color}</span>
+                                </div>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="edit-description" className="text-right">
@@ -610,6 +656,18 @@ export default function DeviceTypeIndex({ deviceTypes, breadcrumbs = [] }: Props
                                         return <IconComponent className="h-4 w-4" />;
                                     })()}
                                     <span>{getIconLabel(viewingDeviceType.icon)}</span>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceTypeManagement.color')}
+                                </Label>
+                                <div className="col-span-3 flex items-center gap-3">
+                                    <div
+                                        className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600"
+                                        style={{ backgroundColor: viewingDeviceType.color || '#3b82f6' }}
+                                    />
+                                    <span className="text-muted-foreground">{viewingDeviceType.color || '#3b82f6'}</span>
                                 </div>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">

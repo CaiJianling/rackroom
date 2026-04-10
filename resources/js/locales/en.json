@@ -551,6 +551,7 @@
         "description": "Manage device types in the system",
         "name": "Type Name",
         "icon": "Icon",
+        "color": "Color",
         "descriptionField": "Description",
         "created": "Created At",
         "actions": "Actions",

@@ -1,4 +1,5 @@
 <?php
+
 /*
  * @Author: CaiJianling caijianling@outlook.com
  * @Date: 2026-03-27 20:48:33
@@ -16,10 +17,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class DeviceType extends Model
 {
     protected $table = 'device_types';
-    
+
     protected $fillable = [
         'name',
         'icon',
+        'color',
         'description',
     ];
 
