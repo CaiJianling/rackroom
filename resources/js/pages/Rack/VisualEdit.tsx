@@ -1581,12 +1581,15 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                                                             }}
                                                                             className="flex h-full w-full items-center justify-center truncate px-1 text-[9px] font-medium text-white cursor-grab absolute inset-0 z-10"
                                                                             style={{
-                                                                                backgroundColor: (slot.device.device_library?.device_type?.name === 'server' || slot.device.category === 'server') ? '#3b82f6' :
-                                                                                    (slot.device.device_library?.device_type?.name === 'network' || slot.device.category === 'network') ? '#06b6d4' :
-                                                                                        (slot.device.device_library?.device_type?.name === 'storage' || slot.device.category === 'storage') ? '#0ea5e9' : '#64748b'
+                                                                                backgroundColor: slot.device.status === 'online' ? '#3b82f6' :
+                                                                                    slot.device.status === 'offline' ? '#f97316' : '#64748b'
                                                                             }}
                                                                             onDoubleClick={() => openEditModal(rack.id, slot.uPosition - 1, slot.device!)}
-                                                                            title={`${slot.device.name}\n${getCategoryLabel(slot.device.device_library?.device_type?.name || slot.device.category || 'visualEdit.other')} | ${getStatusLabel(slot.device.status)} | ${slot.device.device_library?.power || slot.device.power || 0}W`}
+                                                                            title={`${slot.device.name}
+${getCategoryLabel(slot.device.device_library?.device_type?.name || slot.device.category || 'visualEdit.other')} | ${getStatusLabel(slot.device.status)} | ${slot.device.device_library?.power || slot.device.power || 0}W
+${t('visualEdit.model')}: ${slot.device.model || slot.device.device_library?.model || '-'}
+${t('visualEdit.manufacturer')}: ${slot.device.manufacturer || slot.device.device_library?.manufacturer || '-'}
+${t('visualEdit.serialNumber')}: ${slot.device.serial_number || slot.device.device_library?.serial_number || '-'}`}
                                                                         >
                                                                             {slot.device.name.length > 18
                                                                                 ? slot.device.name.slice(0, 16) + '..'
@@ -1609,7 +1612,11 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                                                             handleDragStart(e, parentDevice);
                                                                         }}
                                                                         className="absolute inset-0 bg-slate-400/20 dark:bg-slate-600/20 cursor-grab z-5"
-                                                                        title={`${parentDevice.name} (U${slot.uPosition})\n${getCategoryLabel(parentDevice.device_library?.device_type?.name || parentDevice.category || 'visualEdit.other')} | ${getStatusLabel(parentDevice.status)} | ${parentDevice.device_library?.power || parentDevice.power || 0}W`}
+                                                                        title={`${parentDevice.name} (U${slot.uPosition})
+${getCategoryLabel(parentDevice.device_library?.device_type?.name || parentDevice.category || 'visualEdit.other')} | ${getStatusLabel(parentDevice.status)} | ${parentDevice.device_library?.power || parentDevice.power || 0}W
+${t('visualEdit.model')}: ${parentDevice.model || parentDevice.device_library?.model || '-'}
+${t('visualEdit.manufacturer')}: ${parentDevice.manufacturer || parentDevice.device_library?.manufacturer || '-'}
+${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.device_library?.serial_number || '-'}`}
                                                                     />
                                                                 )}
                                                                 {/* 拖动预览时的提示 */}
