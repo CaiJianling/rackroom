@@ -286,7 +286,10 @@
         "pingFailed": "Batch ping failed",
         "pingResults": "Batch Ping Results",
         "pingResultsDesc": "Total {total} devices: {online} online, {offline} offline, {maintenance} maintenance",
-        "totalDevices": "Total Devices"
+        "totalDevices": "Total Devices",
+        "connect": "Connect",
+        "noIpAddress": "No IP Address",
+        "deviceDeleted": "Device deleted"
     },
     "deleteAccount": {
         "title": "Delete account",
@@ -493,6 +496,10 @@
         "power": "Power",
         "ipAddress": "IP Address",
         "connectionType": "Connection Type",
+        "selectConnectionType": "Select Connection Type",
+        "connectionPort": "Connection Port",
+        "connect": "Connect",
+        "noIpAddress": "No IP Address",
         "status": "Status",
         "statuses": {
             "online": "Online",
@@ -590,6 +597,7 @@
         "editDesc": "Edit the device information",
         "delete": "Delete Device",
         "deleteConfirm": "Are you sure you want to delete this device? This action cannot be undone.",
+        "deleted": "Device deleted",
         "details": "Device Details",
         "detailsDesc": "View detailed information of the device",
         "pleaseCreateTypeFirst": "Please create a device type first",
@@ -600,7 +608,7 @@
         "unused": "Unused"
     },
     "general": {
-        "previousPage": "上一页",
-        "nextPage": "下一页"
+        "previousPage": "Previous Page",
+        "nextPage": "Next Page"
     }
 }

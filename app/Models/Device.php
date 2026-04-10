@@ -34,6 +34,7 @@ class Device extends Model
         'u_position',
         'power',
         'connection_type',
+        'connection_port',
         'ip_address',
         'status',
         'description',

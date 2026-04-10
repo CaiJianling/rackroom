@@ -16,6 +16,8 @@ import {
     Database,
     Cpu,
     Activity,
+    Link2,
+    Pencil,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -67,6 +69,7 @@ interface Device {
     device_library?: DeviceLibraryItem;
     ip_address: string | null;
     connection_type: string | null;
+    connection_port: number | null;
 }
 
 interface Rack {
@@ -215,6 +218,40 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
         results: [],
     });
 
+    // 右键菜单状态
+    const [contextMenu, setContextMenu] = useState<{
+        open: boolean;
+        x: number;
+        y: number;
+        device: Device | null;
+    }>({
+        open: false,
+        x: 0,
+        y: 0,
+        device: null,
+    });
+
+    // 设备详情弹窗状态
+    const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+    const [viewingDevice, setViewingDevice] = useState<Device | null>(null);
+
+    // 设备库右键菜单状态
+    const [libraryContextMenu, setLibraryContextMenu] = useState<{
+        open: boolean;
+        x: number;
+        y: number;
+        item: DeviceLibraryItem | null;
+    }>({
+        open: false,
+        x: 0,
+        y: 0,
+        item: null,
+    });
+
+    // 设备库详情弹窗状态
+    const [libraryDetailDialogOpen, setLibraryDetailDialogOpen] = useState(false);
+    const [viewingLibraryItem, setViewingLibraryItem] = useState<DeviceLibraryItem | null>(null);
+
     // 添加机柜表单状态 - 与 Rack/Index.tsx 保持一致
     const [rackForm, setRackForm] = useState({
         room_id: '',
@@ -259,6 +296,7 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
         status: 'offline',
         ip_address: '',
         connection_type: '',
+        connection_port: undefined as number | undefined,
         device_library_id: '',
         rack_id: '',
         description: '',
@@ -526,6 +564,47 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
             power: 0,
             description: '',
         });
+    };
+
+    // 处理设备库右键菜单
+    const handleLibraryContextMenu = (e: React.MouseEvent, item: DeviceLibraryItem) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setLibraryContextMenu({
+            open: true,
+            x: e.clientX,
+            y: e.clientY,
+            item,
+        });
+    };
+
+    // 关闭设备库右键菜单
+    const closeLibraryContextMenu = () => {
+        setLibraryContextMenu({ ...libraryContextMenu, open: false });
+    };
+
+    // 打开设备库详情弹窗
+    const openLibraryDetailDialog = (item: DeviceLibraryItem) => {
+        setViewingLibraryItem(item);
+        setLibraryDetailDialogOpen(true);
+        setLibraryContextMenu({ ...libraryContextMenu, open: false });
+    };
+
+    // 关闭设备库详情弹窗
+    const closeLibraryDetailDialog = () => {
+        setLibraryDetailDialogOpen(false);
+        setViewingLibraryItem(null);
+    };
+
+    // 删除设备库条目
+    const handleDeleteLibraryItem = (item: DeviceLibraryItem) => {
+        router.delete(`/device-library/${item.id}`, {
+            onSuccess: () => {
+                showToast(t('deviceLibrary.deleted'), 'success');
+                router.reload({ only: ['deviceLibrary'] });
+            },
+        });
+        setLibraryContextMenu({ ...libraryContextMenu, open: false });
     };
 
     // 编辑设备库条目提交 - 与 DeviceLibrary/Index.tsx 保持一致
@@ -1136,6 +1215,7 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
             status: device.status,
             ip_address: device.ip_address || '',
             connection_type: device.connection_type || '',
+            connection_port: device.connection_port || undefined,
             device_library_id: device.device_library_id?.toString() || '',
             rack_id: device.rack_id?.toString() || '',
             description: device.description || '',
@@ -1288,6 +1368,69 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
         return t(`visualEdit.${status}`);
     };
 
+    // 处理设备连接
+    const handleConnect = (device: Device) => {
+        if (!device.ip_address) {
+            showToast(t('visualEdit.noIpAddress'), 'warning');
+            return;
+        }
+
+        const protocol = device.connection_type || 'ssh';
+        const ip = device.ip_address;
+        const port = device.connection_port;
+
+        let url = '';
+        switch (protocol) {
+            case 'ssh':
+                url = port ? `ssh://${ip}:${port}` : `ssh://${ip}`;
+                break;
+            case 'rdp':
+                url = port ? `rdp://${ip}:${port}` : `rdp://${ip}`;
+                break;
+            case 'vnc':
+                url = port ? `vnc://${ip}:${port}` : `vnc://${ip}`;
+                break;
+            case 'radmin':
+                url = port ? `radmin://${ip}:${port}` : `radmin://${ip}`;
+                break;
+            default:
+                url = port ? `ssh://${ip}:${port}` : `ssh://${ip}`;
+        }
+
+        window.open(url, '_blank');
+        setContextMenu({ ...contextMenu, open: false });
+    };
+
+    // 处理右键菜单
+    const handleContextMenu = (e: React.MouseEvent, device: Device) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setContextMenu({
+            open: true,
+            x: e.clientX,
+            y: e.clientY,
+            device,
+        });
+    };
+
+    // 关闭右键菜单
+    const closeContextMenu = () => {
+        setContextMenu({ ...contextMenu, open: false });
+    };
+
+    // 打开设备详情弹窗
+    const openDetailDialog = (device: Device) => {
+        setViewingDevice(device);
+        setDetailDialogOpen(true);
+        setContextMenu({ ...contextMenu, open: false });
+    };
+
+    // 关闭设备详情弹窗
+    const closeDetailDialog = () => {
+        setDetailDialogOpen(false);
+        setViewingDevice(null);
+    };
+
     const getIconForType = (iconName: string | null) => {
         switch (iconName) {
             case 'server': return <Monitor className="h-3 w-3" />;
@@ -1435,6 +1578,7 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                                     onDragStart={(e) => handleLibraryDragStart(e, item)}
                                                     onDragEnd={handleDragEnd}
                                                     onDoubleClick={() => openEditDeviceLibraryDialog(item)}
+                                                    onContextMenu={(e) => handleLibraryContextMenu(e, item)}
                                                     className="cursor-grab active:cursor-grabbing border-b border-border/50 transition-colors hover:bg-primary/10 hover:shadow-sm select-none"
                                                     title={`${item.name} - ${t('visualEdit.dragToRack')} (${t('common.doubleClickToEdit')})`}
                                                     style={{ userSelect: 'none' }}
@@ -1585,6 +1729,7 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                                                                     slot.device.status === 'offline' ? '#f97316' : '#64748b'
                                                                             }}
                                                                             onDoubleClick={() => openEditModal(rack.id, slot.uPosition - 1, slot.device!)}
+                                                                            onContextMenu={(e) => handleContextMenu(e, slot.device!)}
                                                                             title={`${slot.device.name}
 ${getCategoryLabel(slot.device.device_library?.device_type?.name || slot.device.category || 'visualEdit.other')} | ${getStatusLabel(slot.device.status)} | ${slot.device.device_library?.power || slot.device.power || 0}W
 ${t('visualEdit.model')}: ${slot.device.model || slot.device.device_library?.model || '-'}
@@ -1611,6 +1756,7 @@ ${t('visualEdit.serialNumber')}: ${slot.device.serial_number || slot.device.devi
                                                                             // 从被占用的U位拖动，使用父设备
                                                                             handleDragStart(e, parentDevice);
                                                                         }}
+                                                                        onContextMenu={(e) => handleContextMenu(e, parentDevice)}
                                                                         className="absolute inset-0 bg-slate-400/20 dark:bg-slate-600/20 cursor-grab z-5"
                                                                         title={`${parentDevice.name} (U${slot.uPosition})
 ${getCategoryLabel(parentDevice.device_library?.device_type?.name || parentDevice.category || 'visualEdit.other')} | ${getStatusLabel(parentDevice.status)} | ${parentDevice.device_library?.power || parentDevice.power || 0}W
@@ -1745,12 +1891,38 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                                 <Label htmlFor="edit-connection_type" className="text-right">
                                     {t('deviceManagement.connectionType')}
                                 </Label>
-                                <Input
-                                    id="edit-connection_type"
+                                <Select
                                     value={editForm.connection_type}
-                                    onChange={(e) => setEditForm({ ...editForm, connection_type: e.target.value })}
+                                    onValueChange={(value) => setEditForm({ ...editForm, connection_type: value })}
+                                >
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder={t('deviceManagement.selectConnectionType')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ssh">SSH</SelectItem>
+                                        <SelectItem value="rdp">RDP</SelectItem>
+                                        <SelectItem value="vnc">VNC</SelectItem>
+                                        <SelectItem value="radmin">Radmin</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-connection_port" className="text-right">
+                                    {t('deviceManagement.connectionPort')}
+                                </Label>
+                                <Input
+                                    id="edit-connection_port"
+                                    type="number"
+                                    min="0"
+                                    max="65535"
+                                    value={editForm.connection_port || ''}
+                                    onChange={(e) => {
+                                        const value = e.target.value ? parseInt(e.target.value) : undefined;
+                                        setEditForm({ ...editForm, connection_port: value });
+                                    }}
                                     className="col-span-3"
-                                    placeholder="SSH/RDP/IPMI"
+                                    placeholder="0-65535"
                                 />
                             </div>
 
@@ -2420,6 +2592,324 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setPingResults({ ...pingResults, open: false })}>
+                            {t('common.close')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* 右键菜单 */}
+            {contextMenu.open && contextMenu.device && (
+                <>
+                    {/* 遮罩层，点击关闭菜单 */}
+                    <div
+                        className="fixed inset-0 z-40"
+                        onClick={closeContextMenu}
+                        onContextMenu={(e) => {
+                            e.preventDefault();
+                            closeContextMenu();
+                        }}
+                    />
+                    {/* 菜单内容 */}
+                    <div
+                        className="fixed z-50 min-w-[160px] bg-white dark:bg-gray-900 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 py-1"
+                        style={{ left: contextMenu.x, top: contextMenu.y }}
+                    >
+                        <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                            {contextMenu.device.name}
+                        </div>
+                        <button
+                            className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+                            onClick={() => openDetailDialog(contextMenu.device!)}
+                        >
+                            <Eye className="h-4 w-4" />
+                            <span>{t('common.view')}</span>
+                        </button>
+                        <button
+                            className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => handleConnect(contextMenu.device!)}
+                            disabled={!contextMenu.device.ip_address}
+                        >
+                            <Link2 className="h-4 w-4" />
+                            <span>{t('visualEdit.connect')}</span>
+                            {!contextMenu.device.ip_address && (
+                                <span className="text-xs text-gray-400 ml-auto">({t('visualEdit.noIpAddress')})</span>
+                            )}
+                        </button>
+                        <button
+                            className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+                            onClick={() => {
+                                const rackId = racks.find(r => r.devices?.some(d => d.id === contextMenu.device!.id))?.id;
+                                if (rackId && contextMenu.device?.u_position) {
+                                    openEditModal(rackId, contextMenu.device.u_position - 1, contextMenu.device);
+                                }
+                                closeContextMenu();
+                            }}
+                        >
+                            <Pencil className="h-4 w-4" />
+                            <span>{t('common.edit')}</span>
+                        </button>
+                        <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
+                        <button
+                            className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2 text-red-600 dark:text-red-400"
+                            onClick={() => {
+                                if (contextMenu.device) {
+                                    router.delete(`/devices/${contextMenu.device.id}`, {
+                                        onSuccess: () => {
+                                            showToast(t('visualEdit.deviceDeleted'), 'success');
+                                            router.reload({ only: ['racks'] });
+                                        },
+                                    });
+                                }
+                                closeContextMenu();
+                            }}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            <span>{t('common.delete')}</span>
+                        </button>
+                    </div>
+                </>
+            )}
+
+            {/* 设备详情弹窗 */}
+            <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>{t('deviceManagement.deviceDetails')}</DialogTitle>
+                        <DialogDescription>
+                            {t('deviceManagement.deviceDetailsDesc')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    {viewingDevice && (
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceManagement.name')}
+                                </Label>
+                                <span className="col-span-3">{viewingDevice.name}</span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceLibrary.type')}
+                                </Label>
+                                <span className="col-span-3">
+                                    {viewingDevice.device_library?.device_type?.name || '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceLibrary.model')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground">
+                                    {viewingDevice.device_library
+                                        ? `${viewingDevice.device_library.manufacturer || ''} ${viewingDevice.device_library.model || ''}`.trim() || '-'
+                                        : '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceManagement.serialNumber')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground">
+                                    {viewingDevice.serial_number || '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceManagement.rack')}
+                                </Label>
+                                <span className="col-span-3">
+                                    {racks.find(r => r.devices?.some(d => d.id === viewingDevice.id))?.name || t('deviceManagement.noRack')}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceManagement.uPosition')}
+                                </Label>
+                                <span className="col-span-3">{viewingDevice.u_position}U</span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceLibrary.power')}
+                                </Label>
+                                <span className="col-span-3">
+                                    {viewingDevice.device_library ? `${viewingDevice.device_library.power}W` : '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceManagement.ipAddress')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground">
+                                    {viewingDevice.ip_address || '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceManagement.connectionType')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground">
+                                    {viewingDevice.connection_type?.toUpperCase() || '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceManagement.connectionPort')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground">
+                                    {viewingDevice.connection_port || '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceManagement.status')}
+                                </Label>
+                                <span className="col-span-3">
+                                    {t(`deviceManagement.statuses.${viewingDevice.status}`)}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceManagement.description')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground">
+                                    {viewingDevice.description || '-'}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={closeDetailDialog}>
+                            {t('common.close')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* 设备库右键菜单 */}
+            {libraryContextMenu.open && libraryContextMenu.item && (
+                <>
+                    {/* 遮罩层，点击关闭菜单 */}
+                    <div
+                        className="fixed inset-0 z-40"
+                        onClick={closeLibraryContextMenu}
+                        onContextMenu={(e) => {
+                            e.preventDefault();
+                            closeLibraryContextMenu();
+                        }}
+                    />
+                    {/* 菜单内容 */}
+                    <div
+                        className="fixed z-50 min-w-[160px] bg-white dark:bg-gray-900 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 py-1"
+                        style={{ left: libraryContextMenu.x, top: libraryContextMenu.y }}
+                    >
+                        <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                            {libraryContextMenu.item.name}
+                        </div>
+                        <button
+                            className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+                            onClick={() => openLibraryDetailDialog(libraryContextMenu.item!)}
+                        >
+                            <Eye className="h-4 w-4" />
+                            <span>{t('common.view')}</span>
+                        </button>
+                        <button
+                            className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+                            onClick={() => {
+                                openEditDeviceLibraryDialog(libraryContextMenu.item!);
+                                closeLibraryContextMenu();
+                            }}
+                        >
+                            <Pencil className="h-4 w-4" />
+                            <span>{t('common.edit')}</span>
+                        </button>
+                        <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
+                        <button
+                            className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2 text-red-600 dark:text-red-400"
+                            onClick={() => handleDeleteLibraryItem(libraryContextMenu.item!)}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            <span>{t('common.delete')}</span>
+                        </button>
+                    </div>
+                </>
+            )}
+
+            {/* 设备库详情弹窗 */}
+            <Dialog open={libraryDetailDialogOpen} onOpenChange={setLibraryDetailDialogOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>{t('deviceLibrary.details')}</DialogTitle>
+                        <DialogDescription>
+                            {t('deviceLibrary.detailsDesc')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    {viewingLibraryItem && (
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceLibrary.name')}
+                                </Label>
+                                <span className="col-span-3">{viewingLibraryItem.name}</span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceLibrary.type')}
+                                </Label>
+                                <span className="col-span-3">
+                                    {viewingLibraryItem.device_type?.name || '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceLibrary.model')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground">
+                                    {viewingLibraryItem.model || '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceLibrary.manufacturer')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground">
+                                    {viewingLibraryItem.manufacturer || '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceLibrary.serialNumber')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground">
+                                    {viewingLibraryItem.serial_number || '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceLibrary.uHeight')}
+                                </Label>
+                                <span className="col-span-3">{viewingLibraryItem.u_height}U</span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceLibrary.power')}
+                                </Label>
+                                <span className="col-span-3">
+                                    {viewingLibraryItem.power ? `${viewingLibraryItem.power}W` : '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceLibrary.description')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground">
+                                    {viewingLibraryItem.description || '-'}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={closeLibraryDetailDialog}>
                             {t('common.close')}
                         </Button>
                     </DialogFooter>

@@ -12,6 +12,7 @@ import {
     Cpu,
     ShieldCheck,
     AlertCircle,
+    Link2,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -86,6 +87,7 @@ interface Device {
     serial_number: string | null;
     u_position: number;
     connection_type: string | null;
+    connection_port: number | null;
     ip_address: string | null;
     status: string;
     description: string | null;
@@ -111,10 +113,10 @@ const statuses = [
 ];
 
 const connectionTypes = [
-    { value: 'network', label: '网络' },
-    { value: 'kvm', label: 'KVM' },
-    { value: 'usb', label: 'USB' },
-    { value: 'other', label: '其他' },
+    { value: 'ssh', label: 'SSH' },
+    { value: 'rdp', label: 'RDP' },
+    { value: 'vnc', label: 'VNC' },
+    { value: 'radmin', label: 'Radmin' },
 ];
 
 export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes, breadcrumbs = [], message }: Props) {
@@ -136,6 +138,7 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
         name: '',
         u_position: 1,
         connection_type: '',
+        connection_port: undefined as number | undefined,
         ip_address: '',
         status: 'online',
         description: '',
@@ -187,6 +190,7 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
         name: '',
         u_position: 1,
         connection_type: '',
+        connection_port: undefined as number | undefined,
         ip_address: '',
         status: 'online',
         description: '',
@@ -200,6 +204,7 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
             name: device.name,
             u_position: device.u_position,
             connection_type: device.connection_type || '',
+            connection_port: device.connection_port || undefined,
             ip_address: device.ip_address || '',
             status: device.status,
             description: device.description || '',
@@ -226,6 +231,45 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
     const closeDetailDialog = () => {
         setIsDetailDialogOpen(false);
         setViewingDevice(null);
+    };
+
+    // 处理设备连接
+    const handleConnect = (device: Device) => {
+        if (!device.ip_address) {
+            alert(t('deviceManagement.noIpAddress'));
+            return;
+        }
+
+        const protocol = device.connection_type || 'ssh';
+        const ip = device.ip_address;
+        const port = device.connection_port;
+
+        let url = '';
+
+        switch (protocol) {
+            case 'ssh':
+                // SSH 协议: ssh://ip:port
+                url = port ? `ssh://${ip}:${port}` : `ssh://${ip}`;
+                break;
+            case 'rdp':
+                // RDP 协议: rdp://ip:port
+                url = port ? `rdp://${ip}:${port}` : `rdp://${ip}`;
+                break;
+            case 'vnc':
+                // VNC 协议: vnc://ip:port
+                url = port ? `vnc://${ip}:${port}` : `vnc://${ip}`;
+                break;
+            case 'radmin':
+                // Radmin 协议: radmin://ip:port
+                url = port ? `radmin://${ip}:${port}` : `radmin://${ip}`;
+                break;
+            default:
+                // 默认使用 SSH
+                url = port ? `ssh://${ip}:${port}` : `ssh://${ip}`;
+        }
+
+        // 打开连接
+        window.open(url, '_blank');
     };
 
     const openCreateDialog = () => {
@@ -586,14 +630,26 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                                                             size="sm"
                                                             onClick={() => openDetailDialog(device)}
                                                             className="h-8 w-8 p-0"
+                                                            title={t('deviceManagement.view')}
                                                         >
                                                             <Eye className="h-4 w-4" />
                                                         </Button>
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
+                                                            onClick={() => handleConnect(device)}
+                                                            disabled={!device.ip_address}
+                                                            className="h-8 w-8 p-0"
+                                                            title={device.ip_address ? t('deviceManagement.connect') : t('deviceManagement.noIpAddress')}
+                                                        >
+                                                            <Link2 className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
                                                             onClick={() => openEditDialog(device)}
                                                             className="h-8 w-8 p-0"
+                                                            title={t('deviceManagement.edit')}
                                                         >
                                                             <Pencil className="h-4 w-4" />
                                                         </Button>
@@ -602,6 +658,7 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                                                             size="sm"
                                                             onClick={() => handleDelete(device.id)}
                                                             className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                            title={t('deviceManagement.delete')}
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
@@ -767,6 +824,25 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                             </div>
 
                             <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="connection_port" className="text-right">
+                                    {t('deviceManagement.connectionPort')}
+                                </Label>
+                                <Input
+                                    id="connection_port"
+                                    type="number"
+                                    min="0"
+                                    max="65535"
+                                    value={form.connection_port || ''}
+                                    onChange={(e) => {
+                                        const value = e.target.value ? parseInt(e.target.value) : undefined;
+                                        setForm({ ...form, connection_port: value });
+                                    }}
+                                    className="col-span-3"
+                                    placeholder="0-65535"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="status" className="text-right">
                                     {t('deviceManagement.status')} *
                                 </Label>
@@ -920,6 +996,25 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                                         ))}
                                     </SelectContent>
                                 </Select>
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-connection_port" className="text-right">
+                                    {t('deviceManagement.connectionPort')}
+                                </Label>
+                                <Input
+                                    id="edit-connection_port"
+                                    type="number"
+                                    min="0"
+                                    max="65535"
+                                    value={form.connection_port || ''}
+                                    onChange={(e) => {
+                                        const value = e.target.value ? parseInt(e.target.value) : undefined;
+                                        setForm({ ...form, connection_port: value });
+                                    }}
+                                    className="col-span-3"
+                                    placeholder="0-65535"
+                                />
                             </div>
 
                             <div className="grid grid-cols-4 items-center gap-4">
