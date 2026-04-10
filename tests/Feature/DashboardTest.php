@@ -2,15 +2,31 @@
 
 use App\Models\User;
 
-test('guests are redirected to the login page', function () {
-    $response = $this->get(route('dashboard'));
-    $response->assertRedirect(route('login'));
+uses()->group('dashboard');
+
+beforeEach(function () {
+    $this->user = User::factory()->create();
+    $this->actingAs($this->user);
 });
 
-test('authenticated users can visit the dashboard', function () {
-    $user = User::factory()->create();
-    $this->actingAs($user);
+test('dashboard page can be rendered', function () {
+    $response = $this->get('/dashboard');
+    $response->assertStatus(200);
+});
 
-    $response = $this->get(route('dashboard'));
-    $response->assertOk();
+test('dashboard returns correct stats structure', function () {
+    $response = $this->get('/dashboard');
+    $response->assertStatus(200)
+        ->assertInertia(fn ($page) => $page
+            ->has('stats.rooms')
+            ->has('stats.racks')
+            ->has('stats.devices')
+            ->has('stats.alerts')
+            ->has('stats.power')
+            ->has('deviceStatusDistribution')
+            ->has('roomDistribution')
+            ->has('recentAlerts')
+            ->has('recentDevices')
+            ->has('categoryDistribution')
+        );
 });

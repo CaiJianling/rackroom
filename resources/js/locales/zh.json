@@ -671,6 +671,28 @@
         "previousPage": "上一页",
         "nextPage": "下一页"
     },
+    "dashboard": {
+        "title": "仪表盘",
+        "description": "数据中心运行状态概览",
+        "overview": "概览",
+        "deviceStatus": "设备状态分布",
+        "roomDistribution": "机房分布",
+        "recentAlerts": "最近告警",
+        "recentDevices": "最近添加的设备",
+        "quickActions": "快捷操作",
+        "totalRooms": "机房总数",
+        "totalRacks": "机柜总数",
+        "totalDevices": "设备总数",
+        "activeAlerts": "活跃告警",
+        "totalPower": "总功率",
+        "noAlerts": "暂无活跃告警",
+        "systemNormal": "系统运行正常",
+        "viewAll": "查看全部",
+        "units": {
+            "racks": "机柜",
+            "devices": "设备"
+        }
+    },
     "monitor": {
         "title": "实时监控",
         "description": "查看系统关键指标的实时数据",
