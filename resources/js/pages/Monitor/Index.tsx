@@ -180,26 +180,26 @@ export default function MonitorIndex({ initialStats, recentAlerts, breadcrumbs =
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="实时监控" />
+            <Head title={t('monitor.title')} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 {/* 页面标题和刷新控制 */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4">
-                        <h1 className="text-2xl font-bold">实时监控</h1>
+                        <h1 className="text-2xl font-bold">{t('monitor.title')}</h1>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Clock className="h-4 w-4" />
-                            <span>最后更新: {stats.timestamp ? new Date(stats.timestamp).toLocaleTimeString() : '-'}</span>
+                            <span>{t('monitor.lastUpdated')}: {stats.timestamp ? new Date(stats.timestamp).toLocaleTimeString() : '-'}</span>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">自动刷新</span>
+                            <span className="text-sm text-muted-foreground">{t('monitor.autoRefresh')}</span>
                             <Button
                                 variant={autoRefresh ? 'default' : 'outline'}
                                 size="sm"
                                 onClick={() => setAutoRefresh(!autoRefresh)}
                             >
-                                {autoRefresh ? '开启' : '关闭'}
+                                {autoRefresh ? t('common.on') : t('common.off')}
                             </Button>
                         </div>
                         <Select
@@ -210,10 +210,10 @@ export default function MonitorIndex({ initialStats, recentAlerts, breadcrumbs =
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="10">10秒</SelectItem>
-                                <SelectItem value="30">30秒</SelectItem>
-                                <SelectItem value="60">1分钟</SelectItem>
-                                <SelectItem value="300">5分钟</SelectItem>
+                                <SelectItem value="10">10{t('common.seconds')}</SelectItem>
+                                <SelectItem value="30">30{t('common.seconds')}</SelectItem>
+                                <SelectItem value="60">1{t('common.minute')}</SelectItem>
+                                <SelectItem value="300">5{t('common.minutes')}</SelectItem>
                             </SelectContent>
                         </Select>
                         <Button
@@ -227,7 +227,7 @@ export default function MonitorIndex({ initialStats, recentAlerts, breadcrumbs =
                             ) : (
                                 <RefreshCw className="mr-2 h-4 w-4" />
                             )}
-                            刷新
+                            {t('common.refresh')}
                         </Button>
                     </div>
                 </div>

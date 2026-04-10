@@ -223,11 +223,11 @@ export default function Dashboard({
                                 <div className="flex items-center gap-2">
                                     <span className="flex items-center gap-0.5 text-[10px] text-red-600">
                                         <AlertTriangle className="h-2.5 w-2.5" />
-                                        严重 {stat.critical}
+                                        {t('dashboard.criticalShort')} {stat.critical}
                                     </span>
                                     <span className="flex items-center gap-0.5 text-[10px] text-orange-600">
                                         <AlertTriangle className="h-2.5 w-2.5" />
-                                        警告 {stat.warning}
+                                        {t('dashboard.warningShort')} {stat.warning}
                                     </span>
                                 </div>
                             )}
@@ -239,7 +239,7 @@ export default function Dashboard({
                     </div>
                     {stat.href && (
                         <Link href={stat.href} className="absolute inset-0">
-                            <span className="sr-only">查看{stat.label}</span>
+                            <span className="sr-only">{t('common.view')}{stat.label}</span>
                         </Link>
                     )}
                 </CardContent>
@@ -255,19 +255,19 @@ export default function Dashboard({
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold">{t('navigation.dashboard')}</h1>
-                        <p className="text-sm text-muted-foreground">实时监控数据中心运行状态</p>
+                        <p className="text-sm text-muted-foreground">{t('dashboard.subtitle')}</p>
                     </div>
                     <div className="flex gap-2">
                         <Button variant="outline" size="sm" asChild>
                             <Link href="/monitor">
                                 <Activity className="mr-2 h-4 w-4" />
-                                实时监控
+                                {t('dashboard.realtimeMonitor')}
                             </Link>
                         </Button>
                         <Button variant="outline" size="sm" asChild>
                             <Link href="/racks/visual-edit">
                                 <Eye className="mr-2 h-4 w-4" />
-                                可视化编辑
+                                {t('dashboard.visualEdit')}
                             </Link>
                         </Button>
                     </div>
@@ -275,11 +275,11 @@ export default function Dashboard({
 
                 {/* 统计卡片 */}
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                    <StatCardComponent stat={stats.rooms} title="rooms" />
-                    <StatCardComponent stat={stats.racks} title="racks" />
-                    <StatCardComponent stat={stats.devices} title="devices" />
-                    <StatCardComponent stat={stats.alerts} title="alerts" />
-                    <StatCardComponent stat={stats.power} title="power" />
+                    <StatCardComponent stat={stats.rooms} title={t('roomManagement.title')} />
+                    <StatCardComponent stat={stats.racks} title={t('rackManagement.title')} />
+                    <StatCardComponent stat={stats.devices} title={t('deviceManagement.title')} />
+                    <StatCardComponent stat={stats.alerts} title={t('alert.title')} />
+                    <StatCardComponent stat={stats.power} title={t('deviceLibrary.power')} />
                 </div>
 
                 {/* 主要内容区 */}

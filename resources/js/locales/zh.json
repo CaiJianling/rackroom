@@ -1,6 +1,6 @@
 {
     "common": {
-        "appName": "GodlyTools",
+        "appName": "RackRoom",
         "welcome": "欢迎",
         "cancel": "取消",
         "confirm": "确认",
@@ -23,7 +23,13 @@
         "somethingWentWrong": "出现错误",
         "clearSearch": "清除搜索",
         "doubleClickToEdit": "双击编辑",
-        "actions": "操作"
+        "actions": "操作",
+        "refresh": "刷新",
+        "on": "开启",
+        "off": "关闭",
+        "seconds": "秒",
+        "minute": "分钟",
+        "minutes": "分钟"
     },
     "auth": {
         "login": {
@@ -691,7 +697,17 @@
         "units": {
             "racks": "机柜",
             "devices": "设备"
-        }
+        },
+        "realtimeMonitor": "实时监控",
+        "visualEdit": "可视化编辑",
+        "subtitle": "实时监控数据中心运行状态",
+        "server": "服务器",
+        "network": "网络设备",
+        "storage": "存储",
+        "other": "其他",
+        "criticalShort": "严重",
+        "warningShort": "警告",
+        "view": "查看"
     },
     "monitor": {
         "title": "实时监控",
@@ -784,6 +800,7 @@
         "completed": "已完成",
         "failed": "失败",
         "noTemplates": "暂无保存的模板",
-        "noHistory": "暂无生成记录"
+        "noHistory": "暂无生成记录",
+        "deleteConfirm": "确定要删除此报表吗？"
     }
 }

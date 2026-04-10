@@ -229,26 +229,26 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
     const getSeverityBadge = (severity: string) => {
         switch (severity) {
             case 'critical':
-                return <Badge variant="destructive">严重</Badge>;
+                return <Badge variant="destructive">{t('alert.critical')}</Badge>;
             case 'warning':
-                return <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200">警告</Badge>;
+                return <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200">{t('alert.warning')}</Badge>;
             case 'info':
-                return <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">信息</Badge>;
+                return <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">{t('alert.info')}</Badge>;
             default:
-                return <Badge variant="outline">未知</Badge>;
+                return <Badge variant="outline">-</Badge>;
         }
     };
 
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'active':
-                return <Badge variant="default" className="bg-red-500">活跃</Badge>;
+                return <Badge variant="default" className="bg-red-500">{t('alert.activeAlerts')}</Badge>;
             case 'acknowledged':
-                return <Badge variant="secondary">已确认</Badge>;
+                return <Badge variant="secondary">{t('alert.acknowledged')}</Badge>;
             case 'resolved':
-                return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">已解决</Badge>;
+                return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">{t('alert.resolved')}</Badge>;
             default:
-                return <Badge variant="outline">未知</Badge>;
+                return <Badge variant="outline">-</Badge>;
         }
     };
 
@@ -259,14 +259,14 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="告警列表" />
+            <Head title={t('alert.title')} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 {/* 页面标题 */}
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold">告警列表</h1>
+                    <h1 className="text-2xl font-bold">{t('alert.title')}</h1>
                     <Button variant="outline" size="sm" onClick={() => router.reload()}>
                         <RefreshCw className="mr-2 h-4 w-4" />
-                        刷新
+                        {t('common.refresh')}
                     </Button>
                 </div>
 
@@ -274,7 +274,7 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
                     <Card>
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">总告警数</CardTitle>
+                            <CardTitle className="text-sm font-medium text-muted-foreground">{t('alert.totalAlerts')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{stats.total}</div>
@@ -282,7 +282,7 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                     </Card>
                     <Card className="border-red-200 bg-red-50/50">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-red-600">严重告警</CardTitle>
+                            <CardTitle className="text-sm font-medium text-red-600">{t('alert.criticalAlerts')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold text-red-600">{stats.critical}</div>
@@ -290,7 +290,7 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                     </Card>
                     <Card className="border-orange-200 bg-orange-50/50">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-orange-600">警告</CardTitle>
+                            <CardTitle className="text-sm font-medium text-orange-600">{t('alert.warningAlerts')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold text-orange-600">{stats.warning}</div>
@@ -298,7 +298,7 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                     </Card>
                     <Card>
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">活跃告警</CardTitle>
+                            <CardTitle className="text-sm font-medium text-muted-foreground">{t('alert.activeAlerts')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{stats.active}</div>
@@ -306,7 +306,7 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                     </Card>
                     <Card>
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">已确认</CardTitle>
+                            <CardTitle className="text-sm font-medium text-muted-foreground">{t('alert.acknowledged')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{stats.acknowledged}</div>
@@ -314,7 +314,7 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                     </Card>
                     <Card>
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">已解决</CardTitle>
+                            <CardTitle className="text-sm font-medium text-muted-foreground">{t('alert.resolved')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{stats.resolved}</div>

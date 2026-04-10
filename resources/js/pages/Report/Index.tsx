@@ -260,7 +260,7 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
     };
 
     const deleteReport = async (reportId: number) => {
-        if (!confirm('确定要删除此报表吗？')) return;
+        if (!confirm(t('report.deleteConfirm'))) return;
         try {
             const response = await fetch(`/api/reports/${reportId}`, {
                 method: 'DELETE',
@@ -283,13 +283,13 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'completed':
-                return <Badge variant="default" className="bg-green-500"><CheckCircle2 className="mr-1 h-3 w-3" />完成</Badge>;
+                return <Badge variant="default" className="bg-green-500"><CheckCircle2 className="mr-1 h-3 w-3" />{t('report.completed')}</Badge>;
             case 'processing':
-                return <Badge variant="secondary"><Loader2 className="mr-1 h-3 w-3 animate-spin" />处理中</Badge>;
+                return <Badge variant="secondary"><Loader2 className="mr-1 h-3 w-3 animate-spin" />{t('report.processing')}</Badge>;
             case 'failed':
-                return <Badge variant="destructive">失败</Badge>;
+                return <Badge variant="destructive">{t('report.failed')}</Badge>;
             default:
-                return <Badge variant="outline">未知</Badge>;
+                return <Badge variant="outline">-</Badge>;
         }
     };
 
@@ -309,11 +309,11 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
     const getReportTypeLabel = (type: string) => {
         switch (type) {
             case 'inventory':
-                return '资产清单';
+                return t('report.inventory');
             case 'status':
-                return '状态报表';
+                return t('report.statusReport');
             case 'usage':
-                return '使用率报表';
+                return t('report.usageReport');
             default:
                 return type;
         }

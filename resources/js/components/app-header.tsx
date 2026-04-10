@@ -67,18 +67,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
         },
     ];
 
-    const rightNavItems: NavItem[] = [
-        {
-            title: t('navigation.repository'),
-            href: 'https://github.com/laravel/react-starter-kit',
-            icon: Folder,
-        },
-        {
-            title: t('navigation.documentation'),
-            href: 'https://laravel.com/docs/starter-kits#react',
-            icon: BookOpen,
-        },
-    ];
+    const rightNavItems: NavItem[] = [];
     return (
         <>
             <div className="border-b border-sidebar-border/80">
