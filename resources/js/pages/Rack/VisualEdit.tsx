@@ -157,6 +157,12 @@ interface RackDisplay {
 export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary, deviceTypes, usedLibraryIds, selectedRoom: initialRoom, breadcrumbs = [] }: Props) {
     const { t } = useTranslation();
     const { showToast } = useToast();
+
+    // 辅助函数：移除设备名称中的括号及其内容
+    const cleanDeviceName = (name: string): string => {
+        return name.replace(/\s*\([^)]*\)/g, '');
+    };
+
     const [selectedRoom, setSelectedRoom] = useState<string>(initialRoom || 'all');
     const [activeCategory, setActiveCategory] = useState<string>('all');
     const [previewMode, setPreviewMode] = useState(false);
@@ -1758,7 +1764,7 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                                                             }}
                                                                             onDoubleClick={!previewMode ? () => openEditModal(rack.id, slot.uPosition - 1, slot.device!) : undefined}
                                                                             onContextMenu={!previewMode ? (e) => handleContextMenu(e, slot.device!) : undefined}
-                                                                            title={`${slot.device.name}
+                                                                            title={`${cleanDeviceName(slot.device.name)}
 ${getCategoryLabel(slot.device.device_library?.device_type?.name || slot.device.category || 'visualEdit.other')} | ${getStatusLabel(slot.device.status)} | ${slot.device.device_library?.power || slot.device.power || 0}W
 ${t('visualEdit.model')}: ${slot.device.model || slot.device.device_library?.model || '-'}
 ${t('visualEdit.manufacturer')}: ${slot.device.manufacturer || slot.device.device_library?.manufacturer || '-'}
@@ -1769,9 +1775,9 @@ ${t('visualEdit.serialNumber')}: ${slot.device.serial_number || slot.device.devi
                                                                                     className="w-2 h-2 rounded-full flex-shrink-0"
                                                                                     style={{ backgroundColor: getTypeColor(slot.device.device_library?.device_type_id || 0) }}
                                                                                 />
-                                                                                {slot.device.name.length > 18
-                                                                                    ? slot.device.name.slice(0, 16) + '..'
-                                                                                    : slot.device.name}
+                                                                                {cleanDeviceName(slot.device.name).length > 18
+                                                                                    ? cleanDeviceName(slot.device.name).slice(0, 16) + '..'
+                                                                                    : cleanDeviceName(slot.device.name)}
                                                                             </div>
                                                                         </div>
                                                                         {/* 显示设备占据的所有U位标识 */}
@@ -1792,7 +1798,7 @@ ${t('visualEdit.serialNumber')}: ${slot.device.serial_number || slot.device.devi
                                                                         } : undefined}
                                                                         onContextMenu={!previewMode ? (e) => handleContextMenu(e, parentDevice) : undefined}
                                                                         className={`absolute inset-0 bg-slate-400/20 dark:bg-slate-600/20 z-5 ${!previewMode ? 'cursor-grab' : 'cursor-default'}`}
-                                                                        title={`${parentDevice.name} (U${slot.uPosition})
+                                                                        title={`${cleanDeviceName(parentDevice.name)} (U${slot.uPosition})
 ${getCategoryLabel(parentDevice.device_library?.device_type?.name || parentDevice.category || 'visualEdit.other')} | ${getStatusLabel(parentDevice.status)} | ${parentDevice.device_library?.power || parentDevice.power || 0}W
 ${t('visualEdit.model')}: ${parentDevice.model || parentDevice.device_library?.model || '-'}
 ${t('visualEdit.manufacturer')}: ${parentDevice.manufacturer || parentDevice.device_library?.manufacturer || '-'}
@@ -2634,7 +2640,7 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                                         {pingResults.results.map((result) => (
                                             <TableRow key={result.id} className="hover:bg-muted/30">
                                                 <TableCell className="py-2 text-sm whitespace-nowrap">{result.rack_name || '-'}</TableCell>
-                                                <TableCell className="py-2 text-sm whitespace-nowrap">{result.name}</TableCell>
+                                                <TableCell className="py-2 text-sm whitespace-nowrap">{cleanDeviceName(result.name)}</TableCell>
                                                 <TableCell className="py-2 text-sm font-mono whitespace-nowrap">{result.ip || '-'}</TableCell>
                                                 <TableCell className="py-2 whitespace-nowrap">
                                                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
@@ -2680,7 +2686,7 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                         style={{ left: contextMenu.x, top: contextMenu.y }}
                     >
                         <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                            {contextMenu.device.name}
+                            {cleanDeviceName(contextMenu.device.name)}
                         </div>
                         <button
                             className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
@@ -2752,7 +2758,7 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                                 <Label className="text-right font-medium">
                                     {t('deviceManagement.name')}
                                 </Label>
-                                <span className="col-span-3">{viewingDevice.name}</span>
+                                <span className="col-span-3">{cleanDeviceName(viewingDevice.name)}</span>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label className="text-right font-medium">
