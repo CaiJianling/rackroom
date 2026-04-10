@@ -281,7 +281,12 @@
         "importCascadeHint": "Hint: Selecting an item will auto-check its dependencies; unchecking will auto-uncheck items that depend on it",
         "importPreviewFailed": "Failed to preview file",
         "importSuccess": "Import successful! Rooms: {rooms}, Racks: {racks}, Devices: {devices}",
-        "importFailed": "Import failed"
+        "importFailed": "Import failed",
+        "pinging": "Pinging...",
+        "pingFailed": "Batch ping failed",
+        "pingResults": "Batch Ping Results",
+        "pingResultsDesc": "Total {total} devices: {online} online, {offline} offline, {maintenance} maintenance",
+        "totalDevices": "Total Devices"
     },
     "deleteAccount": {
         "title": "Delete account",

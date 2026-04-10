@@ -24,6 +24,7 @@ use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\DeviceTypeController;
 use App\Http\Controllers\DeviceLibraryController;
 use App\Http\Controllers\DataExportController;
+use App\Http\Controllers\PingController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -55,6 +56,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('data/export', [DataExportController::class, 'export'])->name('data.export');
     Route::post('data/import-preview', [DataExportController::class, 'preview'])->name('data.import-preview');
     Route::post('data/import', [DataExportController::class, 'import'])->name('data.import');
+
+    // Ping 检测路由
+    Route::post('ping/batch', [PingController::class, 'batchPing'])->name('ping.batch');
+    Route::post('ping/device/{device}', [PingController::class, 'pingDevice'])->name('ping.device');
 });
 
 require __DIR__.'/settings.php';

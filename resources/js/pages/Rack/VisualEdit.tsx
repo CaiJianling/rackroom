@@ -15,6 +15,7 @@ import {
     Monitor,
     Database,
     Cpu,
+    Activity,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -188,6 +189,31 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
     });
     const [isImporting, setIsImporting] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+
+    // 批量检测状态
+    const [isPinging, setIsPinging] = useState(false);
+    const [pingResults, setPingResults] = useState<{
+        open: boolean;
+        total: number;
+        online: number;
+        offline: number;
+        maintenance: number;
+        results: Array<{
+            id: number;
+            name: string;
+            ip: string | null;
+            status: string;
+            is_online: boolean;
+            rack_name?: string;
+        }>;
+    }>({
+        open: false,
+        total: 0,
+        online: 0,
+        offline: 0,
+        maintenance: 0,
+        results: [],
+    });
 
     // 添加机柜表单状态 - 与 Rack/Index.tsx 保持一致
     const [rackForm, setRackForm] = useState({
@@ -696,6 +722,48 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
         });
     };
 
+    // 批量 Ping 检测
+    const handleBatchPing = async () => {
+        setIsPinging(true);
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const response = await fetch('/ping/batch', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    rack_id: selectedRoom !== 'all' ? null : null,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('检测失败');
+            }
+
+            const result = await response.json();
+            setPingResults({
+                open: true,
+                total: result.total,
+                online: result.online,
+                offline: result.offline,
+                maintenance: result.maintenance,
+                results: result.results,
+            });
+            showToast(result.message, 'success');
+
+            // 刷新页面以更新状态显示
+            router.reload({ only: ['racks'] });
+        } catch (error) {
+            showToast(t('visualEdit.pingFailed'), 'error');
+        } finally {
+            setIsPinging(false);
+        }
+    };
+
     const handleRoomChange = (roomId: string) => {
         setSelectedRoom(roomId);
         if (roomId && roomId !== 'all') {
@@ -892,7 +960,7 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                 u_position: uPosition,
                 model: libraryItem!.model,
                 manufacturer: libraryItem!.manufacturer,
-                status: 'offline',
+                status: 'maintenance',
             };
 
             console.log('Sending POST request to /devices with data:', postData);
@@ -1290,9 +1358,14 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                             <Upload className="mr-2 h-4 w-4" />
                             {t('visualEdit.import')}
                         </Button>
-                        <Button variant="outline" size="sm">
-                            <Network className="mr-2 h-4 w-4" />
-                            {t('visualEdit.batchPing')}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleBatchPing}
+                            disabled={isPinging}
+                        >
+                            <Activity className={`mr-2 h-4 w-4 ${isPinging ? 'animate-spin' : ''}`} />
+                            {isPinging ? t('visualEdit.pinging') : t('visualEdit.batchPing')}
                         </Button>
                     </div>
                 </div>
@@ -2268,6 +2341,80 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                 {isImporting ? t('common.loading') : t('visualEdit.import')}
                             </Button>
                         )}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* 批量检测结果对话框 */}
+            <Dialog open={pingResults.open} onOpenChange={(open) => setPingResults({ ...pingResults, open })}>
+                <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>{t('visualEdit.pingResults')}</DialogTitle>
+                        <DialogDescription>
+                            {t('visualEdit.pingResultsDesc', {
+                                total: pingResults.total,
+                                online: pingResults.online,
+                                offline: pingResults.offline,
+                                maintenance: pingResults.maintenance,
+                            })}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex-1 overflow-hidden">
+                        <div className="grid grid-cols-4 gap-4 py-4">
+                            <div className="text-center p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                                <div className="text-2xl font-bold text-blue-600">{pingResults.total}</div>
+                                <div className="text-xs text-blue-600/80">{t('visualEdit.totalDevices')}</div>
+                            </div>
+                            <div className="text-center p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                                <div className="text-2xl font-bold text-green-600">{pingResults.online}</div>
+                                <div className="text-xs text-green-600/80">{t('visualEdit.online')}</div>
+                            </div>
+                            <div className="text-center p-3 bg-orange-50 dark:bg-orange-950 rounded-lg">
+                                <div className="text-2xl font-bold text-orange-600">{pingResults.offline}</div>
+                                <div className="text-xs text-orange-600/80">{t('visualEdit.offline')}</div>
+                            </div>
+                            <div className="text-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                                <div className="text-2xl font-bold text-gray-600">{pingResults.maintenance}</div>
+                                <div className="text-xs text-gray-600/80">{t('visualEdit.maintenance')}</div>
+                            </div>
+                        </div>
+                        <div className="border rounded-md overflow-hidden">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="bg-muted/50">
+                                        <TableHead className="h-8 text-xs">{t('visualEdit.rack')}</TableHead>
+                                        <TableHead className="h-8 text-xs">{t('visualEdit.name')}</TableHead>
+                                        <TableHead className="h-8 text-xs">IP</TableHead>
+                                        <TableHead className="h-8 text-xs">{t('visualEdit.status')}</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody className="max-h-[300px] overflow-y-auto">
+                                    {pingResults.results.map((result) => (
+                                        <TableRow key={result.id}>
+                                            <TableCell className="py-2 text-sm">{result.rack_name || '-'}</TableCell>
+                                            <TableCell className="py-2 text-sm">{result.name}</TableCell>
+                                            <TableCell className="py-2 text-sm font-mono">{result.ip || '-'}</TableCell>
+                                            <TableCell className="py-2">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                                    result.status === 'online'
+                                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                                        : result.status === 'offline'
+                                                            ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
+                                                            : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+                                                }`}>
+                                                    {t(`visualEdit.${result.status}`)}
+                                                </span>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setPingResults({ ...pingResults, open: false })}>
+                            {t('common.close')}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
