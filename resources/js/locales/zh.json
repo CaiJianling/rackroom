@@ -22,7 +22,8 @@
         "hide": "隐藏",
         "somethingWentWrong": "出现错误",
         "clearSearch": "清除搜索",
-        "doubleClickToEdit": "双击编辑"
+        "doubleClickToEdit": "双击编辑",
+        "actions": "操作"
     },
     "auth": {
         "login": {
@@ -607,6 +608,63 @@
         "status": "状态",
         "used": "已使用",
         "unused": "未使用"
+    },
+    "backup": {
+        "title": "数据备份",
+        "create": "创建备份",
+        "createDesc": "创建当前数据的完整备份",
+        "createSuccess": "备份创建成功",
+        "createFailed": "备份创建失败",
+        "creating": "创建中...",
+        "list": "备份列表",
+        "listDesc": "管理已创建的数据备份",
+        "noBackups": "暂无备份文件",
+        "filename": "文件名",
+        "size": "大小",
+        "createdAt": "创建时间",
+        "name": "备份名称",
+        "namePlaceholder": "输入备份名称（可选）",
+        "download": "下载",
+        "restore": "恢复",
+        "restoreSuccess": "数据恢复成功",
+        "restoreFailed": "数据恢复失败",
+        "restoring": "恢复中...",
+        "restoreMode": "恢复模式",
+        "modeReplace": "覆盖模式",
+        "modeReplaceDesc": "先清空现有数据，然后导入备份数据",
+        "modeAppend": "附加模式",
+        "modeAppendDesc": "保留现有数据，将备份数据合并到现有数据中",
+        "replaceWarning": "警告：覆盖模式将删除现有数据，请确保已备份重要数据！",
+        "selectData": "选择要恢复的数据",
+        "upload": "上传备份",
+        "uploadDesc": "上传 JSON 备份文件",
+        "uploadSuccess": "备份上传成功",
+        "uploadFailed": "备份上传失败",
+        "uploading": "上传中...",
+        "file": "备份文件",
+        "saveToServer": "保存到服务器",
+        "fileParsed": "文件解析成功",
+        "preview": "文件预览",
+        "deleteConfirm": "确定要删除此备份吗？此操作无法撤销。",
+        "deleteSuccess": "备份删除成功",
+        "deleteFailed": "备份删除失败",
+        "deleting": "删除中...",
+        "totalBackups": "备份总数",
+        "totalSize": "总大小",
+        "latestBackup": "最新备份",
+        "items": "条",
+        "categories": {
+            "rooms": "机房",
+            "rackTypes": "机柜类型",
+            "racks": "机柜",
+            "deviceTypes": "设备类型",
+            "deviceLibrary": "设备库",
+            "devices": "设备"
+        }
+    },
+    "nav": {
+        "system": "系统管理",
+        "backup": "数据备份"
     },
     "general": {
         "previousPage": "上一页",

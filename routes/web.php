@@ -1,4 +1,5 @@
 <?php
+
 /*
  * @Author: CaiJianling caijianling@outlook.com
  * @Date: 2026-03-25 03:55:13
@@ -16,15 +17,16 @@
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 
-use App\Http\Controllers\RoomController;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\BackupController;
+use App\Http\Controllers\DataExportController;
+use App\Http\Controllers\DeviceController;
+use App\Http\Controllers\DeviceLibraryController;
+use App\Http\Controllers\DeviceTypeController;
+use App\Http\Controllers\PingController;
 use App\Http\Controllers\RackController;
 use App\Http\Controllers\RackTypeController;
-use App\Http\Controllers\DeviceController;
-use App\Http\Controllers\DeviceTypeController;
-use App\Http\Controllers\DeviceLibraryController;
-use App\Http\Controllers\DataExportController;
-use App\Http\Controllers\PingController;
+use App\Http\Controllers\RoomController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -60,6 +62,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Ping 检测路由
     Route::post('ping/batch', [PingController::class, 'batchPing'])->name('ping.batch');
     Route::post('ping/device/{device}', [PingController::class, 'pingDevice'])->name('ping.device');
+
+    // 备份管理路由
+    Route::get('backup', [BackupController::class, 'index'])->name('backup.index');
+    Route::post('backup', [BackupController::class, 'create'])->name('backup.create');
+    Route::get('backup/{id}', [BackupController::class, 'show'])->name('backup.show');
+    Route::get('backup/{id}/download', [BackupController::class, 'download'])->name('backup.download');
+    Route::post('backup/{id}/restore', [BackupController::class, 'restore'])->name('backup.restore');
+    Route::delete('backup/{id}', [BackupController::class, 'destroy'])->name('backup.destroy');
+    Route::post('backup/upload', [BackupController::class, 'upload'])->name('backup.upload');
 });
 
 require __DIR__.'/settings.php';

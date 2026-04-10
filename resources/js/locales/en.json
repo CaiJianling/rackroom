@@ -22,7 +22,8 @@
         "hide": "Hide",
         "somethingWentWrong": "Something went wrong",
         "clearSearch": "Clear search",
-        "doubleClickToEdit": "Double-click to edit"
+        "doubleClickToEdit": "Double-click to edit",
+        "actions": "Actions"
     },
     "auth": {
         "login": {
@@ -607,6 +608,63 @@
         "status": "Status",
         "used": "Used",
         "unused": "Unused"
+    },
+    "backup": {
+        "title": "Data Backup",
+        "create": "Create Backup",
+        "createDesc": "Create a full backup of current data",
+        "createSuccess": "Backup created successfully",
+        "createFailed": "Failed to create backup",
+        "creating": "Creating...",
+        "list": "Backup List",
+        "listDesc": "Manage created data backups",
+        "noBackups": "No backup files yet",
+        "filename": "Filename",
+        "size": "Size",
+        "createdAt": "Created At",
+        "name": "Backup Name",
+        "namePlaceholder": "Enter backup name (optional)",
+        "download": "Download",
+        "restore": "Restore",
+        "restoreSuccess": "Data restored successfully",
+        "restoreFailed": "Failed to restore data",
+        "restoring": "Restoring...",
+        "restoreMode": "Restore Mode",
+        "modeReplace": "Replace Mode",
+        "modeReplaceDesc": "Clear existing data first, then import backup data",
+        "modeAppend": "Append Mode",
+        "modeAppendDesc": "Keep existing data and merge backup data",
+        "replaceWarning": "Warning: Replace mode will delete existing data. Please ensure important data is backed up!",
+        "selectData": "Select Data to Restore",
+        "upload": "Upload Backup",
+        "uploadDesc": "Upload JSON backup file",
+        "uploadSuccess": "Backup uploaded successfully",
+        "uploadFailed": "Failed to upload backup",
+        "uploading": "Uploading...",
+        "file": "Backup File",
+        "saveToServer": "Save to Server",
+        "fileParsed": "File parsed successfully",
+        "preview": "File Preview",
+        "deleteConfirm": "Are you sure you want to delete this backup? This action cannot be undone.",
+        "deleteSuccess": "Backup deleted successfully",
+        "deleteFailed": "Failed to delete backup",
+        "deleting": "Deleting...",
+        "totalBackups": "Total Backups",
+        "totalSize": "Total Size",
+        "latestBackup": "Latest Backup",
+        "items": "items",
+        "categories": {
+            "rooms": "Rooms",
+            "rackTypes": "Rack Types",
+            "racks": "Racks",
+            "deviceTypes": "Device Types",
+            "deviceLibrary": "Device Library",
+            "devices": "Devices"
+        }
+    },
+    "nav": {
+        "system": "System Management",
+        "backup": "Data Backup"
     },
     "general": {
         "previousPage": "Previous Page",
