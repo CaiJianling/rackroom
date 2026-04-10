@@ -127,6 +127,7 @@ interface Props {
     rackTypes: RackType[];
     deviceLibrary: DeviceLibraryItem[];
     deviceTypes: DeviceType[];
+    usedLibraryIds: number[];
     selectedRoom?: string;
     breadcrumbs?: Array<{ title: string; href: string }>;
 }
@@ -153,7 +154,7 @@ interface RackDisplay {
 
 
 
-export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary, deviceTypes, selectedRoom: initialRoom, breadcrumbs = [] }: Props) {
+export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary, deviceTypes, usedLibraryIds, selectedRoom: initialRoom, breadcrumbs = [] }: Props) {
     const { t } = useTranslation();
     const { showToast } = useToast();
     const [selectedRoom, setSelectedRoom] = useState<string>(initialRoom || 'all');
@@ -430,18 +431,14 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
     }, [deviceLibrary]);
 
     const filteredDevices = useMemo(() => {
-        const usedLibraryIds = new Set(
-            racks.flatMap(r => r.devices || [])
-                .map(d => d.device_library_id)
-                .filter((id): id is number => id !== null && id !== undefined)
-        );
-        const availableDevices = libraryDevices.filter(d => !usedLibraryIds.has(d.id));
+        const usedIdsSet = new Set(usedLibraryIds);
+        const availableDevices = libraryDevices.filter(d => !usedIdsSet.has(d.id));
 
         if (activeCategory === 'all') {
             return availableDevices;
         }
         return availableDevices.filter(d => d.device_type_id.toString() === activeCategory);
-    }, [libraryDevices, activeCategory, racks]);
+    }, [libraryDevices, activeCategory, usedLibraryIds]);
 
     const filteredDeviceLibraryByType = useMemo(() => {
         if (!selectedDeviceType) return [];
@@ -473,6 +470,8 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
             device_library_id: addDeviceForm.device_library_id ? parseInt(addDeviceForm.device_library_id) : null,
             u_position: parseInt(addDeviceForm.u_position.toString()) || 1,
         }, {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 setAddDeviceModalOpen(false);
                 setAddDeviceForm({
@@ -601,6 +600,8 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
     // 删除设备库条目
     const handleDeleteLibraryItem = (item: DeviceLibraryItem) => {
         router.delete(`/device-library/${item.id}`, {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 showToast(t('deviceLibrary.deleted'), 'success');
                 router.reload({ only: ['deviceLibrary'] });
@@ -1047,7 +1048,7 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
             console.log('Sending POST request to /devices with data:', postData);
 
             router.post('/devices', postData, {
-                preserveState: false,
+                preserveState: true,
                 preserveScroll: true,
                 onSuccess: () => {
                     console.log('Device created successfully');
@@ -1114,7 +1115,7 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
 
             // 直接删除设备记录
             router.delete(`/devices/${deviceId}`, {
-                preserveState: false,
+                preserveState: true,
                 preserveScroll: true,
                 onSuccess: () => {
                     console.log('Device deleted successfully');
@@ -1277,7 +1278,7 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
 
         // 直接删除设备记录
         router.delete(`/devices/${currentEditDevice.device.id}`, {
-            preserveState: false,
+            preserveState: true,
             preserveScroll: true,
             onSuccess: () => {
                 console.log('Device deleted successfully');
@@ -1328,7 +1329,7 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
             description: rackForm.description,
         };
         router.post('/racks', submitData, {
-            preserveState: false,
+            preserveState: true,
             preserveScroll: true,
             onSuccess: () => {
                 setAddRackModalOpen(false);
@@ -1478,10 +1479,12 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                             <Eye className="mr-2 h-4 w-4" />
                             {previewMode ? t('visualEdit.editMode') : t('visualEdit.previewMode')}
                         </Button>
-                        <Button variant="outline" onClick={() => setAddRackModalOpen(true)}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            {t('visualEdit.addRack')}
-                        </Button>
+                        {!previewMode && (
+                            <Button variant="outline" onClick={() => setAddRackModalOpen(true)}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                {t('visualEdit.addRack')}
+                            </Button>
+                        )}
                     </div>
                 </div>
 
@@ -1502,19 +1505,23 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                         </Select>
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => setExportDialogOpen(true)}>
-                            <Download className="mr-2 h-4 w-4" />
-                            {t('visualEdit.export')}
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)}>
-                            <Upload className="mr-2 h-4 w-4" />
-                            {t('visualEdit.import')}
-                        </Button>
+                        {!previewMode && (
+                            <>
+                                <Button variant="outline" size="sm" onClick={() => setExportDialogOpen(true)}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    {t('visualEdit.export')}
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)}>
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    {t('visualEdit.import')}
+                                </Button>
+                            </>
+                        )}
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={handleBatchPing}
-                            disabled={isPinging}
+                            disabled={isPinging || previewMode}
                         >
                             <Activity className={`mr-2 h-4 w-4 ${isPinging ? 'animate-spin' : ''}`} />
                             {isPinging ? t('visualEdit.pinging') : t('visualEdit.batchPing')}
@@ -1524,10 +1531,10 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
 
                 <div className="flex flex-1 gap-4 overflow-hidden">
                     <Card
-                        className={`w-80 flex-shrink-0 transition-colors ${isDraggingOverLibrary ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-400 dark:border-blue-600' : ''}`}
-                        onDragOver={handleLibraryDragOver}
-                        onDragLeave={handleLibraryDragLeave}
-                        onDrop={handleLibraryDrop}
+                        className={`w-80 flex-shrink-0 transition-colors ${!previewMode && isDraggingOverLibrary ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-400 dark:border-blue-600' : ''}`}
+                        onDragOver={!previewMode ? handleLibraryDragOver : undefined}
+                        onDragLeave={!previewMode ? handleLibraryDragLeave : undefined}
+                        onDrop={!previewMode ? handleLibraryDrop : undefined}
                     >
                         <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
@@ -1536,9 +1543,11 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                     {t('visualEdit.deviceLibrary')}
                                     {isDraggingOverLibrary && <span className="text-xs font-normal ml-2">(释放以移除)</span>}
                                 </CardTitle>
-                                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={openCreateDeviceLibraryDialog} disabled={deviceTypes.length === 0}>
-                                    + {t('visualEdit.addDevice')}
-                                </Button>
+                                {!previewMode && (
+                                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={openCreateDeviceLibraryDialog} disabled={deviceTypes.length === 0}>
+                                        + {t('visualEdit.addDevice')}
+                                    </Button>
+                                )}
                             </div>
                             {deviceTypes.length === 0 && (
                                 <div className="rounded-md bg-yellow-50 border border-yellow-200 p-2 text-xs text-yellow-800 mt-2">
@@ -1589,13 +1598,13 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                             filteredDevices.map((item) => (
                                                 <TableRow
                                                     key={item.id}
-                                                    draggable
-                                                    onDragStart={(e) => handleLibraryDragStart(e, item)}
-                                                    onDragEnd={handleDragEnd}
-                                                    onDoubleClick={() => openEditDeviceLibraryDialog(item)}
-                                                    onContextMenu={(e) => handleLibraryContextMenu(e, item)}
-                                                    className="cursor-grab active:cursor-grabbing border-b border-border/50 transition-colors hover:bg-primary/10 hover:shadow-sm select-none"
-                                                    title={`${item.name} - ${t('visualEdit.dragToRack')} (${t('common.doubleClickToEdit')})`}
+                                                    draggable={!previewMode}
+                                                    onDragStart={!previewMode ? (e) => handleLibraryDragStart(e, item) : undefined}
+                                                    onDragEnd={!previewMode ? handleDragEnd : undefined}
+                                                    onDoubleClick={!previewMode ? () => openEditDeviceLibraryDialog(item) : undefined}
+                                                    onContextMenu={!previewMode ? (e) => handleLibraryContextMenu(e, item) : undefined}
+                                                    className={`border-b border-border/50 transition-colors hover:bg-primary/10 hover:shadow-sm select-none ${!previewMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
+                                                    title={previewMode ? item.name : `${item.name} - ${t('visualEdit.dragToRack')} (${t('common.doubleClickToEdit')})`}
                                                     style={{ userSelect: 'none' }}
                                                 >
                                                     <TableCell className="py-2 px-4 text-sm font-medium">
@@ -1720,11 +1729,11 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                                                 data-rack-id={rack.id}
                                                                 data-u-position={slot.uPosition}
                                                                 className={`flex items-center justify-center border-b border-border/50 text-[10px] relative
-                                                                    ${isDragPreview ? (canPlace ? 'bg-green-200 dark:bg-green-900/50' : 'bg-red-200 dark:bg-red-900/50') : ''}
-                                                                    ${slot.device && slot.isStart ? 'cursor-pointer' : ''}
+                                                                    ${!previewMode && isDragPreview ? (canPlace ? 'bg-green-200 dark:bg-green-900/50' : 'bg-red-200 dark:bg-red-900/50') : ''}
+                                                                    ${slot.device && slot.isStart && !previewMode ? 'cursor-pointer' : 'cursor-default'}
                                                                     ${slot.isOccupied && !slot.device ? 'bg-slate-200 dark:bg-slate-800' : ''}`}
-                                                                onDragOver={(e) => handleDragOver(e, rack.id, slot.uPosition)}
-                                                                onDrop={(e) => handleDrop(e, rack.id, slot.uPosition)}
+                                                                onDragOver={!previewMode ? (e) => handleDragOver(e, rack.id, slot.uPosition) : undefined}
+                                                                onDrop={!previewMode ? (e) => handleDrop(e, rack.id, slot.uPosition) : undefined}
                                                                 style={{ height: '24px' }}
                                                             >
                                                                 {/* 空U位或被占用的U位显示U编号 */}
@@ -1737,18 +1746,18 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                                                 {slot.device && slot.isStart && (
                                                                     <>
                                                                         <div
-                                                                            draggable
-                                                                            onDragStart={(e) => {
+                                                                            draggable={!previewMode}
+                                                                            onDragStart={!previewMode ? (e) => {
                                                                                 // 从设备的任何U位开始拖动，都使用起始U位
                                                                                 handleDragStart(e, slot.device!);
-                                                                            }}
-                                                                            className="flex h-full w-full items-center justify-center truncate px-1 text-[9px] font-medium text-white cursor-grab absolute inset-0 z-10"
+                                                                            } : undefined}
+                                                                            className={`flex h-full w-full items-center justify-center truncate px-1 text-[9px] font-medium text-white absolute inset-0 z-10 ${!previewMode ? 'cursor-grab' : 'cursor-default'}`}
                                                                             style={{
                                                                                 backgroundColor: slot.device.status === 'online' ? '#3b82f6' :
                                                                                     slot.device.status === 'offline' ? '#f97316' : '#64748b'
                                                                             }}
-                                                                            onDoubleClick={() => openEditModal(rack.id, slot.uPosition - 1, slot.device!)}
-                                                                            onContextMenu={(e) => handleContextMenu(e, slot.device!)}
+                                                                            onDoubleClick={!previewMode ? () => openEditModal(rack.id, slot.uPosition - 1, slot.device!) : undefined}
+                                                                            onContextMenu={!previewMode ? (e) => handleContextMenu(e, slot.device!) : undefined}
                                                                             title={`${slot.device.name}
 ${getCategoryLabel(slot.device.device_library?.device_type?.name || slot.device.category || 'visualEdit.other')} | ${getStatusLabel(slot.device.status)} | ${slot.device.device_library?.power || slot.device.power || 0}W
 ${t('visualEdit.model')}: ${slot.device.model || slot.device.device_library?.model || '-'}
@@ -1776,13 +1785,13 @@ ${t('visualEdit.serialNumber')}: ${slot.device.serial_number || slot.device.devi
                                                                 {/* 被占用的U位（非起始位置）显示半透明覆盖层，也可以拖动 */}
                                                                 {slot.isOccupied && parentDevice && !slot.device && (
                                                                     <div
-                                                                        draggable
-                                                                        onDragStart={(e) => {
+                                                                        draggable={!previewMode}
+                                                                        onDragStart={!previewMode ? (e) => {
                                                                             // 从被占用的U位拖动，使用父设备
                                                                             handleDragStart(e, parentDevice);
-                                                                        }}
-                                                                        onContextMenu={(e) => handleContextMenu(e, parentDevice)}
-                                                                        className="absolute inset-0 bg-slate-400/20 dark:bg-slate-600/20 cursor-grab z-5"
+                                                                        } : undefined}
+                                                                        onContextMenu={!previewMode ? (e) => handleContextMenu(e, parentDevice) : undefined}
+                                                                        className={`absolute inset-0 bg-slate-400/20 dark:bg-slate-600/20 z-5 ${!previewMode ? 'cursor-grab' : 'cursor-default'}`}
                                                                         title={`${parentDevice.name} (U${slot.uPosition})
 ${getCategoryLabel(parentDevice.device_library?.device_type?.name || parentDevice.category || 'visualEdit.other')} | ${getStatusLabel(parentDevice.status)} | ${parentDevice.device_library?.power || parentDevice.power || 0}W
 ${t('visualEdit.model')}: ${parentDevice.model || parentDevice.device_library?.model || '-'}
@@ -1791,7 +1800,7 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                                                                     />
                                                                 )}
                                                                 {/* 拖动预览时的提示 */}
-                                                                {isDragPreviewTop && draggingDevice && (
+                                                                {!previewMode && isDragPreviewTop && draggingDevice && (
                                                                     <div className={`absolute inset-0 border-2 border-dashed z-30 pointer-events-none ${canPlace ? 'bg-green-500/30 border-green-500' : 'bg-red-500/30 border-red-500'}`}>
                                                                         <div className={`h-full w-full flex items-center justify-center text-xs font-bold ${canPlace ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
                                                                             {draggingDevice.type === 'library' && 'u_height' in draggingDevice.device
@@ -2579,8 +2588,8 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
 
             {/* 批量检测结果对话框 */}
             <Dialog open={pingResults.open} onOpenChange={(open) => setPingResults({ ...pingResults, open })}>
-                <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col max-w-3xl">
-                    <DialogHeader>
+                <DialogContent className="max-h-[90vh] flex flex-col max-w-3xl p-0">
+                    <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
                         <DialogTitle>{t('visualEdit.pingResults')}</DialogTitle>
                         <DialogDescription>
                             {t('visualEdit.pingResultsDesc', {
@@ -2591,8 +2600,8 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                             })}
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="flex-1 overflow-hidden">
-                        <div className="grid grid-cols-4 gap-4 py-4">
+                    <div className="flex-1 overflow-y-auto px-6 py-2 min-h-0">
+                        <div className="grid grid-cols-4 gap-4 py-4 shrink-0">
                             <div className="text-center p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
                                 <div className="text-2xl font-bold text-blue-600">{pingResults.total}</div>
                                 <div className="text-xs text-blue-600/80">{t('visualEdit.totalDevices')}</div>
@@ -2611,39 +2620,41 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                             </div>
                         </div>
                         <div className="border rounded-md overflow-hidden">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="bg-muted/50">
-                                        <TableHead className="h-8 text-xs">{t('visualEdit.rack')}</TableHead>
-                                        <TableHead className="h-8 text-xs">{t('visualEdit.name')}</TableHead>
-                                        <TableHead className="h-8 text-xs">IP</TableHead>
-                                        <TableHead className="h-8 text-xs">{t('visualEdit.status')}</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody className="max-h-[300px] overflow-y-auto">
-                                    {pingResults.results.map((result) => (
-                                        <TableRow key={result.id}>
-                                            <TableCell className="py-2 text-sm">{result.rack_name || '-'}</TableCell>
-                                            <TableCell className="py-2 text-sm">{result.name}</TableCell>
-                                            <TableCell className="py-2 text-sm font-mono">{result.ip || '-'}</TableCell>
-                                            <TableCell className="py-2">
-                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                                    result.status === 'online'
-                                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                                                        : result.status === 'offline'
-                                                            ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
-                                                            : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
-                                                }`}>
-                                                    {t(`visualEdit.${result.status}`)}
-                                                </span>
-                                            </TableCell>
+                            <div className="max-h-[50vh] min-h-[200px] overflow-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 dark:hover:scrollbar-thumb-gray-500">
+                                <Table>
+                                    <TableHeader className="sticky top-0 bg-background z-10">
+                                        <TableRow className="bg-muted/50">
+                                            <TableHead className="h-8 text-xs whitespace-nowrap">{t('visualEdit.rack')}</TableHead>
+                                            <TableHead className="h-8 text-xs whitespace-nowrap">{t('visualEdit.name')}</TableHead>
+                                            <TableHead className="h-8 text-xs whitespace-nowrap">IP</TableHead>
+                                            <TableHead className="h-8 text-xs whitespace-nowrap">{t('visualEdit.status')}</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {pingResults.results.map((result) => (
+                                            <TableRow key={result.id} className="hover:bg-muted/30">
+                                                <TableCell className="py-2 text-sm whitespace-nowrap">{result.rack_name || '-'}</TableCell>
+                                                <TableCell className="py-2 text-sm whitespace-nowrap">{result.name}</TableCell>
+                                                <TableCell className="py-2 text-sm font-mono whitespace-nowrap">{result.ip || '-'}</TableCell>
+                                                <TableCell className="py-2 whitespace-nowrap">
+                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                                        result.status === 'online'
+                                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                                            : result.status === 'offline'
+                                                                ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
+                                                                : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+                                                    }`}>
+                                                        {t(`visualEdit.${result.status}`)}
+                                                    </span>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="px-6 py-4 border-t shrink-0">
                         <Button variant="outline" onClick={() => setPingResults({ ...pingResults, open: false })}>
                             {t('common.close')}
                         </Button>
@@ -2652,7 +2663,7 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
             </Dialog>
 
             {/* 右键菜单 */}
-            {contextMenu.open && contextMenu.device && (
+            {!previewMode && contextMenu.open && contextMenu.device && (
                 <>
                     {/* 遮罩层，点击关闭菜单 */}
                     <div
@@ -2708,6 +2719,8 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                             onClick={() => {
                                 if (contextMenu.device) {
                                     router.delete(`/devices/${contextMenu.device.id}`, {
+                                        preserveState: true,
+                                        preserveScroll: true,
                                         onSuccess: () => {
                                             showToast(t('visualEdit.deviceDeleted'), 'success');
                                             router.reload({ only: ['racks'] });
@@ -2840,7 +2853,7 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
             </Dialog>
 
             {/* 设备库右键菜单 */}
-            {libraryContextMenu.open && libraryContextMenu.item && (
+            {!previewMode && libraryContextMenu.open && libraryContextMenu.item && (
                 <>
                     {/* 遮罩层，点击关闭菜单 */}
                     <div

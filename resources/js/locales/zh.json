@@ -212,6 +212,7 @@
         "noUnassignedDevices": "没有未分配的设备",
         "rackView": "机柜视图",
         "racks": "机柜",
+        "rack": "机柜",
         "noRacksAvailable": "没有可用的机柜",
         "editPower": "编辑功率",
         "dragHint": "双击设备编辑 • 点击功率图标编辑机柜功率 • 拖拽设备到机柜位置",

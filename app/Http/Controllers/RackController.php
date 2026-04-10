@@ -60,6 +60,13 @@ class RackController extends Controller
         $deviceLibrary = DeviceLibrary::with('deviceType')->get();
         $deviceTypes = DeviceType::all();
 
+        // 获取所有已使用的设备库ID（用于设备库列表过滤）
+        $usedLibraryIds = \App\Models\Device::whereNotNull('device_library_id')
+            ->pluck('device_library_id')
+            ->unique()
+            ->values()
+            ->toArray();
+
         return inertia('Rack/VisualEdit', [
             'racks' => $racks,
             'rooms' => $rooms,
@@ -67,6 +74,7 @@ class RackController extends Controller
             'deviceLibrary' => $deviceLibrary,
             'deviceTypes' => $deviceTypes,
             'selectedRoom' => $roomId,
+            'usedLibraryIds' => $usedLibraryIds,
         ]);
     }
 
@@ -98,6 +106,17 @@ class RackController extends Controller
         }
 
         Rack::create($validated);
+
+        // 检查请求来源，如果是可视化编辑页面则保持在该页面
+        $referer = $request->headers->get('referer');
+        if ($referer && str_contains($referer, '/racks/visual-edit')) {
+            return back();
+        }
+
+        // 如果是 Inertia 请求且接受 JSON 响应（AJAX）
+        if ($request->header('X-Inertia') && $request->wantsJson()) {
+            return back();
+        }
 
         return redirect()->route('racks.index');
     }
@@ -136,12 +155,34 @@ class RackController extends Controller
 
         $rack->update($validated);
 
+        // 检查请求来源，如果是可视化编辑页面则保持在该页面
+        $referer = $request->headers->get('referer');
+        if ($referer && str_contains($referer, '/racks/visual-edit')) {
+            return back();
+        }
+
+        // 如果是 Inertia 请求且接受 JSON 响应（AJAX）
+        if ($request->header('X-Inertia') && $request->wantsJson()) {
+            return back();
+        }
+
         return redirect()->route('racks.index');
     }
 
-    public function destroy(Rack $rack)
+    public function destroy(Request $request, Rack $rack)
     {
         $rack->delete();
+
+        // 检查请求来源，如果是可视化编辑页面则保持在该页面
+        $referer = $request->headers->get('referer');
+        if ($referer && str_contains($referer, '/racks/visual-edit')) {
+            return back();
+        }
+
+        // 如果是 Inertia 请求且接受 JSON 响应（AJAX）
+        if ($request->header('X-Inertia') && $request->wantsJson()) {
+            return back();
+        }
 
         return redirect()->route('racks.index');
     }

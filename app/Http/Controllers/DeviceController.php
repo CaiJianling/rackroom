@@ -85,8 +85,14 @@ class DeviceController extends Controller
 
         Device::create($validated);
 
-        // 如果是 Inertia 请求（如可视化编辑页面），返回 back() 避免跳转
-        if ($request->header('X-Inertia')) {
+        // 检查请求来源，如果是可视化编辑页面则保持在该页面
+        $referer = $request->headers->get('referer');
+        if ($referer && str_contains($referer, '/racks/visual-edit')) {
+            return back();
+        }
+
+        // 如果是 Inertia 请求且接受 JSON 响应（AJAX）
+        if ($request->header('X-Inertia') && $request->wantsJson()) {
             return back();
         }
 
@@ -141,7 +147,14 @@ class DeviceController extends Controller
 
         $device->update($validated);
 
-        if ($request->header('X-Inertia')) {
+        // 检查请求来源，如果是可视化编辑页面则保持在该页面
+        $referer = $request->headers->get('referer');
+        if ($referer && str_contains($referer, '/racks/visual-edit')) {
+            return back();
+        }
+
+        // 如果是 Inertia 请求且接受 JSON 响应（AJAX）
+        if ($request->header('X-Inertia') && $request->wantsJson()) {
             return back();
         }
 
@@ -152,8 +165,14 @@ class DeviceController extends Controller
     {
         $device->delete();
 
-        // 如果是 Inertia 请求（如可视化编辑页面），返回 back() 避免跳转
-        if ($request->header('X-Inertia')) {
+        // 检查请求来源，如果是可视化编辑页面则保持在该页面
+        $referer = $request->headers->get('referer');
+        if ($referer && str_contains($referer, '/racks/visual-edit')) {
+            return back();
+        }
+
+        // 如果是 Inertia 请求且接受 JSON 响应（AJAX）
+        if ($request->header('X-Inertia') && $request->wantsJson()) {
             return back();
         }
 

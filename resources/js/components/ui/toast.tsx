@@ -2,14 +2,14 @@ import { useState, useEffect, createContext, useContext, useCallback } from 'rea
 import { X, AlertCircle, CheckCircle, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface Toast {
+export interface Toast {
   id: string;
   message: string;
   type: 'success' | 'error' | 'warning' | 'info';
   duration?: number;
 }
 
-interface ToastContextType {
+export interface ToastContextType {
   showToast: (message: string, type?: Toast['type'], duration?: number) => void;
   removeToast: (id: string) => void;
 }

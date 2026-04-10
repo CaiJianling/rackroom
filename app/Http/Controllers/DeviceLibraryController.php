@@ -1,4 +1,5 @@
 <?php
+
 /*
  * @Author: CaiJianling caijianling@outlook.com
  * @Date: 2026-03-27 20:49:30
@@ -21,6 +22,7 @@ class DeviceLibraryController extends Controller
     {
         $deviceLibrary = DeviceLibrary::with(['deviceType', 'devices.rack'])->orderBy('created_at', 'desc')->get();
         $deviceTypes = DeviceType::all();
+
         return Inertia::render('DeviceLibrary/Index', [
             'deviceLibrary' => $deviceLibrary,
             'deviceTypes' => $deviceTypes,
@@ -42,6 +44,17 @@ class DeviceLibraryController extends Controller
 
         DeviceLibrary::create($validated);
 
+        // 检查请求来源，如果是可视化编辑页面则保持在该页面
+        $referer = $request->headers->get('referer');
+        if ($referer && str_contains($referer, '/racks/visual-edit')) {
+            return back();
+        }
+
+        // 如果是 Inertia 请求且接受 JSON 响应（AJAX）
+        if ($request->header('X-Inertia') && $request->wantsJson()) {
+            return back();
+        }
+
         return redirect()->route('device-library.index');
     }
 
@@ -60,12 +73,35 @@ class DeviceLibraryController extends Controller
 
         $deviceLibrary->update($validated);
 
+        // 检查请求来源，如果是可视化编辑页面则保持在该页面
+        $referer = $request->headers->get('referer');
+        if ($referer && str_contains($referer, '/racks/visual-edit')) {
+            return back();
+        }
+
+        // 如果是 Inertia 请求且接受 JSON 响应（AJAX）
+        if ($request->header('X-Inertia') && $request->wantsJson()) {
+            return back();
+        }
+
         return redirect()->route('device-library.index');
     }
 
-    public function destroy(DeviceLibrary $deviceLibrary)
+    public function destroy(Request $request, DeviceLibrary $deviceLibrary)
     {
         $deviceLibrary->delete();
+
+        // 检查请求来源，如果是可视化编辑页面则保持在该页面
+        $referer = $request->headers->get('referer');
+        if ($referer && str_contains($referer, '/racks/visual-edit')) {
+            return back();
+        }
+
+        // 如果是 Inertia 请求且接受 JSON 响应（AJAX）
+        if ($request->header('X-Inertia') && $request->wantsJson()) {
+            return back();
+        }
+
         return redirect()->route('device-library.index');
     }
 }
