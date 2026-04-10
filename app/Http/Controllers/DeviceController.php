@@ -66,6 +66,21 @@ class DeviceController extends Controller
             'description' => 'nullable|string',
         ]);
 
+        // U位范围占用校验（考虑设备高度）
+        if (! empty($validated['rack_id']) && ! empty($validated['u_position'])) {
+            $conflict = $this->checkUPositionConflict(
+                $validated['rack_id'],
+                $validated['u_position'],
+                $validated['device_library_id'] ?? null
+            );
+
+            if ($conflict) {
+                return back()->withErrors([
+                    'u_position' => $conflict['message'],
+                ])->withInput();
+            }
+        }
+
         if (! empty($validated['device_library_id'])) {
             $deviceLibrary = DeviceLibrary::with('deviceType')->find($validated['device_library_id']);
             if ($deviceLibrary) {
@@ -127,6 +142,22 @@ class DeviceController extends Controller
             'status' => 'required|string|in:online,offline,maintenance',
             'description' => 'nullable|string',
         ]);
+
+        // U位范围占用校验（排除自身，考虑设备高度）
+        if (! empty($validated['rack_id']) && ! empty($validated['u_position'])) {
+            $conflict = $this->checkUPositionConflict(
+                $validated['rack_id'],
+                $validated['u_position'],
+                $validated['device_library_id'] ?? null,
+                $device->id
+            );
+
+            if ($conflict) {
+                return back()->withErrors([
+                    'u_position' => $conflict['message'],
+                ])->withInput();
+            }
+        }
 
         if (! empty($validated['device_library_id'])) {
             $deviceLibrary = DeviceLibrary::with('deviceType')->find($validated['device_library_id']);
@@ -252,5 +283,58 @@ class DeviceController extends Controller
         fclose($handle);
 
         return redirect()->route('devices.index')->with('message', "导入完成：成功 {$imported} 条，失败 {$errors} 条");
+    }
+
+    /**
+     * 检查U位范围冲突（考虑设备高度）
+     *
+     * @param  int  $rackId  机柜ID
+     * @param  int  $uPosition  目标U位
+     * @param  int|null  $deviceLibraryId  设备库ID（用于获取U高度）
+     * @param  int|null  $excludeDeviceId  排除的设备ID（编辑时使用）
+     * @return array|null 返回冲突信息或null
+     */
+    private function checkUPositionConflict(int $rackId, int $uPosition, ?int $deviceLibraryId, ?int $excludeDeviceId = null): ?array
+    {
+        // 获取新设备的U高度
+        $newDeviceHeight = 1;
+        if ($deviceLibraryId) {
+            $deviceLibrary = DeviceLibrary::find($deviceLibraryId);
+            $newDeviceHeight = $deviceLibrary?->u_height ?? 1;
+        }
+
+        // 计算新设备占用的U位范围
+        $newStart = $uPosition;
+        $newEnd = $uPosition + $newDeviceHeight - 1;
+
+        // 查询该机柜下的所有设备
+        $query = Device::with('deviceLibrary')
+            ->where('rack_id', $rackId);
+
+        if ($excludeDeviceId) {
+            $query->where('id', '!=', $excludeDeviceId);
+        }
+
+        $existingDevices = $query->get();
+
+        foreach ($existingDevices as $existingDevice) {
+            // 获取现有设备的U高度
+            $existingHeight = $existingDevice->deviceLibrary?->u_height ?? 1;
+            $existingStart = $existingDevice->u_position;
+            $existingEnd = $existingDevice->u_position + $existingHeight - 1;
+
+            // 检查范围是否冲突（两个区间有交集）
+            // 新区间: [newStart, newEnd]
+            // 现有区间: [existingStart, existingEnd]
+            // 冲突条件: newStart <= existingEnd && newEnd >= existingStart
+            if ($newStart <= $existingEnd && $newEnd >= $existingStart) {
+                return [
+                    'conflict' => true,
+                    'message' => "U位 {$uPosition}-{$newEnd} 与设备「{$existingDevice->name}」占用的 U{$existingStart}-{$existingEnd} 冲突，请选择其他U位。",
+                ];
+            }
+        }
+
+        return null;
     }
 }

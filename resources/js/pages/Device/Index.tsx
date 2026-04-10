@@ -318,6 +318,9 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                 u_position: parseInt(form.u_position as unknown as string) || 1,
             }, {
                 onSuccess: () => closeEditDialog(),
+                onError: (errors) => {
+                    console.error('Update failed:', errors);
+                },
             });
         }
     };
@@ -331,6 +334,9 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
             u_position: parseInt(form.u_position.toString()) || 1,
         }, {
             onSuccess: () => closeCreateDialog(),
+            onError: (errors) => {
+                console.error('Create failed:', errors);
+            },
         });
     };
 
@@ -789,32 +795,37 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                                 </Select>
                             </div>
 
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="u_position" className="text-right">
+                            <div className="grid grid-cols-4 items-start gap-4">
+                                <Label htmlFor="u_position" className="text-right pt-2">
                                     {t('deviceManagement.uPosition')} *
                                 </Label>
-                                <Input
-                                    id="u_position"
-                                    type="number"
-                                    min="1"
-                                    max={(() => {
-                                        const rack = form.rack_id ? racks.find(r => r.id.toString() === form.rack_id) : null;
-                                        const deviceLib = form.device_library_id ? deviceLibrary.find(item => item.id.toString() === form.device_library_id) : null;
-                                        const deviceUHeight = deviceLib?.u_height || 1;
-                                        return rack ? rack.u_count - deviceUHeight + 1 : 42;
-                                    })()}
-                                    value={form.u_position}
-                                    onChange={(e) => {
-                                        const value = parseInt(e.target.value) || 1;
-                                        const rack = form.rack_id ? racks.find(r => r.id.toString() === form.rack_id) : null;
-                                        const deviceLib = form.device_library_id ? deviceLibrary.find(item => item.id.toString() === form.device_library_id) : null;
-                                        const deviceUHeight = deviceLib?.u_height || 1;
-                                        const maxU = rack ? rack.u_count - deviceUHeight + 1 : 42;
-                                        setForm({ ...form, u_position: Math.min(value, maxU) });
-                                    }}
-                                    className="col-span-3"
-                                    required
-                                />
+                                <div className="col-span-3 space-y-1">
+                                    <Input
+                                        id="u_position"
+                                        type="number"
+                                        min="1"
+                                        max={(() => {
+                                            const rack = form.rack_id ? racks.find(r => r.id.toString() === form.rack_id) : null;
+                                            const deviceLib = form.device_library_id ? deviceLibrary.find(item => item.id.toString() === form.device_library_id) : null;
+                                            const deviceUHeight = deviceLib?.u_height || 1;
+                                            return rack ? rack.u_count - deviceUHeight + 1 : 42;
+                                        })()}
+                                        value={form.u_position}
+                                        onChange={(e) => {
+                                            const value = parseInt(e.target.value) || 1;
+                                            const rack = form.rack_id ? racks.find(r => r.id.toString() === form.rack_id) : null;
+                                            const deviceLib = form.device_library_id ? deviceLibrary.find(item => item.id.toString() === form.device_library_id) : null;
+                                            const deviceUHeight = deviceLib?.u_height || 1;
+                                            const maxU = rack ? rack.u_count - deviceUHeight + 1 : 42;
+                                            setForm({ ...form, u_position: Math.min(value, maxU) });
+                                        }}
+                                        className={errors?.u_position ? 'border-destructive' : ''}
+                                        required
+                                    />
+                                    {errors?.u_position && (
+                                        <p className="text-sm text-destructive">{errors.u_position}</p>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-4 items-center gap-4">
@@ -992,32 +1003,37 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                                 </Select>
                             </div>
 
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-u_position" className="text-right">
+                            <div className="grid grid-cols-4 items-start gap-4">
+                                <Label htmlFor="edit-u_position" className="text-right pt-2">
                                     {t('deviceManagement.uPosition')} *
                                 </Label>
-                                <Input
-                                    id="edit-u_position"
-                                    type="number"
-                                    min="1"
-                                    max={(() => {
-                                        const rack = form.rack_id ? racks.find(r => r.id.toString() === form.rack_id) : null;
-                                        const deviceLib = form.device_library_id ? deviceLibrary.find(item => item.id.toString() === form.device_library_id) : null;
-                                        const deviceUHeight = deviceLib?.u_height || editingDevice?.device_library?.u_height || 1;
-                                        return rack ? rack.u_count - deviceUHeight + 1 : 42;
-                                    })()}
-                                    value={form.u_position}
-                                    onChange={(e) => {
-                                        const value = parseInt(e.target.value) || 1;
-                                        const rack = form.rack_id ? racks.find(r => r.id.toString() === form.rack_id) : null;
-                                        const deviceLib = form.device_library_id ? deviceLibrary.find(item => item.id.toString() === form.device_library_id) : null;
-                                        const deviceUHeight = deviceLib?.u_height || editingDevice?.device_library?.u_height || 1;
-                                        const maxU = rack ? rack.u_count - deviceUHeight + 1 : 42;
-                                        setForm({ ...form, u_position: Math.min(value, maxU) });
-                                    }}
-                                    className="col-span-3"
-                                    required
-                                />
+                                <div className="col-span-3 space-y-1">
+                                    <Input
+                                        id="edit-u_position"
+                                        type="number"
+                                        min="1"
+                                        max={(() => {
+                                            const rack = form.rack_id ? racks.find(r => r.id.toString() === form.rack_id) : null;
+                                            const deviceLib = form.device_library_id ? deviceLibrary.find(item => item.id.toString() === form.device_library_id) : null;
+                                            const deviceUHeight = deviceLib?.u_height || editingDevice?.device_library?.u_height || 1;
+                                            return rack ? rack.u_count - deviceUHeight + 1 : 42;
+                                        })()}
+                                        value={form.u_position}
+                                        onChange={(e) => {
+                                            const value = parseInt(e.target.value) || 1;
+                                            const rack = form.rack_id ? racks.find(r => r.id.toString() === form.rack_id) : null;
+                                            const deviceLib = form.device_library_id ? deviceLibrary.find(item => item.id.toString() === form.device_library_id) : null;
+                                            const deviceUHeight = deviceLib?.u_height || editingDevice?.device_library?.u_height || 1;
+                                            const maxU = rack ? rack.u_count - deviceUHeight + 1 : 42;
+                                            setForm({ ...form, u_position: Math.min(value, maxU) });
+                                        }}
+                                        className={errors?.u_position ? 'border-destructive' : ''}
+                                        required
+                                    />
+                                    {errors?.u_position && (
+                                        <p className="text-sm text-destructive">{errors.u_position}</p>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-4 items-center gap-4">

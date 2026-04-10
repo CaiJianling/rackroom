@@ -191,48 +191,50 @@ export default function Dashboard({
         const colorClass = colorMap[stat.color] || colorMap.blue;
 
         return (
-            <Card className="relative overflow-hidden">
-                <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                        <div className="space-y-2">
-                            <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-                            <div className="flex items-baseline gap-2">
-                                <h3 className="text-3xl font-bold">{stat.total.toLocaleString()}</h3>
-                                {stat.unit && <span className="text-sm text-muted-foreground">{stat.unit}</span>}
+            <Card className="relative h-[140px] overflow-hidden">
+                <CardContent className="flex h-full items-center p-5">
+                    <div className="flex w-full items-center justify-between gap-4">
+                        {/* 左侧：文字内容区域 */}
+                        <div className="flex flex-1 flex-col justify-center">
+                            <p className="mb-1 text-xs font-medium text-muted-foreground">{stat.label}</p>
+                            <div className="mb-2 flex items-baseline gap-1.5">
+                                <span className="text-2xl font-bold tracking-tight">{stat.total.toLocaleString()}</span>
+                                {stat.unit && <span className="text-xs text-muted-foreground">{stat.unit}</span>}
                             </div>
                             {/* 设备状态分布 */}
                             {stat.online !== undefined && (
-                                <div className="mt-2 flex items-center gap-3 text-xs">
-                                    <span className="flex items-center text-green-600">
-                                        <span className="mr-1 h-2 w-2 rounded-full bg-green-500" />
+                                <div className="flex items-center gap-2">
+                                    <span className="flex items-center gap-1 text-[10px] text-green-600">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
                                         {stat.online}
                                     </span>
-                                    <span className="flex items-center text-red-600">
-                                        <span className="mr-1 h-2 w-2 rounded-full bg-red-500" />
+                                    <span className="flex items-center gap-1 text-[10px] text-red-600">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
                                         {stat.offline}
                                     </span>
-                                    <span className="flex items-center text-yellow-600">
-                                        <span className="mr-1 h-2 w-2 rounded-full bg-yellow-500" />
+                                    <span className="flex items-center gap-1 text-[10px] text-yellow-600">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-yellow-500" />
                                         {stat.maintenance}
                                     </span>
                                 </div>
                             )}
                             {/* 告警分布 */}
                             {stat.critical !== undefined && (
-                                <div className="mt-2 flex items-center gap-3 text-xs">
-                                    <span className="flex items-center text-red-600">
-                                        <AlertTriangle className="mr-1 h-3 w-3" />
+                                <div className="flex items-center gap-2">
+                                    <span className="flex items-center gap-0.5 text-[10px] text-red-600">
+                                        <AlertTriangle className="h-2.5 w-2.5" />
                                         严重 {stat.critical}
                                     </span>
-                                    <span className="flex items-center text-orange-600">
-                                        <AlertTriangle className="mr-1 h-3 w-3" />
+                                    <span className="flex items-center gap-0.5 text-[10px] text-orange-600">
+                                        <AlertTriangle className="h-2.5 w-2.5" />
                                         警告 {stat.warning}
                                     </span>
                                 </div>
                             )}
                         </div>
-                        <div className={cn('rounded-lg border p-3', colorClass)}>
-                            <Icon className="h-6 w-6" />
+                        {/* 右侧：图标区域 */}
+                        <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border', colorClass)}>
+                            <Icon className="h-5 w-5" />
                         </div>
                     </div>
                     {stat.href && (

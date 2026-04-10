@@ -1063,7 +1063,8 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                 },
                 onError: (errors) => {
                     console.error('Failed to create device:', errors);
-                    showToast('Failed to create device: ' + JSON.stringify(errors), 'error');
+                    const errorMsg = errors?.u_position || errors?.error || JSON.stringify(errors);
+                    showToast(t('visualEdit.toast.deviceUpdateFailed') + ': ' + errorMsg, 'error');
                 }
             });
         } else if (deviceType === 'existing' && draggingDeviceId) {
@@ -1087,7 +1088,8 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                 },
                 onError: (errors) => {
                     console.error('Failed to update device:', errors);
-                    showToast('Failed to update device: ' + JSON.stringify(errors), 'error');
+                    const errorMsg = errors?.u_position || errors?.error || JSON.stringify(errors);
+                    showToast(t('visualEdit.toast.deviceUpdateFailed') + ': ' + errorMsg, 'error');
                 }
             });
         }
@@ -1272,7 +1274,8 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
             },
             onError: (errors) => {
                 console.error('Failed to update device:', errors);
-                showToast(t('visualEdit.toast.deviceUpdateFailed') + ': ' + JSON.stringify(errors), 'error');
+                const errorMsg = errors?.u_position || errors?.error || JSON.stringify(errors);
+                showToast(t('visualEdit.toast.deviceUpdateFailed') + ': ' + errorMsg, 'error');
             }
         });
     };
