@@ -341,30 +341,40 @@ export default function Dashboard({
                         </CardHeader>
                         <CardContent>
                             <div className="flex gap-4">
-                                {/* 机房列表 - 固定高度 */}
-                                <div className="flex-1 space-y-3 min-h-[280px]">
+                                {/* 机房列表 - 固定5个位置的高度 */}
+                                <div className="flex-1 space-y-3">
                                     {roomDistribution.length === 0 ? (
-                                        <div className="py-8 text-center text-muted-foreground">
-                                            暂无机房数据
-                                        </div>
-                                    ) : (
-                                        paginatedRooms.map((room) => (
-                                            <div key={room.id} className="flex items-center justify-between rounded-lg border p-3">
-                                                <p className="font-medium">{room.name}</p>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                        <Server className="h-3 w-3" />
-                                                        <span>机柜</span>
-                                                        <span className="font-medium text-foreground">{room.racks}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                        <Cpu className="h-3 w-3" />
-                                                        <span>设备</span>
-                                                        <span className="font-medium text-foreground">{room.devices}</span>
-                                                    </div>
-                                                </div>
+                                        Array.from({ length: ITEMS_PER_PAGE }).map((_, idx) => (
+                                            <div key={idx} className="flex h-[46px] items-center justify-center rounded-lg border border-dashed border-muted-foreground/30 p-3">
+                                                <span className="text-xs text-muted-foreground">-</span>
                                             </div>
                                         ))
+                                    ) : (
+                                        <>
+                                            {paginatedRooms.map((room) => (
+                                                <div key={room.id} className="flex h-[46px] items-center justify-between rounded-lg border p-3">
+                                                    <p className="font-medium">{room.name}</p>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                            <Server className="h-3 w-3" />
+                                                            <span>机柜</span>
+                                                            <span className="font-medium text-foreground">{room.racks}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                            <Cpu className="h-3 w-3" />
+                                                            <span>设备</span>
+                                                            <span className="font-medium text-foreground">{room.devices}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {/* 填充空白位置 */}
+                                            {Array.from({ length: ITEMS_PER_PAGE - paginatedRooms.length }).map((_, idx) => (
+                                                <div key={`empty-${idx}`} className="flex h-[46px] items-center justify-center rounded-lg border border-dashed border-muted-foreground/20 p-3">
+                                                    <span className="text-xs text-muted-foreground/40">-</span>
+                                                </div>
+                                            ))}
+                                        </>
                                     )}
                                 </div>
 
