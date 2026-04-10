@@ -21,7 +21,8 @@
         "view": "View",
         "hide": "Hide",
         "somethingWentWrong": "Something went wrong",
-        "clearSearch": "Clear search"
+        "clearSearch": "Clear search",
+        "doubleClickToEdit": "Double-click to edit"
     },
     "auth": {
         "login": {
@@ -243,8 +244,44 @@
             "deviceRemoved": "Device removed from rack",
             "deviceAdded": "Device added to rack",
             "deviceUpdated": "Device information updated",
-            "deviceDeleted": "Device deleted"
-        }
+            "deviceDeleted": "Device deleted",
+            "deviceUpdateFailed": "Failed to update device",
+            "rackAdded": "Rack added",
+            "rackAddFailed": "Failed to add rack"
+        },
+        "exportData": "Export Data",
+        "exportDesc": "Export all configurations of rooms, racks, and devices as a data package file",
+        "exportContent": "Export content includes:",
+        "exportRooms": "Room Management",
+        "exportRackTypes": "Rack Type Management",
+        "exportRacks": "Rack List Management",
+        "exportDeviceTypes": "Device Type Management",
+        "exportDeviceLibrary": "Device Library Management",
+        "exportDevices": "Device List Management",
+        "exportVersion": "Data Version",
+        "exportDate": "Export Date",
+        "exportSuccess": "Data exported successfully",
+        "exportFailed": "Failed to export data",
+        "importData": "Import Data",
+        "importDesc": "Import room, rack, and device configurations from a data package file",
+        "selectImportFile": "Select Import File",
+        "importFileHint": "Supports .json format data package files",
+        "importPreview": "Data Preview",
+        "selectImportContent": "Select content to import",
+        "importRoomsLabel": "Room Management",
+        "importRackTypesLabel": "Rack Type Management",
+        "importRacksLabel": "Rack List Management",
+        "importDeviceTypesLabel": "Device Type Management",
+        "importDeviceLibraryLabel": "Device Library Management",
+        "importDevicesLabel": "Device List Management",
+        "items": "items",
+        "requiresRoomsAndTypes": "Requires rooms and rack types to be selected first",
+        "requiresDeviceTypes": "Requires device types to be selected first",
+        "requiresRacksAndLibrary": "Requires racks and device library to be selected first",
+        "importCascadeHint": "Hint: Selecting an item will auto-check its dependencies; unchecking will auto-uncheck items that depend on it",
+        "importPreviewFailed": "Failed to preview file",
+        "importSuccess": "Import successful! Rooms: {rooms}, Racks: {racks}, Devices: {devices}",
+        "importFailed": "Import failed"
     },
     "deleteAccount": {
         "title": "Delete account",
@@ -556,5 +593,9 @@
         "status": "Status",
         "used": "Used",
         "unused": "Unused"
+    },
+    "general": {
+        "previousPage": "上一页",
+        "nextPage": "下一页"
     }
 }

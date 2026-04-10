@@ -51,20 +51,21 @@ export function AppSidebar() {
             icon: Building2,
         },
         {
+            title: t('navigation.rackVisualEdit'),
+            href: '/racks/visual-edit',
+            icon: Eye,
+        },
+        {
             title: t('navigation.rackManagement'),
             icon: Server,
             items: [
-                {
-                    title: t('navigation.rackList'),
-                    href: '/racks',
-                },
                 {
                     title: t('navigation.rackTypeManagement'),
                     href: '/rack-types',
                 },
                 {
-                    title: t('navigation.rackVisualEdit'),
-                    href: '/racks/visual-edit',
+                    title: t('navigation.rackList'),
+                    href: '/racks',
                 },
             ],
         },

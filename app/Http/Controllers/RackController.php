@@ -47,6 +47,7 @@ class RackController extends Controller
     public function visualEdit(Request $request)
     {
         $rooms = Room::all();
+        $rackTypes = RackType::all();
 
         $roomId = $request->input('room_id');
         $query = Rack::with(['room', 'devices.deviceLibrary']);
@@ -62,6 +63,7 @@ class RackController extends Controller
         return inertia('Rack/VisualEdit', [
             'racks' => $racks,
             'rooms' => $rooms,
+            'rackTypes' => $rackTypes,
             'deviceLibrary' => $deviceLibrary,
             'deviceTypes' => $deviceTypes,
             'selectedRoom' => $roomId,

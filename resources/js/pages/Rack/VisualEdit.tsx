@@ -45,7 +45,9 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
+import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
 
 interface Device {
@@ -94,8 +96,10 @@ interface DeviceLibraryItem {
     name: string;
     model: string | null;
     manufacturer: string | null;
+    serial_number: string | null;
     u_height: number;
     power: number;
+    description: string | null;
     device_type?: DeviceType;
 }
 
@@ -104,9 +108,18 @@ interface Room {
     name: string;
 }
 
+interface RackType {
+    id: number;
+    name: string;
+    u_count: number;
+    power: number;
+    description: string | null;
+}
+
 interface Props {
     racks: Rack[];
     rooms: Room[];
+    rackTypes: RackType[];
     deviceLibrary: DeviceLibraryItem[];
     deviceTypes: DeviceType[];
     selectedRoom?: string;
@@ -135,7 +148,7 @@ interface RackDisplay {
 
 
 
-export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceTypes, selectedRoom: initialRoom, breadcrumbs = [] }: Props) {
+export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary, deviceTypes, selectedRoom: initialRoom, breadcrumbs = [] }: Props) {
     const { t } = useTranslation();
     const { showToast } = useToast();
     const [selectedRoom, setSelectedRoom] = useState<string>(initialRoom || 'all');
@@ -144,14 +157,72 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [addRackModalOpen, setAddRackModalOpen] = useState(false);
     const [addDeviceModalOpen, setAddDeviceModalOpen] = useState(false);
+    const [editDeviceLibraryModalOpen, setEditDeviceLibraryModalOpen] = useState(false);
     const [currentEditDevice, setCurrentEditDevice] = useState<{ rackId: number; uIndex: number; device: Device } | null>(null);
+    const [editingDeviceLibraryItem, setEditingDeviceLibraryItem] = useState<DeviceLibraryItem | null>(null);
 
-    const [rackU, setRackU] = useState(42);
-    const [rackRows, setRackRows] = useState(1);
-    const [rackCols, setRackCols] = useState(2);
+    // 导入/导出对话框状态
+    const [exportDialogOpen, setExportDialogOpen] = useState(false);
+    const [importDialogOpen, setImportDialogOpen] = useState(false);
+    const [importFile, setImportFile] = useState<File | null>(null);
+    const [importPreview, setImportPreview] = useState<{
+        version: string;
+        exported_at: string | null;
+        counts: {
+            rooms: number;
+            rack_types: number;
+            racks: number;
+            device_types: number;
+            device_library: number;
+            devices: number;
+        };
+    } | null>(null);
+    const [importData, setImportData] = useState<Record<string, unknown> | null>(null);
+    const [importOptions, setImportOptions] = useState({
+        rooms: true,
+        rack_types: true,
+        racks: true,
+        device_types: true,
+        device_library: true,
+        devices: true,
+    });
+    const [isImporting, setIsImporting] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
-    const [newRackName, setNewRackName] = useState('');
-    const [newRackRoom, setNewRackRoom] = useState('');
+    // 添加机柜表单状态 - 与 Rack/Index.tsx 保持一致
+    const [rackForm, setRackForm] = useState({
+        room_id: '',
+        rack_type_id: '',
+        name: '',
+        u_count: 42,
+        power: 0,
+        device_count: 0,
+        description: '',
+    });
+
+    // 创建设备库条目表单状态 - 与 DeviceLibrary/Index.tsx 保持一致
+    const [deviceLibraryForm, setDeviceLibraryForm] = useState({
+        device_type_id: '',
+        name: '',
+        model: '',
+        manufacturer: '',
+        serial_number: '',
+        u_height: 1,
+        power: 0,
+        description: '',
+    });
+
+    // 编辑设备库条目表单状态 - 与 DeviceLibrary/Index.tsx 保持一致
+    const [editDeviceLibraryForm, setEditDeviceLibraryForm] = useState({
+        device_type_id: '',
+        name: '',
+        model: '',
+        manufacturer: '',
+        serial_number: '',
+        u_height: 1,
+        power: 0,
+        description: '',
+    });
 
     const [editForm, setEditForm] = useState({
         name: '',
@@ -162,8 +233,10 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
         status: 'offline',
         ip_address: '',
         connection_type: '',
+        device_library_id: '',
+        rack_id: '',
+        description: '',
     });
-
     const [selectedDeviceType, setSelectedDeviceType] = useState<string>('');
     const [addDeviceForm, setAddDeviceForm] = useState({
         device_library_id: undefined as string | undefined,
@@ -348,6 +421,278 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
                 setSelectedDeviceType('');
                 router.reload({ only: ['racks', 'devices'] });
             }
+        });
+    };
+
+    // 打开创建设备库条目对话框 - 与 DeviceLibrary/Index.tsx 保持一致
+    const openCreateDeviceLibraryDialog = () => {
+        setDeviceLibraryForm({
+            device_type_id: deviceTypes.length > 0 ? deviceTypes[0].id.toString() : '',
+            name: '',
+            model: '',
+            manufacturer: '',
+            serial_number: '',
+            u_height: 1,
+            power: 0,
+            description: '',
+        });
+        setAddDeviceModalOpen(true);
+    };
+
+    // 关闭创建设备库条目对话框
+    const closeCreateDeviceLibraryDialog = () => {
+        setAddDeviceModalOpen(false);
+        setDeviceLibraryForm({
+            device_type_id: '',
+            name: '',
+            model: '',
+            manufacturer: '',
+            serial_number: '',
+            u_height: 1,
+            power: 0,
+            description: '',
+        });
+    };
+
+    // 创建设备库条目提交 - 与 DeviceLibrary/Index.tsx 保持一致
+    const handleCreateDeviceLibrarySubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        router.post('/device-library', {
+            ...deviceLibraryForm,
+            device_type_id: parseInt(deviceLibraryForm.device_type_id),
+            u_height: parseInt(deviceLibraryForm.u_height as unknown as string),
+            power: parseInt(deviceLibraryForm.power as unknown as string),
+        }, {
+            onSuccess: () => {
+                closeCreateDeviceLibraryDialog();
+                router.reload({ only: ['deviceLibrary'] });
+            }
+        });
+    };
+
+    // 打开编辑设备库条目对话框 - 与 DeviceLibrary/Index.tsx 保持一致
+    const openEditDeviceLibraryDialog = (item: DeviceLibraryItem) => {
+        setEditingDeviceLibraryItem(item);
+        setEditDeviceLibraryForm({
+            device_type_id: item.device_type_id.toString(),
+            name: item.name,
+            model: item.model || '',
+            manufacturer: item.manufacturer || '',
+            serial_number: item.serial_number || '',
+            u_height: item.u_height,
+            power: item.power,
+            description: item.description || '',
+        });
+        setEditDeviceLibraryModalOpen(true);
+    };
+
+    // 关闭编辑设备库条目对话框
+    const closeEditDeviceLibraryDialog = () => {
+        setEditDeviceLibraryModalOpen(false);
+        setEditingDeviceLibraryItem(null);
+        setEditDeviceLibraryForm({
+            device_type_id: '',
+            name: '',
+            model: '',
+            manufacturer: '',
+            serial_number: '',
+            u_height: 1,
+            power: 0,
+            description: '',
+        });
+    };
+
+    // 编辑设备库条目提交 - 与 DeviceLibrary/Index.tsx 保持一致
+    const handleEditDeviceLibrarySubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (editingDeviceLibraryItem) {
+            router.put(`/device-library/${editingDeviceLibraryItem.id}`, {
+                ...editDeviceLibraryForm,
+                device_type_id: parseInt(editDeviceLibraryForm.device_type_id),
+                u_height: parseInt(editDeviceLibraryForm.u_height as unknown as string),
+                power: parseInt(editDeviceLibraryForm.power as unknown as string),
+            }, {
+                onSuccess: () => {
+                    closeEditDeviceLibraryDialog();
+                    router.reload({ only: ['deviceLibrary'] });
+                }
+            });
+        }
+    };
+
+    // 导出数据
+    const handleExport = async () => {
+        setIsExporting(true);
+        try {
+            const response = await fetch('/data/export');
+            if (!response.ok) throw new Error('导出失败');
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `rackroom_backup_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            showToast(t('visualEdit.exportSuccess'), 'success');
+        } catch (error) {
+            showToast(t('visualEdit.exportFailed'), 'error');
+        } finally {
+            setIsExporting(false);
+            setExportDialogOpen(false);
+        }
+    };
+
+    // 处理导入文件选择
+    const handleImportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setImportFile(file);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const response = await fetch('/data/import-preview', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                showToast(error.error || t('visualEdit.importPreviewFailed'), 'error');
+                return;
+            }
+
+            const result = await response.json();
+            if (result.success) {
+                setImportPreview(result.preview);
+                setImportData(result.data);
+                // 默认全选
+                setImportOptions({
+                    rooms: true,
+                    rack_types: true,
+                    racks: true,
+                    device_types: true,
+                    device_library: true,
+                    devices: true,
+                });
+            }
+        } catch (error) {
+            showToast(t('visualEdit.importPreviewFailed'), 'error');
+        }
+    };
+
+    // 处理导入选项的级联选择
+    const handleImportOptionChange = (key: keyof typeof importOptions, checked: boolean) => {
+        const newOptions = { ...importOptions, [key]: checked };
+
+        // 级联逻辑：如果取消选择某一项，则取消选择所有依赖它的项
+        if (!checked) {
+            if (key === 'rooms') {
+                newOptions.racks = false;
+            }
+            if (key === 'rack_types') {
+                newOptions.racks = false;
+            }
+            if (key === 'racks') {
+                newOptions.devices = false;
+            }
+            if (key === 'device_types') {
+                newOptions.device_library = false;
+            }
+            if (key === 'device_library') {
+                newOptions.devices = false;
+            }
+        }
+
+        // 级联逻辑：如果要选择某一项，必须先选择它的依赖项
+        if (checked) {
+            if (key === 'racks') {
+                newOptions.rooms = true;
+                newOptions.rack_types = true;
+            }
+            if (key === 'devices') {
+                newOptions.racks = true;
+                newOptions.device_library = true;
+            }
+            if (key === 'device_library') {
+                newOptions.device_types = true;
+            }
+        }
+
+        setImportOptions(newOptions);
+    };
+
+    // 提交导入
+    const handleImportSubmit = async () => {
+        if (!importData) return;
+
+        setIsImporting(true);
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const response = await fetch('/data/import', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    data: importData,
+                    options: importOptions,
+                }),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || '导入失败');
+            }
+
+            const result = await response.json();
+            showToast(
+                t('visualEdit.importSuccess', {
+                    rooms: result.stats.rooms,
+                    racks: result.stats.racks,
+                    devices: result.stats.devices,
+                }),
+                'success'
+            );
+
+            // 重置状态并刷新页面
+            setImportDialogOpen(false);
+            setImportFile(null);
+            setImportPreview(null);
+            setImportData(null);
+            router.reload();
+        } catch (error) {
+            showToast(error instanceof Error ? error.message : t('visualEdit.importFailed'), 'error');
+        } finally {
+            setIsImporting(false);
+        }
+    };
+
+    // 关闭导入对话框
+    const closeImportDialog = () => {
+        setImportDialogOpen(false);
+        setImportFile(null);
+        setImportPreview(null);
+        setImportData(null);
+        setImportOptions({
+            rooms: true,
+            rack_types: true,
+            racks: true,
+            device_types: true,
+            device_library: true,
+            devices: true,
         });
     };
 
@@ -711,6 +1056,9 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
 
     const openEditModal = (rackId: number, uIndex: number, device: Device) => {
         setCurrentEditDevice({ rackId, uIndex, device });
+        // 设置设备类型
+        const deviceTypeId = device.device_library?.device_type_id?.toString() || '';
+        setSelectedDeviceType(deviceTypeId);
         setEditForm({
             name: device.name,
             model: device.model || '',
@@ -720,35 +1068,53 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
             status: device.status,
             ip_address: device.ip_address || '',
             connection_type: device.connection_type || '',
+            device_library_id: device.device_library_id?.toString() || '',
+            rack_id: device.rack_id?.toString() || '',
+            description: device.description || '',
         });
         setEditModalOpen(true);
     };
 
-    const saveEdit = () => {
+    const handleEditDeviceTypeChange = (value: string) => {
+        setSelectedDeviceType(value);
+        setEditForm({ ...editForm, device_library_id: '' });
+    };
+
+    const handleEditDeviceLibraryChange = (value: string) => {
+        const selectedLib = deviceLibrary.find(item => item.id.toString() === value);
+        if (selectedLib) {
+            setEditForm({
+                ...editForm,
+                device_library_id: value,
+                name: selectedLib.name,
+                model: selectedLib.model || '',
+                manufacturer: selectedLib.manufacturer || '',
+            });
+        }
+    };
+
+    const handleEditSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
         if (!currentEditDevice) return;
 
-        // 只发送非空值，避免覆盖 device_library 自动填充的字段
-        const updateData: Record<string, unknown> = {
-            name: editForm.name,
-            status: editForm.status,
+        const submitData = {
+            ...editForm,
+            rack_id: editForm.rack_id ? parseInt(editForm.rack_id) : null,
+            device_library_id: editForm.device_library_id ? parseInt(editForm.device_library_id) : null,
         };
 
-        // 可选字段只有在有值时才发送
-        if (editForm.ip_address) updateData.ip_address = editForm.ip_address;
-        if (editForm.connection_type) updateData.connection_type = editForm.connection_type;
-        if (editForm.serial_number) updateData.serial_number = editForm.serial_number;
-
-        router.put(`/devices/${currentEditDevice.device.id}`, updateData as any, {
+        router.put(`/devices/${currentEditDevice.device.id}`, submitData, {
             preserveState: false,
             preserveScroll: true,
             onSuccess: () => {
                 setEditModalOpen(false);
+                setSelectedDeviceType('');
                 showToast(t('visualEdit.toast.deviceUpdated'), 'success');
                 router.reload({ only: ['racks', 'devices'] });
             },
             onError: (errors) => {
                 console.error('Failed to update device:', errors);
-                showToast('Failed to save: ' + JSON.stringify(errors), 'error');
+                showToast(t('visualEdit.toast.deviceUpdateFailed') + ': ' + JSON.stringify(errors), 'error');
             }
         });
     };
@@ -776,23 +1142,53 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
         });
     };
 
-    const generateRacks = () => {
-        for (let r = 0; r < rackRows; r++) {
-            for (let c = 0; c < rackCols; c++) {
-                const name = newRackName || `Rack-${String.fromCharCode(65 + r)}${c + 1}`;
-                const roomId = newRackRoom ? parseInt(newRackRoom) : (rooms[0]?.id || 1);
+    // 处理机柜类型变化 - 自动填充 U数和功率
+    const handleRackTypeChange = (value: string) => {
+        const selectedType = rackTypes.find(t => t.id.toString() === value);
+        setRackForm({
+            ...rackForm,
+            rack_type_id: value,
+            u_count: selectedType ? selectedType.u_count : 42,
+            power: selectedType ? selectedType.power : 0,
+        });
+    };
 
-                router.post('/racks', {
-                    room_id: roomId,
-                    name: `${name}-${r + 1}-${c + 1}`,
-                    u_count: rackU,
-                    power: 5000,
-                    device_count: 0,
-                });
+    // 重置添加机柜表单
+    const resetRackForm = () => {
+        setRackForm({
+            room_id: '',
+            rack_type_id: '',
+            name: '',
+            u_count: 42,
+            power: 0,
+            device_count: 0,
+            description: '',
+        });
+    };
+
+    // 处理添加机柜提交 - 与 Rack/Index.tsx 保持一致
+    const handleAddRackSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const submitData = {
+            room_id: rackForm.room_id,
+            rack_type_id: rackForm.rack_type_id === 'none' ? null : (rackForm.rack_type_id || null),
+            name: rackForm.name,
+            device_count: rackForm.device_count,
+            description: rackForm.description,
+        };
+        router.post('/racks', submitData, {
+            preserveState: false,
+            preserveScroll: true,
+            onSuccess: () => {
+                setAddRackModalOpen(false);
+                resetRackForm();
+                showToast(t('visualEdit.toast.rackAdded'), 'success');
+                router.reload({ only: ['racks'] });
+            },
+            onError: (errors) => {
+                showToast(t('visualEdit.toast.rackAddFailed') + ': ' + JSON.stringify(errors), 'error');
             }
-        }
-        setAddRackModalOpen(false);
-        setTimeout(() => router.reload({ only: ['racks'] }), 500);
+        });
     };
 
     const handlePowerEdit = (rack: RackDisplay) => {
@@ -810,7 +1206,14 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
     };
 
     const getCategoryLabel = (category: string) => {
-        return t(`${category}`);
+        // 首先尝试从 visualEdit 命名空间获取
+        const visualEditKey = `visualEdit.${category}`;
+        const visualEditValue = t(visualEditKey);
+        if (visualEditValue !== visualEditKey) {
+            return visualEditValue;
+        }
+        // 回退到根级别
+        return t(category);
     };
 
     const getStatusLabel = (status: string) => {
@@ -879,11 +1282,11 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
                         </Select>
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => setExportDialogOpen(true)}>
                             <Download className="mr-2 h-4 w-4" />
                             {t('visualEdit.export')}
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)}>
                             <Upload className="mr-2 h-4 w-4" />
                             {t('visualEdit.import')}
                         </Button>
@@ -908,10 +1311,15 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
                                     {t('visualEdit.deviceLibrary')}
                                     {isDraggingOverLibrary && <span className="text-xs font-normal ml-2">(释放以移除)</span>}
                                 </CardTitle>
-                                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setAddDeviceModalOpen(true)}>
+                                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={openCreateDeviceLibraryDialog} disabled={deviceTypes.length === 0}>
                                     + {t('visualEdit.addDevice')}
                                 </Button>
                             </div>
+                            {deviceTypes.length === 0 && (
+                                <div className="rounded-md bg-yellow-50 border border-yellow-200 p-2 text-xs text-yellow-800 mt-2">
+                                    {t('deviceLibrary.pleaseCreateTypeFirst')}
+                                </div>
+                            )}
                             <div className="flex flex-wrap gap-1 pt-2">
                                 {categories.map((cat) => (
                                     <Button
@@ -953,8 +1361,9 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
                                                     draggable
                                                     onDragStart={(e) => handleLibraryDragStart(e, item)}
                                                     onDragEnd={handleDragEnd}
+                                                    onDoubleClick={() => openEditDeviceLibraryDialog(item)}
                                                     className="cursor-grab active:cursor-grabbing border-b border-border/50 transition-colors hover:bg-primary/10 hover:shadow-sm select-none"
-                                                    title={`${item.name} - ${t('visualEdit.dragToRack')}`}
+                                                    title={`${item.name} - ${t('visualEdit.dragToRack')} (${t('common.doubleClickToEdit')})`}
                                                     style={{ userSelect: 'none' }}
                                                 >
                                                     <TableCell className="py-2 px-4 text-sm font-medium">
@@ -1104,7 +1513,7 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
                                                                                         (slot.device.device_library?.device_type?.name === 'storage' || slot.device.category === 'storage') ? '#0ea5e9' : '#64748b'
                                                                             }}
                                                                             onDoubleClick={() => openEditModal(rack.id, slot.uPosition - 1, slot.device!)}
-                                                                            title={`${slot.device.name}\n${getCategoryLabel(slot.device.device_library?.device_type?.name || slot.device.category || 'other')} | ${getStatusLabel(slot.device.status)} | ${slot.device.device_library?.power || slot.device.power || 0}W`}
+                                                                            title={`${slot.device.name}\n${getCategoryLabel(slot.device.device_library?.device_type?.name || slot.device.category || 'visualEdit.other')} | ${getStatusLabel(slot.device.status)} | ${slot.device.device_library?.power || slot.device.power || 0}W`}
                                                                         >
                                                                             {slot.device.name.length > 18
                                                                                 ? slot.device.name.slice(0, 16) + '..'
@@ -1127,7 +1536,7 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
                                                                             handleDragStart(e, parentDevice);
                                                                         }}
                                                                         className="absolute inset-0 bg-slate-400/20 dark:bg-slate-600/20 cursor-grab z-5"
-                                                                        title={`${parentDevice.name} (U${slot.uPosition})\n${getCategoryLabel(parentDevice.device_library?.device_type?.name || parentDevice.category || 'other')} | ${getStatusLabel(parentDevice.status)} | ${parentDevice.device_library?.power || parentDevice.power || 0}W`}
+                                                                        title={`${parentDevice.name} (U${slot.uPosition})\n${getCategoryLabel(parentDevice.device_library?.device_type?.name || parentDevice.category || 'visualEdit.other')} | ${getStatusLabel(parentDevice.status)} | ${parentDevice.device_library?.power || parentDevice.power || 0}W`}
                                                                     />
                                                                 )}
                                                                 {/* 拖动预览时的提示 */}
@@ -1165,194 +1574,22 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
             </div>
 
             <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-                <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col">
+                <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>{t('visualEdit.editDevice')}</DialogTitle>
-                        <DialogDescription>{t('visualEdit.editDeviceDesc')}</DialogDescription>
+                        <DialogTitle>{t('deviceManagement.editDevice')}</DialogTitle>
+                        <DialogDescription>{t('deviceManagement.editDeviceDesc')}</DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4 overflow-y-auto px-1" style={{ maxHeight: 'calc(90vh - 180px)' }}>
-                        <div className="grid gap-2">
-                            <Label htmlFor="name">{t('visualEdit.name')}</Label>
-                            <Input
-                                id="name"
-                                value={editForm.name}
-                                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="model">{t('visualEdit.model')}</Label>
-                            <Input
-                                id="model"
-                                value={editForm.model}
-                                onChange={(e) => setEditForm({ ...editForm, model: e.target.value })}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="manufacturer">{t('visualEdit.manufacturer')}</Label>
-                            <Input
-                                id="manufacturer"
-                                value={editForm.manufacturer}
-                                onChange={(e) => setEditForm({ ...editForm, manufacturer: e.target.value })}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="serial_number">{t('visualEdit.serialNumber')}</Label>
-                            <Input
-                                id="serial_number"
-                                value={editForm.serial_number}
-                                onChange={(e) => setEditForm({ ...editForm, serial_number: e.target.value })}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="power">{t('visualEdit.power')} (W)</Label>
-                            <Input
-                                id="power"
-                                type="number"
-                                value={editForm.power}
-                                onChange={(e) => setEditForm({ ...editForm, power: parseInt(e.target.value) || 0 })}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="status">{t('visualEdit.status')}</Label>
-                            <Select
-                                value={editForm.status}
-                                onValueChange={(value) => setEditForm({ ...editForm, status: value })}
-                            >
-                                <SelectTrigger id="status">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="online">{t('visualEdit.online')}</SelectItem>
-                                    <SelectItem value="offline">{t('visualEdit.offline')}</SelectItem>
-                                    <SelectItem value="maintenance">{t('visualEdit.maintenance')}</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="ip_address">{t('deviceManagement.ipAddress')}</Label>
-                            <Input
-                                id="ip_address"
-                                value={editForm.ip_address}
-                                onChange={(e) => setEditForm({ ...editForm, ip_address: e.target.value })}
-                                placeholder="192.168.1.1"
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="connection_type">{t('deviceManagement.connectionType')}</Label>
-                            <Input
-                                id="connection_type"
-                                value={editForm.connection_type}
-                                onChange={(e) => setEditForm({ ...editForm, connection_type: e.target.value })}
-                                placeholder="SSH/RDP/IPMI"
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter className="flex gap-2">
-                        <Button variant="outline" onClick={removeDeviceFromRack} className="text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            {t('visualEdit.removeFromRack')}
-                        </Button>
-                        <Button onClick={saveEdit}>
-                            <Save className="mr-2 h-4 w-4" />
-                            {t('common.save')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={addRackModalOpen} onOpenChange={setAddRackModalOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{t('visualEdit.quickAddRacks')}</DialogTitle>
-                        <DialogDescription>{t('visualEdit.quickAddRacksDesc')}</DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="room">{t('visualEdit.room')}</Label>
-                            <Select value={newRackRoom} onValueChange={setNewRackRoom}>
-                                <SelectTrigger id="room">
-                                    <SelectValue placeholder={t('visualEdit.selectRoom')} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {rooms.map((room) => (
-                                        <SelectItem key={room.id} value={room.id.toString()}>
-                                            {room.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="rackName">{t('visualEdit.rackNamePrefix')}</Label>
-                            <Input
-                                id="rackName"
-                                value={newRackName}
-                                onChange={(e) => setNewRackName(e.target.value)}
-                                placeholder={t('visualEdit.rackNamePlaceholder')}
-                            />
-                        </div>
-                        <div className="grid grid-cols-3 gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="uCount">{t('visualEdit.uCount')}</Label>
-                                <Input
-                                    id="uCount"
-                                    type="number"
-                                    value={rackU}
-                                    onChange={(e) => setRackU(parseInt(e.target.value) || 42)}
-                                    min={4}
-                                    max={48}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="rows">{t('visualEdit.rows')}</Label>
-                                <Input
-                                    id="rows"
-                                    type="number"
-                                    value={rackRows}
-                                    onChange={(e) => setRackRows(parseInt(e.target.value) || 1)}
-                                    min={1}
-                                    max={4}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="cols">{t('visualEdit.cols')}</Label>
-                                <Input
-                                    id="cols"
-                                    type="number"
-                                    value={rackCols}
-                                    onChange={(e) => setRackCols(parseInt(e.target.value) || 2)}
-                                    min={1}
-                                    max={6}
-                                />
-                            </div>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                            {t('visualEdit.willGenerate', { rows: rackRows, cols: rackCols, total: rackRows * rackCols })}
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button onClick={generateRacks}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            {t('visualEdit.generate')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={addDeviceModalOpen} onOpenChange={setAddDeviceModalOpen}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>{t('deviceManagement.newDevice')}</DialogTitle>
-                        <DialogDescription>{t('deviceManagement.addDeviceDesc')}</DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleAddDevice}>
-                        <div className="grid gap-4 py-4">
+                    <form onSubmit={handleEditSubmit} className="flex flex-col flex-1 overflow-hidden">
+                        <div className="grid gap-4 py-4 overflow-y-auto px-1" style={{ maxHeight: 'calc(90vh - 220px)' }}>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="add-device-type" className="text-right">
+                                <Label htmlFor="edit-device_type" className="text-right">
                                     {t('deviceLibrary.type')} *
                                 </Label>
-                                <Select value={selectedDeviceType} onValueChange={handleDeviceTypeChange}>
-                                    <SelectTrigger id="add-device-type" className="col-span-3">
+                                <Select
+                                    value={selectedDeviceType}
+                                    onValueChange={handleEditDeviceTypeChange}
+                                >
+                                    <SelectTrigger className="col-span-3">
                                         <SelectValue placeholder={t('deviceLibrary.selectType')} />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1366,12 +1603,16 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
                             </div>
 
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="add-device-library" className="text-right">
+                                <Label htmlFor="edit-device_library_id" className="text-right">
                                     {t('deviceLibrary.name')} *
                                 </Label>
-                                <Select value={addDeviceForm.device_library_id} onValueChange={handleDeviceLibraryChange} disabled={!selectedDeviceType}>
-                                    <SelectTrigger id="add-device-library" className="col-span-3">
-                                        <SelectValue placeholder={t('deviceLibrary.selectDevice')} />
+                                <Select
+                                    value={editForm.device_library_id}
+                                    onValueChange={handleEditDeviceLibraryChange}
+                                    disabled={!selectedDeviceType}
+                                >
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder={t('deviceLibrary.selectType')} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {filteredDeviceLibraryByType.map((lib) => (
@@ -1384,15 +1625,20 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
                             </div>
 
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="add-rack" className="text-right">
+                                <Label htmlFor="edit-rack_id" className="text-right">
                                     {t('deviceManagement.rack')}
                                 </Label>
-                                <Select value={addDeviceForm.rack_id} onValueChange={(value) => setAddDeviceForm({ ...addDeviceForm, rack_id: value === 'none' ? undefined : value })}>
-                                    <SelectTrigger id="add-rack" className="col-span-3">
+                                <Select
+                                    value={editForm.rack_id}
+                                    onValueChange={(value) => setEditForm({ ...editForm, rack_id: value === 'none' ? '' : value })}
+                                >
+                                    <SelectTrigger className="col-span-3">
                                         <SelectValue placeholder={t('deviceManagement.selectRack')} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="none">{t('deviceManagement.noRack')}</SelectItem>
+                                        <SelectItem value="none">
+                                            {t('deviceManagement.noRack')}
+                                        </SelectItem>
                                         {racks.map((rack) => (
                                             <SelectItem key={rack.id} value={rack.id.toString()}>
                                                 {rack.name}
@@ -1403,39 +1649,40 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
                             </div>
 
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="add-u_position" className="text-right">
-                                    {t('deviceManagement.uPosition')} *
-                                </Label>
-                                <Input
-                                    id="add-u_position"
-                                    type="number"
-                                    min="1"
-                                    value={addDeviceForm.u_position}
-                                    onChange={(e) => setAddDeviceForm({ ...addDeviceForm, u_position: parseInt(e.target.value) || 1 })}
-                                    className="col-span-3"
-                                    required
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="add-ip" className="text-right">
+                                <Label htmlFor="edit-ip_address" className="text-right">
                                     {t('deviceManagement.ipAddress')}
                                 </Label>
                                 <Input
-                                    id="add-ip"
-                                    value={addDeviceForm.ip_address}
-                                    onChange={(e) => setAddDeviceForm({ ...addDeviceForm, ip_address: e.target.value })}
+                                    id="edit-ip_address"
+                                    value={editForm.ip_address}
+                                    onChange={(e) => setEditForm({ ...editForm, ip_address: e.target.value })}
                                     className="col-span-3"
                                     placeholder="192.168.1.1"
                                 />
                             </div>
 
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="add-status" className="text-right">
+                                <Label htmlFor="edit-connection_type" className="text-right">
+                                    {t('deviceManagement.connectionType')}
+                                </Label>
+                                <Input
+                                    id="edit-connection_type"
+                                    value={editForm.connection_type}
+                                    onChange={(e) => setEditForm({ ...editForm, connection_type: e.target.value })}
+                                    className="col-span-3"
+                                    placeholder="SSH/RDP/IPMI"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-status" className="text-right">
                                     {t('deviceManagement.status')} *
                                 </Label>
-                                <Select value={addDeviceForm.status} onValueChange={(value) => setAddDeviceForm({ ...addDeviceForm, status: value })}>
-                                    <SelectTrigger id="add-status" className="col-span-3">
+                                <Select
+                                    value={editForm.status}
+                                    onValueChange={(value) => setEditForm({ ...editForm, status: value })}
+                                >
+                                    <SelectTrigger className="col-span-3">
                                         <SelectValue placeholder={t('deviceManagement.selectStatus')} />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1445,16 +1692,583 @@ export default function RackVisualEdit({ racks, rooms, deviceLibrary, deviceType
                                     </SelectContent>
                                 </Select>
                             </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-description" className="text-right">
+                                    {t('deviceManagement.description')}
+                                </Label>
+                                <Input
+                                    id="edit-description"
+                                    value={editForm.description}
+                                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                    className="col-span-3"
+                                />
+                            </div>
                         </div>
-                        <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setAddDeviceModalOpen(false)}>
+                        <DialogFooter className="flex justify-end gap-2 mt-4">
+                            <Button type="button" variant="outline" onClick={() => {
+                                setEditModalOpen(false);
+                                setSelectedDeviceType('');
+                            }}>
                                 {t('common.cancel')}
                             </Button>
-                            <Button type="submit" disabled={!selectedDeviceType || !addDeviceForm.device_library_id}>
+                            <Button type="submit" disabled={!selectedDeviceType || !editForm.device_library_id}>
+                                {t('common.save')}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={addRackModalOpen} onOpenChange={setAddRackModalOpen}>
+                <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>{t('rackManagement.addRack')}</DialogTitle>
+                        <DialogDescription>{t('rackManagement.addNewRack')}</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleAddRackSubmit} className="flex flex-col flex-1 overflow-hidden">
+                        <div className="grid gap-4 py-4 overflow-y-auto px-1" style={{ maxHeight: 'calc(90vh - 220px)' }}>
+                            <div className="grid gap-2">
+                                <Label htmlFor="room_id">
+                                    {t('rackManagement.room')} *
+                                </Label>
+                                <Select
+                                    value={rackForm.room_id}
+                                    onValueChange={(value) => setRackForm({ ...rackForm, room_id: value })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={t('rackManagement.selectRoom')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {rooms.map((room) => (
+                                            <SelectItem key={room.id} value={room.id.toString()}>
+                                                {room.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="rack_type_id">
+                                    {t('rackManagement.rackType')}
+                                </Label>
+                                <Select
+                                    value={rackForm.rack_type_id}
+                                    onValueChange={handleRackTypeChange}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={t('rackManagement.selectRackType')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">
+                                            {t('rackManagement.noRackType')}
+                                        </SelectItem>
+                                        {rackTypes.map((type) => (
+                                            <SelectItem key={type.id} value={type.id.toString()}>
+                                                {type.name} ({type.u_count}U)
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="name">
+                                    {t('rackManagement.name')} *
+                                </Label>
+                                <Input
+                                    id="name"
+                                    value={rackForm.name}
+                                    onChange={(e) => setRackForm({ ...rackForm, name: e.target.value })}
+                                    placeholder={t('rackManagement.name')}
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="u_count">
+                                    {t('rackManagement.uCount')}
+                                </Label>
+                                <Input
+                                    id="u_count"
+                                    type="number"
+                                    value={rackForm.u_count}
+                                    disabled
+                                    className="bg-muted"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    {t('rackManagement.autoFilledFromRackType')}
+                                </p>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="power">
+                                    {t('rackManagement.power')}
+                                </Label>
+                                <Input
+                                    id="power"
+                                    type="number"
+                                    value={rackForm.power}
+                                    disabled
+                                    className="bg-muted"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    {t('rackManagement.autoFilledFromRackType')}
+                                </p>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="device_count">
+                                    {t('rackManagement.deviceCount')}
+                                </Label>
+                                <Input
+                                    id="device_count"
+                                    type="number"
+                                    value={rackForm.device_count}
+                                    disabled
+                                    className="bg-muted"
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="description">
+                                    {t('rackManagement.description')}
+                                </Label>
+                                <Input
+                                    id="description"
+                                    value={rackForm.description}
+                                    onChange={(e) => setRackForm({ ...rackForm, description: e.target.value })}
+                                    placeholder={t('rackManagement.description')}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter className="flex justify-end gap-2 mt-4">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                    setAddRackModalOpen(false);
+                                    resetRackForm();
+                                }}
+                            >
+                                {t('common.cancel')}
+                            </Button>
+                            <Button type="submit">
+                                {t('rackManagement.addRack')}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={addDeviceModalOpen} onOpenChange={setAddDeviceModalOpen}>
+                <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle>{t('deviceLibrary.add')}</DialogTitle>
+                        <DialogDescription>{t('deviceLibrary.addDesc')}</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateDeviceLibrarySubmit} className="flex flex-col flex-1 overflow-hidden">
+                        <div className="grid gap-4 py-4 overflow-y-auto px-1" style={{ maxHeight: 'calc(90vh - 220px)' }}>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="device_type_id" className="text-right">
+                                    {t('deviceLibrary.type')} *
+                                </Label>
+                                <Select
+                                    value={deviceLibraryForm.device_type_id}
+                                    onValueChange={(value) => setDeviceLibraryForm({ ...deviceLibraryForm, device_type_id: value })}
+                                >
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder={t('deviceLibrary.selectType')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {deviceTypes.map((type) => (
+                                            <SelectItem key={type.id} value={type.id.toString()}>
+                                                {type.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="name" className="text-right">
+                                    {t('deviceLibrary.name')} *
+                                </Label>
+                                <Input
+                                    id="name"
+                                    value={deviceLibraryForm.name}
+                                    onChange={(e) => setDeviceLibraryForm({ ...deviceLibraryForm, name: e.target.value })}
+                                    className="col-span-3"
+                                    required
+                                />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="model" className="text-right">
+                                    {t('deviceLibrary.model')}
+                                </Label>
+                                <Input
+                                    id="model"
+                                    value={deviceLibraryForm.model}
+                                    onChange={(e) => setDeviceLibraryForm({ ...deviceLibraryForm, model: e.target.value })}
+                                    className="col-span-3"
+                                />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="manufacturer" className="text-right">
+                                    {t('deviceLibrary.manufacturer')}
+                                </Label>
+                                <Input
+                                    id="manufacturer"
+                                    value={deviceLibraryForm.manufacturer}
+                                    onChange={(e) => setDeviceLibraryForm({ ...deviceLibraryForm, manufacturer: e.target.value })}
+                                    className="col-span-3"
+                                />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="serial_number" className="text-right">
+                                    {t('deviceLibrary.serialNumber')}
+                                </Label>
+                                <Input
+                                    id="serial_number"
+                                    value={deviceLibraryForm.serial_number}
+                                    onChange={(e) => setDeviceLibraryForm({ ...deviceLibraryForm, serial_number: e.target.value })}
+                                    className="col-span-3"
+                                />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="u_height" className="text-right">
+                                    {t('deviceLibrary.uHeight')} *
+                                </Label>
+                                <Input
+                                    id="u_height"
+                                    type="number"
+                                    min="1"
+                                    value={deviceLibraryForm.u_height}
+                                    onChange={(e) => setDeviceLibraryForm({ ...deviceLibraryForm, u_height: parseInt(e.target.value) || 1 })}
+                                    className="col-span-3"
+                                    required
+                                />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="power" className="text-right">
+                                    {t('deviceLibrary.power')}
+                                </Label>
+                                <Input
+                                    id="power"
+                                    type="number"
+                                    min="0"
+                                    value={deviceLibraryForm.power}
+                                    onChange={(e) => setDeviceLibraryForm({ ...deviceLibraryForm, power: parseInt(e.target.value) || 0 })}
+                                    className="col-span-3"
+                                />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="description" className="text-right">
+                                    {t('deviceLibrary.description')}
+                                </Label>
+                                <Textarea
+                                    id="description"
+                                    value={deviceLibraryForm.description}
+                                    onChange={(e) => setDeviceLibraryForm({ ...deviceLibraryForm, description: e.target.value })}
+                                    className="col-span-3"
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={closeCreateDeviceLibraryDialog}>
+                                {t('common.cancel')}
+                            </Button>
+                            <Button type="submit" disabled={!deviceLibraryForm.device_type_id || !deviceLibraryForm.name}>
                                 {t('common.create')}
                             </Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* 编辑设备库条目对话框 - 与 DeviceLibrary/Index.tsx 保持一致 */}
+            <Dialog open={editDeviceLibraryModalOpen} onOpenChange={setEditDeviceLibraryModalOpen}>
+                <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle>{t('deviceLibrary.edit')}</DialogTitle>
+                        <DialogDescription>
+                            {t('deviceLibrary.editDesc')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleEditDeviceLibrarySubmit} className="flex flex-col flex-1 overflow-hidden">
+                        <div className="grid gap-4 py-4 overflow-y-auto px-1" style={{ maxHeight: 'calc(90vh - 220px)' }}>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-device_type_id" className="text-right">
+                                    {t('deviceLibrary.type')}
+                                </Label>
+                                <Select
+                                    value={editDeviceLibraryForm.device_type_id}
+                                    onValueChange={(value) => setEditDeviceLibraryForm({ ...editDeviceLibraryForm, device_type_id: value })}
+                                >
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder={t('deviceLibrary.selectType')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {deviceTypes.map((type) => (
+                                            <SelectItem key={type.id} value={type.id.toString()}>
+                                                {type.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-name" className="text-right">
+                                    {t('deviceLibrary.name')}
+                                </Label>
+                                <Input
+                                    id="edit-name"
+                                    value={editDeviceLibraryForm.name}
+                                    onChange={(e) => setEditDeviceLibraryForm({ ...editDeviceLibraryForm, name: e.target.value })}
+                                    className="col-span-3"
+                                    required
+                                />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-model" className="text-right">
+                                    {t('deviceLibrary.model')}
+                                </Label>
+                                <Input
+                                    id="edit-model"
+                                    value={editDeviceLibraryForm.model}
+                                    onChange={(e) => setEditDeviceLibraryForm({ ...editDeviceLibraryForm, model: e.target.value })}
+                                    className="col-span-3"
+                                />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-manufacturer" className="text-right">
+                                    {t('deviceLibrary.manufacturer')}
+                                </Label>
+                                <Input
+                                    id="edit-manufacturer"
+                                    value={editDeviceLibraryForm.manufacturer}
+                                    onChange={(e) => setEditDeviceLibraryForm({ ...editDeviceLibraryForm, manufacturer: e.target.value })}
+                                    className="col-span-3"
+                                />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-serial_number" className="text-right">
+                                    {t('deviceLibrary.serialNumber')}
+                                </Label>
+                                <Input
+                                    id="edit-serial_number"
+                                    value={editDeviceLibraryForm.serial_number}
+                                    onChange={(e) => setEditDeviceLibraryForm({ ...editDeviceLibraryForm, serial_number: e.target.value })}
+                                    className="col-span-3"
+                                />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-u_height" className="text-right">
+                                    {t('deviceLibrary.uHeight')}
+                                </Label>
+                                <Input
+                                    id="edit-u_height"
+                                    type="number"
+                                    min="1"
+                                    value={editDeviceLibraryForm.u_height}
+                                    onChange={(e) => setEditDeviceLibraryForm({ ...editDeviceLibraryForm, u_height: parseInt(e.target.value) || 1 })}
+                                    className="col-span-3"
+                                    required
+                                />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-power" className="text-right">
+                                    {t('deviceLibrary.power')}
+                                </Label>
+                                <Input
+                                    id="edit-power"
+                                    type="number"
+                                    min="0"
+                                    value={editDeviceLibraryForm.power}
+                                    onChange={(e) => setEditDeviceLibraryForm({ ...editDeviceLibraryForm, power: parseInt(e.target.value) || 0 })}
+                                    className="col-span-3"
+                                />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-description" className="text-right">
+                                    {t('deviceLibrary.description')}
+                                </Label>
+                                <Textarea
+                                    id="edit-description"
+                                    value={editDeviceLibraryForm.description}
+                                    onChange={(e) => setEditDeviceLibraryForm({ ...editDeviceLibraryForm, description: e.target.value })}
+                                    className="col-span-3"
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={closeEditDeviceLibraryDialog}>
+                                {t('common.cancel')}
+                            </Button>
+                            <Button type="submit">
+                                {t('common.save')}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* 导出对话框 */}
+            <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>{t('visualEdit.exportData')}</DialogTitle>
+                        <DialogDescription>
+                            {t('visualEdit.exportDesc')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <p className="text-sm text-muted-foreground mb-4">
+                            {t('visualEdit.exportContent')}
+                        </p>
+                        <ul className="text-sm space-y-1 text-muted-foreground list-disc list-inside">
+                            <li>{t('visualEdit.exportRooms')}</li>
+                            <li>{t('visualEdit.exportRackTypes')}</li>
+                            <li>{t('visualEdit.exportRacks')}</li>
+                            <li>{t('visualEdit.exportDeviceTypes')}</li>
+                            <li>{t('visualEdit.exportDeviceLibrary')}</li>
+                            <li>{t('visualEdit.exportDevices')}</li>
+                        </ul>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setExportDialogOpen(false)}>
+                            {t('common.cancel')}
+                        </Button>
+                        <Button onClick={handleExport} disabled={isExporting}>
+                            {isExporting ? t('common.loading') : t('visualEdit.export')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* 导入对话框 */}
+            <Dialog open={importDialogOpen} onOpenChange={closeImportDialog}>
+                <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>{t('visualEdit.importData')}</DialogTitle>
+                        <DialogDescription>
+                            {t('visualEdit.importDesc')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex flex-col flex-1 overflow-hidden">
+                        {!importPreview ? (
+                            <div className="py-8">
+                                <Label htmlFor="import-file" className="block text-sm font-medium mb-2">
+                                    {t('visualEdit.selectImportFile')}
+                                </Label>
+                                <Input
+                                    id="import-file"
+                                    type="file"
+                                    accept=".json"
+                                    onChange={handleImportFileChange}
+                                    className="cursor-pointer"
+                                />
+                                <p className="text-xs text-muted-foreground mt-2">
+                                    {t('visualEdit.importFileHint')}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col flex-1 overflow-hidden">
+                                <div className="py-4 border-b">
+                                    <h4 className="text-sm font-medium mb-2">{t('visualEdit.importPreview')}</h4>
+                                    <div className="text-sm text-muted-foreground space-y-1">
+                                        <p>{t('visualEdit.exportVersion')}: {importPreview.version}</p>
+                                        <p>{t('visualEdit.exportDate')}: {importPreview.exported_at ? new Date(importPreview.exported_at).toLocaleString() : '-'}</p>
+                                    </div>
+                                </div>
+                                <div className="flex-1 overflow-y-auto py-4">
+                                    <h4 className="text-sm font-medium mb-3">{t('visualEdit.selectImportContent')}</h4>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id="import-rooms"
+                                                checked={importOptions.rooms}
+                                                onCheckedChange={(checked) => handleImportOptionChange('rooms', checked as boolean)}
+                                            />
+                                            <Label htmlFor="import-rooms" className="text-sm cursor-pointer">
+                                                {t('visualEdit.importRoomsLabel')} ({importPreview.counts.rooms} {t('visualEdit.items')})
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2 ml-4">
+                                            <Checkbox
+                                                id="import-rack-types"
+                                                checked={importOptions.rack_types}
+                                                onCheckedChange={(checked) => handleImportOptionChange('rack_types', checked as boolean)}
+                                            />
+                                            <Label htmlFor="import-rack-types" className="text-sm cursor-pointer">
+                                                {t('visualEdit.importRackTypesLabel')} ({importPreview.counts.rack_types} {t('visualEdit.items')})
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2 ml-4">
+                                            <Checkbox
+                                                id="import-racks"
+                                                checked={importOptions.racks}
+                                                disabled={!importOptions.rooms || !importOptions.rack_types}
+                                                onCheckedChange={(checked) => handleImportOptionChange('racks', checked as boolean)}
+                                            />
+                                            <Label htmlFor="import-racks" className={`text-sm cursor-pointer ${(!importOptions.rooms || !importOptions.rack_types) ? 'text-muted-foreground' : ''}`}>
+                                                {t('visualEdit.importRacksLabel')} ({importPreview.counts.racks} {t('visualEdit.items')})
+                                                {(!importOptions.rooms || !importOptions.rack_types) && (
+                                                    <span className="text-xs text-muted-foreground ml-1">({t('visualEdit.requiresRoomsAndTypes')})</span>
+                                                )}
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2 ml-4">
+                                            <Checkbox
+                                                id="import-device-types"
+                                                checked={importOptions.device_types}
+                                                onCheckedChange={(checked) => handleImportOptionChange('device_types', checked as boolean)}
+                                            />
+                                            <Label htmlFor="import-device-types" className="text-sm cursor-pointer">
+                                                {t('visualEdit.importDeviceTypesLabel')} ({importPreview.counts.device_types} {t('visualEdit.items')})
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2 ml-4">
+                                            <Checkbox
+                                                id="import-device-library"
+                                                checked={importOptions.device_library}
+                                                disabled={!importOptions.device_types}
+                                                onCheckedChange={(checked) => handleImportOptionChange('device_library', checked as boolean)}
+                                            />
+                                            <Label htmlFor="import-device-library" className={`text-sm cursor-pointer ${!importOptions.device_types ? 'text-muted-foreground' : ''}`}>
+                                                {t('visualEdit.importDeviceLibraryLabel')} ({importPreview.counts.device_library} {t('visualEdit.items')})
+                                                {!importOptions.device_types && (
+                                                    <span className="text-xs text-muted-foreground ml-1">({t('visualEdit.requiresDeviceTypes')})</span>
+                                                )}
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2 ml-4">
+                                            <Checkbox
+                                                id="import-devices"
+                                                checked={importOptions.devices}
+                                                disabled={!importOptions.racks || !importOptions.device_library}
+                                                onCheckedChange={(checked) => handleImportOptionChange('devices', checked as boolean)}
+                                            />
+                                            <Label htmlFor="import-devices" className={`text-sm cursor-pointer ${(!importOptions.racks || !importOptions.device_library) ? 'text-muted-foreground' : ''}`}>
+                                                {t('visualEdit.importDevicesLabel')} ({importPreview.counts.devices} {t('visualEdit.items')})
+                                                {(!importOptions.racks || !importOptions.device_library) && (
+                                                    <span className="text-xs text-muted-foreground ml-1">({t('visualEdit.requiresRacksAndLibrary')})</span>
+                                                )}
+                                            </Label>
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                                        <p className="text-xs text-yellow-800">
+                                            {t('visualEdit.importCascadeHint')}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={closeImportDialog}>
+                            {t('common.cancel')}
+                        </Button>
+                        {importPreview && (
+                            <Button onClick={handleImportSubmit} disabled={isImporting}>
+                                {isImporting ? t('common.loading') : t('visualEdit.import')}
+                            </Button>
+                        )}
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </AppLayout>
