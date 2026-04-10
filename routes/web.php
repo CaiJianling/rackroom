@@ -17,14 +17,17 @@
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 
+use App\Http\Controllers\AlertController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\DataExportController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\DeviceLibraryController;
 use App\Http\Controllers\DeviceTypeController;
+use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\PingController;
 use App\Http\Controllers\RackController;
 use App\Http\Controllers\RackTypeController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -71,6 +74,38 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('backup/{id}/restore', [BackupController::class, 'restore'])->name('backup.restore');
     Route::delete('backup/{id}', [BackupController::class, 'destroy'])->name('backup.destroy');
     Route::post('backup/upload', [BackupController::class, 'upload'])->name('backup.upload');
+
+    // 监控/报表路由
+    Route::get('monitor', [MonitorController::class, 'index'])->name('monitor.index');
+    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('alerts', [AlertController::class, 'index'])->name('alerts.index');
+
+    // 监控/报表 API 路由（使用 web 中间件共享 session）
+    Route::prefix('api')->group(function () {
+        // 监控API
+        Route::get('monitor/stats', [MonitorController::class, 'stats']);
+        Route::get('monitor/devices', [MonitorController::class, 'devices']);
+        Route::get('monitor/device-status', [MonitorController::class, 'deviceStatus']);
+        Route::get('monitor/room-distribution', [MonitorController::class, 'roomDistribution']);
+        Route::get('monitor/alert-stats', [MonitorController::class, 'alertStats']);
+        Route::get('monitor/metrics', [MonitorController::class, 'metrics']);
+
+        // 告警API
+        Route::get('alerts/{alert}', [AlertController::class, 'show']);
+        Route::post('alerts/{alert}/acknowledge', [AlertController::class, 'acknowledge']);
+        Route::post('alerts/{alert}/resolve', [AlertController::class, 'resolve']);
+        Route::post('alerts/batch-acknowledge', [AlertController::class, 'batchAcknowledge']);
+        Route::post('alerts/batch-resolve', [AlertController::class, 'batchResolve']);
+        Route::post('alerts', [AlertController::class, 'store']);
+
+        // 报表API
+        Route::post('reports/generate', [ReportController::class, 'generate']);
+        Route::post('reports/preview', [ReportController::class, 'preview']);
+        Route::post('reports/chart-data', [ReportController::class, 'chartData']);
+        Route::post('reports/templates', [ReportController::class, 'saveTemplate']);
+        Route::get('reports/{report}/download', [ReportController::class, 'download']);
+        Route::delete('reports/{report}', [ReportController::class, 'destroy']);
+    });
 });
 
 require __DIR__.'/settings.php';

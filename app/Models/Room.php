@@ -1,4 +1,5 @@
 <?php
+
 /*
  * @Author: CaiJianling caijianling@outlook.com
  * @Date: 2026-03-26 13:44:26
@@ -12,6 +13,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Room extends Model
 {
@@ -25,5 +27,10 @@ class Room extends Model
     public function racks(): HasMany
     {
         return $this->hasMany(Rack::class);
+    }
+
+    public function devices(): HasManyThrough
+    {
+        return $this->hasManyThrough(Device::class, Rack::class);
     }
 }
