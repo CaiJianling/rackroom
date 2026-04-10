@@ -58,7 +58,7 @@ class PingController extends Controller
             ];
         }
 
-        // 同时处理没有 IP 的设备，设置为维护中
+        // 同时处理没有 IP 的设备
         $noIpQuery = Device::query()
             ->where(function ($q) {
                 $q->whereNull('ip_address')
@@ -69,17 +69,21 @@ class PingController extends Controller
             $noIpQuery->where('rack_id', $rackId);
         }
 
-        $noIpDevices = $noIpQuery->where('status', '!=', 'maintenance')->get();
+        $noIpDevices = $noIpQuery->get();
         foreach ($noIpDevices as $device) {
-            $device->status = 'maintenance';
-            $device->save();
-            $updatedCount++;
+            $oldStatus = $device->status;
+            // 只有非 maintenance 状态的设备才需要更新为 maintenance
+            if ($oldStatus !== 'maintenance') {
+                $device->status = 'maintenance';
+                $device->save();
+                $updatedCount++;
+            }
 
             $results[] = [
                 'id' => $device->id,
                 'name' => $device->name,
                 'ip' => null,
-                'status' => 'maintenance',
+                'status' => $device->status,
                 'is_online' => false,
                 'rack_name' => $device->rack?->name,
             ];

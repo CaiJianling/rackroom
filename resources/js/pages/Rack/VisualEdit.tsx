@@ -92,6 +92,7 @@ interface DeviceType {
     id: number;
     name: string;
     icon: string | null;
+    color: string | null;
 }
 
 interface DeviceLibraryItem {
@@ -299,6 +300,7 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
         connection_port: undefined as number | undefined,
         device_library_id: '',
         rack_id: '',
+        u_position: 1,
         description: '',
     });
     const [selectedDeviceType, setSelectedDeviceType] = useState<string>('');
@@ -1218,6 +1220,7 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
             connection_port: device.connection_port || undefined,
             device_library_id: device.device_library_id?.toString() || '',
             rack_id: device.rack_id?.toString() || '',
+            u_position: device.u_position || 1,
             description: device.description || '',
         });
         setEditModalOpen(true);
@@ -1364,6 +1367,11 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
         return t(category);
     };
 
+    const getTypeColor = (typeId: number) => {
+        const type = deviceTypes.find(t => t.id === typeId);
+        return type?.color || '#3b82f6';
+    };
+
     const getStatusLabel = (status: string) => {
         return t(`visualEdit.${status}`);
     };
@@ -1443,11 +1451,12 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
     };
 
     const categories = useMemo(() => {
-        const baseCategories = [{ value: 'all', label: t('visualEdit.all'), icon: 'all' }];
+        const baseCategories = [{ value: 'all', label: t('visualEdit.all'), icon: 'all', color: null }];
         const typeCategories = deviceTypes.map(type => ({
             value: type.id.toString(),
             label: type.name,
             icon: type.icon,
+            color: type.color,
         }));
         return [...baseCategories, ...typeCategories];
     }, [deviceTypes, t]);
@@ -1547,6 +1556,12 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                         title={cat.label}
                                     >
                                         {cat.icon === 'all' ? <Layers className="h-3 w-3 mr-1" /> : getIconForType(cat.icon || null)}
+                                        {cat.color && (
+                                            <div
+                                                className="w-2 h-2 rounded-full mr-1"
+                                                style={{ backgroundColor: cat.color }}
+                                            />
+                                        )}
                                         {cat.label}
                                     </Button>
                                 ))}
@@ -1587,9 +1602,13 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                                         {item.name}
                                                     </TableCell>
                                                     <TableCell className="py-2 px-4">
-                                                        <span className="inline-flex items-center">
+                                                        <div className="flex items-center gap-2">
+                                                            <div
+                                                                className="w-3 h-3 rounded-full flex-shrink-0"
+                                                                style={{ backgroundColor: getTypeColor(item.device_type_id) }}
+                                                            />
                                                             {getIconForType(item.device_type?.icon || null)}
-                                                        </span>
+                                                        </div>
                                                     </TableCell>
                                                     <TableCell className="py-2 px-4 text-sm text-muted-foreground">
                                                         {item.u_height}U
@@ -1736,9 +1755,15 @@ ${t('visualEdit.model')}: ${slot.device.model || slot.device.device_library?.mod
 ${t('visualEdit.manufacturer')}: ${slot.device.manufacturer || slot.device.device_library?.manufacturer || '-'}
 ${t('visualEdit.serialNumber')}: ${slot.device.serial_number || slot.device.device_library?.serial_number || '-'}`}
                                                                         >
-                                                                            {slot.device.name.length > 18
-                                                                                ? slot.device.name.slice(0, 16) + '..'
-                                                                                : slot.device.name}
+                                                                            <div className="flex items-center gap-1">
+                                                                                <div
+                                                                                    className="w-2 h-2 rounded-full flex-shrink-0"
+                                                                                    style={{ backgroundColor: getTypeColor(slot.device.device_library?.device_type_id || 0) }}
+                                                                                />
+                                                                                {slot.device.name.length > 18
+                                                                                    ? slot.device.name.slice(0, 16) + '..'
+                                                                                    : slot.device.name}
+                                                                            </div>
                                                                         </div>
                                                                         {/* 显示设备占据的所有U位标识 */}
                                                                         {slot.uHeight > 1 && (
@@ -1872,6 +1897,34 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                                         ))}
                                     </SelectContent>
                                 </Select>
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-u_position" className="text-right">
+                                    {t('deviceManagement.uPosition')} *
+                                </Label>
+                                <Input
+                                    id="edit-u_position"
+                                    type="number"
+                                    min="1"
+                                    max={(() => {
+                                        const rack = editForm.rack_id ? racks.find(r => r.id.toString() === editForm.rack_id) : null;
+                                        const deviceLib = editForm.device_library_id ? deviceLibrary.find(item => item.id.toString() === editForm.device_library_id) : null;
+                                        const deviceUHeight = deviceLib?.u_height || currentEditDevice?.device?.device_library?.u_height || 1;
+                                        return rack ? rack.u_count - deviceUHeight + 1 : 42;
+                                    })()}
+                                    value={editForm.u_position}
+                                    onChange={(e) => {
+                                        const value = parseInt(e.target.value) || 1;
+                                        const rack = editForm.rack_id ? racks.find(r => r.id.toString() === editForm.rack_id) : null;
+                                        const deviceLib = editForm.device_library_id ? deviceLibrary.find(item => item.id.toString() === editForm.device_library_id) : null;
+                                        const deviceUHeight = deviceLib?.u_height || currentEditDevice?.device?.device_library?.u_height || 1;
+                                        const maxU = rack ? rack.u_count - deviceUHeight + 1 : 42;
+                                        setEditForm({ ...editForm, u_position: Math.min(value, maxU) });
+                                    }}
+                                    className="col-span-3"
+                                    required
+                                />
                             </div>
 
                             <div className="grid grid-cols-4 items-center gap-4">
@@ -2857,7 +2910,13 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                                     {t('deviceLibrary.type')}
                                 </Label>
                                 <span className="col-span-3">
-                                    {viewingLibraryItem.device_type?.name || '-'}
+                                    <div className="flex items-center gap-2">
+                                        <div
+                                            className="w-3 h-3 rounded-full flex-shrink-0"
+                                            style={{ backgroundColor: getTypeColor(viewingLibraryItem.device_type_id) }}
+                                        />
+                                        {viewingLibraryItem.device_type?.name || '-'}
+                                    </div>
                                 </span>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">

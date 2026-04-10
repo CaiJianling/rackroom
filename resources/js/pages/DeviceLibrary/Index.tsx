@@ -60,6 +60,7 @@ interface DeviceType {
     id: number;
     name: string;
     icon: string | null;
+    color: string | null;
 }
 
 interface DeviceLibraryItem {
@@ -283,6 +284,11 @@ export default function DeviceLibraryIndex({ deviceLibrary, deviceTypes, breadcr
         return type ? type.name : '-';
     };
 
+    const getTypeColor = (typeId: number) => {
+        const type = deviceTypes.find(t => t.id === typeId);
+        return type?.color || '#3b82f6';
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('navigation.deviceLibrary')} />
@@ -462,7 +468,13 @@ export default function DeviceLibraryIndex({ deviceLibrary, deviceTypes, breadcr
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="px-4 py-3">
-                                                    {getTypeName(item.device_type_id)}
+                                                    <div className="flex items-center gap-2">
+                                                        <div
+                                                            className="w-3 h-3 rounded-full flex-shrink-0"
+                                                            style={{ backgroundColor: getTypeColor(item.device_type_id) }}
+                                                        />
+                                                        {getTypeName(item.device_type_id)}
+                                                    </div>
                                                 </TableCell>
                                                 <TableCell className="px-4 py-3 text-muted-foreground">
                                                     {item.model || '-'}
@@ -839,7 +851,13 @@ export default function DeviceLibraryIndex({ deviceLibrary, deviceTypes, breadcr
                                 <Label className="text-right font-medium">
                                     {t('deviceLibrary.type')}
                                 </Label>
-                                <span className="col-span-3">{getTypeName(viewingItem.device_type_id)}</span>
+                                <div className="col-span-3 flex items-center gap-2">
+                                    <div
+                                        className="w-3 h-3 rounded-full flex-shrink-0"
+                                        style={{ backgroundColor: getTypeColor(viewingItem.device_type_id) }}
+                                    />
+                                    {getTypeName(viewingItem.device_type_id)}
+                                </div>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label className="text-right font-medium">

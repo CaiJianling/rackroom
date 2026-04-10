@@ -60,12 +60,14 @@ interface PageProps {
 interface Rack {
     id: number;
     name: string;
+    u_count: number;
 }
 
 interface DeviceType {
     id: number;
     name: string;
     icon: string | null;
+    color: string | null;
 }
 
 interface DeviceLibraryItem {
@@ -156,6 +158,11 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
     const getDeviceTypeName = (deviceTypeId: number) => {
         const type = deviceTypes.find(t => t.id === deviceTypeId);
         return type ? type.name : '-';
+    };
+
+    const getDeviceTypeColor = (deviceTypeId: number) => {
+        const type = deviceTypes.find(t => t.id === deviceTypeId);
+        return type?.color || '#3b82f6';
     };
 
     const getDeviceLibraryInfo = (deviceLibraryId: number | null) => {
@@ -600,7 +607,15 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                                                     {device.name}
                                                 </TableCell>
                                                 <TableCell className="px-4 py-3">
-                                                    {deviceLib?.device_type ? getDeviceTypeName(deviceLib.device_type_id) : '-'}
+                                                    <div className="flex items-center gap-2">
+                                                        {deviceLib?.device_type && (
+                                                            <div
+                                                                className="w-3 h-3 rounded-full flex-shrink-0"
+                                                                style={{ backgroundColor: getDeviceTypeColor(deviceLib.device_type_id) }}
+                                                            />
+                                                        )}
+                                                        {deviceLib?.device_type ? getDeviceTypeName(deviceLib.device_type_id) : '-'}
+                                                    </div>
                                                 </TableCell>
                                                 <TableCell className="px-4 py-3 text-muted-foreground">
                                                     {deviceLib ? `${deviceLib.manufacturer || ''} ${deviceLib.model || ''}`.trim() || '-' : '-'}
@@ -782,8 +797,21 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                                     id="u_position"
                                     type="number"
                                     min="1"
+                                    max={(() => {
+                                        const rack = form.rack_id ? racks.find(r => r.id.toString() === form.rack_id) : null;
+                                        const deviceLib = form.device_library_id ? deviceLibrary.find(item => item.id.toString() === form.device_library_id) : null;
+                                        const deviceUHeight = deviceLib?.u_height || 1;
+                                        return rack ? rack.u_count - deviceUHeight + 1 : 42;
+                                    })()}
                                     value={form.u_position}
-                                    onChange={(e) => setForm({ ...form, u_position: parseInt(e.target.value) || 1 })}
+                                    onChange={(e) => {
+                                        const value = parseInt(e.target.value) || 1;
+                                        const rack = form.rack_id ? racks.find(r => r.id.toString() === form.rack_id) : null;
+                                        const deviceLib = form.device_library_id ? deviceLibrary.find(item => item.id.toString() === form.device_library_id) : null;
+                                        const deviceUHeight = deviceLib?.u_height || 1;
+                                        const maxU = rack ? rack.u_count - deviceUHeight + 1 : 42;
+                                        setForm({ ...form, u_position: Math.min(value, maxU) });
+                                    }}
                                     className="col-span-3"
                                     required
                                 />
@@ -965,6 +993,34 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                             </div>
 
                             <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-u_position" className="text-right">
+                                    {t('deviceManagement.uPosition')} *
+                                </Label>
+                                <Input
+                                    id="edit-u_position"
+                                    type="number"
+                                    min="1"
+                                    max={(() => {
+                                        const rack = form.rack_id ? racks.find(r => r.id.toString() === form.rack_id) : null;
+                                        const deviceLib = form.device_library_id ? deviceLibrary.find(item => item.id.toString() === form.device_library_id) : null;
+                                        const deviceUHeight = deviceLib?.u_height || editingDevice?.device_library?.u_height || 1;
+                                        return rack ? rack.u_count - deviceUHeight + 1 : 42;
+                                    })()}
+                                    value={form.u_position}
+                                    onChange={(e) => {
+                                        const value = parseInt(e.target.value) || 1;
+                                        const rack = form.rack_id ? racks.find(r => r.id.toString() === form.rack_id) : null;
+                                        const deviceLib = form.device_library_id ? deviceLibrary.find(item => item.id.toString() === form.device_library_id) : null;
+                                        const deviceUHeight = deviceLib?.u_height || editingDevice?.device_library?.u_height || 1;
+                                        const maxU = rack ? rack.u_count - deviceUHeight + 1 : 42;
+                                        setForm({ ...form, u_position: Math.min(value, maxU) });
+                                    }}
+                                    className="col-span-3"
+                                    required
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="edit-ip_address" className="text-right">
                                     {t('deviceManagement.ipAddress')}
                                 </Label>
@@ -1103,7 +1159,15 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                                 </Label>
                                 <span className="col-span-3">
                                     {viewingDevice.device_library?.device_type
-                                        ? getDeviceTypeName(viewingDevice.device_library.device_type_id)
+                                        ? (
+                                            <div className="flex items-center gap-2">
+                                                <div
+                                                    className="w-3 h-3 rounded-full flex-shrink-0"
+                                                    style={{ backgroundColor: getDeviceTypeColor(viewingDevice.device_library.device_type_id) }}
+                                                />
+                                                {getDeviceTypeName(viewingDevice.device_library.device_type_id)}
+                                            </div>
+                                        )
                                         : '-'}
                                 </span>
                             </div>
