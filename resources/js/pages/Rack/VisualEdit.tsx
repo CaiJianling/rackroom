@@ -75,10 +75,12 @@ interface Device {
 interface Rack {
     id: number;
     room_id: number;
+    rack_type_id: number | null;
     name: string;
     u_count: number;
     power: number;
     device_count: number;
+    description: string | null;
     room?: Room;
     devices?: DeviceWithLibrary[];
 }
@@ -146,10 +148,13 @@ interface RackDisplay {
     id: number;
     name: string;
     room_id: number;
+    rack_type_id: number | null;
+    description: string | null;
     totalU: number;
     slots: RackSlot[];
     maxPower: number;
     curPower: number;
+    devices: Device[];
 }
 
 
@@ -168,6 +173,8 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
     const [previewMode, setPreviewMode] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [addRackModalOpen, setAddRackModalOpen] = useState(false);
+    const [editRackModalOpen, setEditRackModalOpen] = useState(false);
+    const [editingRack, setEditingRack] = useState<RackDisplay | null>(null);
     const [addDeviceModalOpen, setAddDeviceModalOpen] = useState(false);
     const [editDeviceLibraryModalOpen, setEditDeviceLibraryModalOpen] = useState(false);
     const [currentEditDevice, setCurrentEditDevice] = useState<{ rackId: number; uIndex: number; device: Device } | null>(null);
@@ -254,6 +261,19 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
         x: 0,
         y: 0,
         item: null,
+    });
+
+    // 机柜右键菜单状态
+    const [rackContextMenu, setRackContextMenu] = useState<{
+        open: boolean;
+        x: number;
+        y: number;
+        rack: RackDisplay | null;
+    }>({
+        open: false,
+        x: 0,
+        y: 0,
+        rack: null,
     });
 
     // 设备库详情弹窗状态
@@ -424,10 +444,13 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                 id: rack.id,
                 name: rack.name,
                 room_id: rack.room_id,
+                rack_type_id: rack.rack_type_id,
+                description: rack.description,
                 totalU: rack.u_count,
                 slots: finalSlots,
                 maxPower: rack.power || 5000,
                 curPower: rack.devices?.reduce((sum, d) => sum + (d.power || 0), 0) || 0,
+                devices: rack.devices || [],
             };
         });
     }, [racks]);
@@ -588,6 +611,22 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
     // 关闭设备库右键菜单
     const closeLibraryContextMenu = () => {
         setLibraryContextMenu({ ...libraryContextMenu, open: false });
+    };
+
+    // 处理机柜右键菜单
+    const handleRackContextMenu = (e: React.MouseEvent, rack: RackDisplay) => {
+        e.preventDefault();
+        setRackContextMenu({
+            open: true,
+            x: e.clientX,
+            y: e.clientY,
+            rack,
+        });
+    };
+
+    // 关闭机柜右键菜单
+    const closeRackContextMenu = () => {
+        setRackContextMenu({ ...rackContextMenu, open: false });
     };
 
     // 打开设备库详情弹窗
@@ -1352,18 +1391,54 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
         });
     };
 
-    const handlePowerEdit = (rack: RackDisplay) => {
-        const input = prompt(t('visualEdit.enterMaxPower'), rack.maxPower.toString());
-        if (input) {
-            const power = parseInt(input);
-            if (!isNaN(power) && power > 0) {
-                router.put(`/racks/${rack.id}`, {
-                    power: power,
-                }, {
-                    onSuccess: () => router.reload({ only: ['racks'] })
-                });
+    // 打开编辑机柜对话框
+    const openEditRackModal = (rack: RackDisplay) => {
+        setEditingRack(rack);
+        const rackTypeId = rack.rack_type_id;
+        setRackForm({
+            room_id: rack.room_id?.toString() || '',
+            rack_type_id: rackTypeId ? rackTypeId.toString() : 'none',
+            name: rack.name,
+            u_count: rack.totalU,
+            power: rack.maxPower,
+            device_count: rack.devices?.length || 0,
+            description: rack.description || '',
+        });
+        setEditRackModalOpen(true);
+    };
+
+    // 关闭编辑机柜对话框
+    const closeEditRackModal = () => {
+        setEditRackModalOpen(false);
+        setEditingRack(null);
+        resetRackForm();
+    };
+
+    // 处理编辑机柜提交
+    const handleEditRackSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingRack) return;
+
+        const submitData = {
+            room_id: rackForm.room_id,
+            rack_type_id: rackForm.rack_type_id === 'none' ? null : (rackForm.rack_type_id || null),
+            name: rackForm.name,
+            device_count: rackForm.device_count,
+            description: rackForm.description,
+        };
+
+        router.put(`/racks/${editingRack.id}`, submitData, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                closeEditRackModal();
+                showToast(t('validation.updated'), 'success');
+                router.reload({ only: ['racks'] });
+            },
+            onError: (errors) => {
+                showToast(t('visualEdit.toast.rackUpdateFailed') + ': ' + JSON.stringify(errors), 'error');
             }
-        }
+        });
     };
 
     const getCategoryLabel = (category: string) => {
@@ -1683,15 +1758,20 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                                 className="flex flex-col rounded-lg border bg-card"
                                             >
                                                 <div className="flex items-center justify-between rounded-t-lg bg-muted px-3 py-2">
-                                                    <span className="font-semibold">{rack.name}</span>
+                                                    <span
+                                                        className="font-semibold cursor-pointer"
+                                                        onContextMenu={!previewMode ? (e) => handleRackContextMenu(e, rack) : undefined}
+                                                    >
+                                                        {rack.name}
+                                                    </span>
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
                                                         className="h-6 w-6 p-0"
-                                                        onClick={() => handlePowerEdit(rack)}
-                                                        title={t('visualEdit.editPower')}
+                                                        onClick={() => openEditRackModal(rack)}
+                                                        title={t('rackManagement.editRack')}
                                                     >
-                                                        <Zap className="h-3 w-3 text-yellow-500" />
+                                                        <Pencil className="h-3 w-3 text-blue-500" />
                                                     </Button>
                                                 </div>
                                                 <div
@@ -2020,11 +2100,12 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                                 <Label htmlFor="edit-description" className="text-right">
                                     {t('deviceManagement.description')}
                                 </Label>
-                                <Input
+                                <Textarea
                                     id="edit-description"
                                     value={editForm.description}
-                                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditForm({ ...editForm, description: e.target.value })}
                                     className="col-span-3"
+                                    rows={3}
                                 />
                             </div>
                         </div>
@@ -2172,6 +2253,134 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                             </Button>
                             <Button type="submit">
                                 {t('rackManagement.addRack')}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* 编辑机柜对话框 */}
+            <Dialog open={editRackModalOpen} onOpenChange={setEditRackModalOpen}>
+                <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>{t('rackManagement.editRack')}</DialogTitle>
+                        <DialogDescription>{t('rackManagement.updateRack')}</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleEditRackSubmit} className="flex flex-col flex-1 overflow-hidden">
+                        <div className="grid gap-4 py-4 overflow-y-auto px-1" style={{ maxHeight: 'calc(90vh - 220px)' }}>
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-room_id">
+                                    {t('rackManagement.room')} *
+                                </Label>
+                                <Select
+                                    value={rackForm.room_id}
+                                    onValueChange={(value) => setRackForm({ ...rackForm, room_id: value })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={t('rackManagement.selectRoom')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {rooms.map((room) => (
+                                            <SelectItem key={room.id} value={room.id.toString()}>
+                                                {room.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-rack_type_id">
+                                    {t('rackManagement.rackType')}
+                                    {editingRack?.devices && editingRack.devices.length > 0 && (
+                                        <span className="ml-2 text-xs text-muted-foreground">
+                                            ({t('rackManagement.hasDevicesLocked')})
+                                        </span>
+                                    )}
+                                </Label>
+                                <Select
+                                    value={rackForm.rack_type_id}
+                                    disabled={editingRack?.devices ? editingRack.devices.length > 0 : false}
+                                    onValueChange={handleRackTypeChange}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={t('rackManagement.selectRackType')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">
+                                            {t('rackManagement.noRackType')}
+                                        </SelectItem>
+                                        {rackTypes.map((type) => (
+                                            <SelectItem key={type.id} value={type.id.toString()}>
+                                                {type.name} ({type.u_count}U)
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-name">
+                                    {t('rackManagement.name')} *
+                                </Label>
+                                <Input
+                                    id="edit-name"
+                                    value={rackForm.name}
+                                    onChange={(e) => setRackForm({ ...rackForm, name: e.target.value })}
+                                    placeholder={t('rackManagement.name')}
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-u_count">
+                                    {t('rackManagement.uCount')}
+                                </Label>
+                                <Input
+                                    id="edit-u_count"
+                                    type="number"
+                                    value={rackForm.u_count}
+                                    disabled
+                                    className="bg-muted"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    {t('rackManagement.autoFilledFromRackType')}
+                                </p>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-power">
+                                    {t('rackManagement.power')}
+                                </Label>
+                                <Input
+                                    id="edit-power"
+                                    type="number"
+                                    value={rackForm.power}
+                                    disabled
+                                    className="bg-muted"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    {t('rackManagement.autoFilledFromRackType')}
+                                </p>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-description">
+                                    {t('rackManagement.description')}
+                                </Label>
+                                <Textarea
+                                    id="edit-description"
+                                    value={rackForm.description}
+                                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setRackForm({ ...rackForm, description: e.target.value })}
+                                    placeholder={t('rackManagement.description')}
+                                    rows={3}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter className="flex justify-end gap-2 mt-4">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={closeEditRackModal}
+                            >
+                                {t('common.cancel')}
+                            </Button>
+                            <Button type="submit">
+                                {t('common.save')}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -2902,6 +3111,71 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                         <button
                             className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2 text-red-600 dark:text-red-400"
                             onClick={() => handleDeleteLibraryItem(libraryContextMenu.item!)}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            <span>{t('common.delete')}</span>
+                        </button>
+                    </div>
+                </>
+            )}
+
+            {/* 机柜右键菜单 */}
+            {!previewMode && rackContextMenu.open && rackContextMenu.rack && (
+                <>
+                    <div
+                        className="fixed inset-0 z-40"
+                        onClick={closeRackContextMenu}
+                        onContextMenu={(e) => {
+                            e.preventDefault();
+                            closeRackContextMenu();
+                        }}
+                    />
+                    <div
+                        className="fixed z-50 min-w-[160px] bg-white dark:bg-gray-900 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 py-1"
+                        style={{ left: rackContextMenu.x, top: rackContextMenu.y }}
+                    >
+                        <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                            {rackContextMenu.rack.name}
+                        </div>
+                        <button
+                            className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+                            onClick={() => {
+                                // 查看机柜详情 - 可以显示机柜信息和设备列表
+                                showToast(`${t('rackManagement.name')}: ${rackContextMenu.rack!.name}\n${t('rackManagement.uCount')}: ${rackContextMenu.rack!.totalU}U\n${t('rackManagement.power')}: ${rackContextMenu.rack!.maxPower}W\n${t('rackManagement.deviceCount')}: ${rackContextMenu.rack!.devices.length}`, 'info');
+                                closeRackContextMenu();
+                            }}
+                        >
+                            <Eye className="h-4 w-4" />
+                            <span>{t('common.view')}</span>
+                        </button>
+                        <button
+                            className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+                            onClick={() => {
+                                openEditRackModal(rackContextMenu.rack!);
+                                closeRackContextMenu();
+                            }}
+                        >
+                            <Pencil className="h-4 w-4" />
+                            <span>{t('common.edit')}</span>
+                        </button>
+                        <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
+                        <button
+                            className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2 text-red-600 dark:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => {
+                                if (rackContextMenu.rack && rackContextMenu.rack.devices.length === 0) {
+                                    router.delete(`/racks/${rackContextMenu.rack.id}`, {
+                                        onSuccess: () => {
+                                            showToast(t('validation.deleted'), 'success');
+                                            closeRackContextMenu();
+                                        },
+                                        onError: () => {
+                                            showToast(t('validation.rack_has_devices_delete'), 'error');
+                                        }
+                                    });
+                                }
+                            }}
+                            disabled={rackContextMenu.rack ? rackContextMenu.rack.devices.length > 0 : true}
+                            title={rackContextMenu.rack && rackContextMenu.rack.devices.length > 0 ? t('rackManagement.hasDevicesLocked') : ''}
                         >
                             <Trash2 className="h-4 w-4" />
                             <span>{t('common.delete')}</span>

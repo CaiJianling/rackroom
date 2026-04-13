@@ -67,7 +67,8 @@
             "email": "邮箱地址",
             "emailPlaceholder": "email@example.com",
             "orReturnTo": "或返回",
-            "login": "登录"
+            "login": "登录",
+            "resetLinkSent": "我们已将密码重置链接发送到您的邮箱。"
         },
         "resetPassword": {
             "title": "重置密码",
@@ -812,5 +813,10 @@
         "noTemplates": "暂无保存的模板",
         "noHistory": "暂无生成记录",
         "deleteConfirm": "确定要删除此报表吗？"
+    },
+    "validation": {
+        "created": "创建成功",
+        "updated": "更新成功",
+        "deleted": "删除成功"
     }
 }

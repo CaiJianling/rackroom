@@ -67,7 +67,8 @@
             "email": "Email address",
             "emailPlaceholder": "email@example.com",
             "orReturnTo": "Or, return to",
-            "login": "log in"
+            "login": "log in",
+            "resetLinkSent": "We have emailed your password reset link."
         },
         "resetPassword": {
             "title": "Reset password",
@@ -812,5 +813,10 @@
         "noTemplates": "No saved templates",
         "noHistory": "No generation history",
         "deleteConfirm": "Are you sure you want to delete this report?"
+    },
+    "validation": {
+        "created": "Created successfully",
+        "updated": "Updated successfully",
+        "deleted": "Deleted successfully"
     }
 }

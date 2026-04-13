@@ -166,7 +166,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
             name: rack.name,
             u_count: rack.u_count,
             power: rack.power,
-            device_count: rack.device_count,
+            device_count: rack.devices_count || 0,
             description: rack.description || '',
         });
         setIsEditDialogOpen(true);
