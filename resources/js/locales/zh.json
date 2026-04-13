@@ -346,7 +346,12 @@
         "suggestion": "我们建议从以下内容开始。",
         "dashboard": "仪表板",
         "login": "登录",
-        "register": "注册"
+        "register": "注册",
+        "appName": "机房设备管理系统",
+        "descriptionLine1": "高效管理您的数据中心机房、机柜和设备资源。",
+        "descriptionLine2": "实时监控设备状态，智能分配U位资源。",
+        "getStartedButton": "立即开始使用",
+        "enterSystem": "进入系统"
     },
     "userManagement": {
         "title": "用户管理",

@@ -54,12 +54,12 @@ export default function Welcome({
                     <main className="flex w-full max-w-[335px] flex-col-reverse lg:max-w-4xl lg:flex-row">
                         <div className="flex-1 rounded-br-lg rounded-bl-lg bg-white p-6 pb-12 text-[13px] leading-[20px] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] lg:rounded-tl-lg lg:rounded-br-none lg:p-20 dark:bg-[#161615] dark:text-[#EDEDEC] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]">
                             <h1 className="mb-4 text-2xl font-bold">
-                                机房设备管理系统
+                                {t('welcome.appName')}
                             </h1>
                             <p className="mb-6 text-[#706f6c] dark:text-[#A1A09A]">
-                                高效管理您的数据中心机房、机柜和设备资源。
+                                {t('welcome.descriptionLine1')}
                                 <br />
-                                实时监控设备状态，智能分配U位资源。
+                                {t('welcome.descriptionLine2')}
                             </p>
                             <ul className="flex flex-col gap-3 text-sm leading-normal">
                                 {!auth.user && canRegister && (
@@ -68,7 +68,7 @@ export default function Welcome({
                                             href={register()}
                                             className="inline-block rounded-sm border border-black bg-[#1b1b18] px-6 py-2 text-sm font-medium text-white hover:bg-black dark:border-[#eeeeec] dark:bg-[#eeeeec] dark:text-[#1C1C1A] dark:hover:bg-white"
                                         >
-                                            立即开始使用
+                                            {t('welcome.getStartedButton')}
                                         </Link>
                                     </li>
                                 )}
@@ -78,7 +78,7 @@ export default function Welcome({
                                             href={dashboard()}
                                             className="inline-block rounded-sm border border-black bg-[#1b1b18] px-6 py-2 text-sm font-medium text-white hover:bg-black dark:border-[#eeeeec] dark:bg-[#eeeeec] dark:text-[#1C1C1A] dark:hover:bg-white"
                                         >
-                                            进入系统
+                                            {t('welcome.enterSystem')}
                                         </Link>
                                     </li>
                                 )}

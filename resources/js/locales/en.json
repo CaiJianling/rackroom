@@ -346,7 +346,12 @@
         "suggestion": "We suggest starting with the following.",
         "dashboard": "Dashboard",
         "login": "Log in",
-        "register": "Register"
+        "register": "Register",
+        "appName": "RackRoom DCIM",
+        "descriptionLine1": "Efficiently manage your data center rooms, racks, and equipment.",
+        "descriptionLine2": "Monitor device status in real-time, intelligently allocate U-space resources.",
+        "getStartedButton": "Get Started",
+        "enterSystem": "Enter System"
     },
     "userManagement": {
         "title": "User Management",
