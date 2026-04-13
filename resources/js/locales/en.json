@@ -42,7 +42,8 @@
             "forgotPassword": "Forgot password?",
             "rememberMe": "Remember me",
             "noAccount": "Don't have an account?",
-            "signUp": "Sign up"
+            "signUp": "Sign up",
+            "accountDisabled": "This account has been disabled. Please contact the administrator."
         },
         "register": {
             "title": "Create an account",

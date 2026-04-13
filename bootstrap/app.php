@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\CheckUserActive;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetLocaleFromRequest;
@@ -23,10 +24,12 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+            CheckUserActive::class,
         ]);
 
         $middleware->alias([
             'admin' => AdminMiddleware::class,
+            'active' => CheckUserActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

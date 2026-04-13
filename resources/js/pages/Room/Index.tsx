@@ -1,19 +1,3 @@
-/*
- * @Author: CaiJianling caijianling@outlook.com
- * @Date: 2026-03-26 13:52:19
- * @LastEditors: CaiJianling caijianling@outlook.com
- * @LastEditTime: 2026-04-10 08:39:03
- * @FilePath: /rackroom/resources/js/pages/Room/Index.tsx
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
-/*
- * @Author: CaiJianling caijianling@outlook.com
- * @Date: 2026-03-26 13:52:19
- * @LastEditors: CaiJianling caijianling@outlook.com
- * @LastEditTime: 2026-03-26 15:49:47
- * @FilePath: /rackroom/resources/js/pages/Room/Index.tsx
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
 import { Head, router, usePage } from '@inertiajs/react';
 import {
     Pencil,

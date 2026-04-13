@@ -1,11 +1,3 @@
-/*
- * @Author: CaiJianling caijianling@outlook.com
- * @Date: 2026-02-09 23:56:04
- * @LastEditors: CaiJianling caijianling@outlook.com
- * @LastEditTime: 2026-02-24 13:01:54
- * @FilePath: /godlytools/resources/js/pages/auth/confirm-password.tsx
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
 import { Form, Head } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 import InputError from '@/components/input-error';

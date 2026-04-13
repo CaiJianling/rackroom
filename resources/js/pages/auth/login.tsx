@@ -1,4 +1,4 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
@@ -16,6 +16,7 @@ type Props = {
     status?: string;
     canResetPassword: boolean;
     canRegister: boolean;
+    error?: string;
 };
 
 export default function Login({
@@ -23,6 +24,8 @@ export default function Login({
     canResetPassword,
     canRegister,
 }: Props) {
+    const { props } = usePage();
+    const error = (props as any).error;
     const { t } = useTranslation();
     return (
         <AuthLayout
@@ -123,6 +126,12 @@ export default function Login({
             {status && (
                 <div className="mb-4 text-center text-sm font-medium text-green-600">
                     {status}
+                </div>
+            )}
+
+            {error && (
+                <div className="mb-4 rounded-md bg-red-50 p-3 text-center text-sm font-medium text-red-600 dark:bg-red-950 dark:text-red-400">
+                    {error}
                 </div>
             )}
         </AuthLayout>
