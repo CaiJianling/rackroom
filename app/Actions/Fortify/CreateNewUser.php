@@ -24,10 +24,14 @@ class CreateNewUser implements CreatesNewUsers
             'password' => $this->passwordRules(),
         ])->validate();
 
+        // 检查是否是第一个用户，第一个用户设为管理员
+        $isFirstUser = User::count() === 0;
+
         return User::create([
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => $input['password'],
+            'is_admin' => $isFirstUser,
         ]);
     }
 }

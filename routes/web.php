@@ -46,8 +46,6 @@ Route::get('dashboard', [DashboardController::class, 'index'])
     ->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::resource('users', UserController::class);
-    Route::put('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
     Route::resource('rooms', RoomController::class);
     Route::resource('rack-types', RackTypeController::class);
     Route::get('racks/visual-edit', [RackController::class, 'visualEdit'])->name('racks.visual-edit');
@@ -75,6 +73,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('backup/{id}/restore', [BackupController::class, 'restore'])->name('backup.restore');
     Route::delete('backup/{id}', [BackupController::class, 'destroy'])->name('backup.destroy');
     Route::post('backup/upload', [BackupController::class, 'upload'])->name('backup.upload');
+
+    // 用户管理路由 - 仅管理员可访问
+    Route::middleware(['admin'])->group(function () {
+        Route::resource('users', UserController::class);
+        Route::put('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+    });
 
     // 监控/报表路由
     Route::get('monitor', [MonitorController::class, 'index'])->name('monitor.index');
