@@ -11,8 +11,9 @@ import {
     Building2,
     Eye,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -51,6 +52,12 @@ import AppLayout from '@/layouts/app-layout';
 
 interface PageProps {
     errors?: Record<string, string>;
+    flash?: {
+        success?: string;
+        error?: string;
+        warning?: string;
+        info?: string;
+    };
 }
 
 interface Room {
@@ -74,6 +81,7 @@ interface Rack {
     u_count: number;
     power: number;
     device_count: number;
+    devices_count: number;
     description: string | null;
     created_at: string;
     updated_at: string;
@@ -90,8 +98,25 @@ interface Props {
 
 export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = [] }: Props) {
     const { t } = useTranslation();
-    const { errors } = usePage().props as PageProps;
+    const { errors, flash } = usePage().props as PageProps;
+    const { showToast } = useToast();
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+    // 监听 flash 消息并使用 toast 显示
+    useEffect(() => {
+        if (flash?.error) {
+            showToast(flash.error, 'error');
+        }
+        if (flash?.success) {
+            showToast(flash.success, 'success');
+        }
+        if (flash?.warning) {
+            showToast(flash.warning, 'warning');
+        }
+        if (flash?.info) {
+            showToast(flash.info, 'info');
+        }
+    }, [flash, showToast]);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
@@ -345,11 +370,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                     </div>
                 </div>
 
-                {errors?.error && (
-                    <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                        {errors.error}
-                    </div>
-                )}
+
 
                 <Card className="flex-1">
                     <CardHeader>
@@ -497,7 +518,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                                 <div className="flex items-center gap-2">
                                                     <Server className="h-4 w-4 text-muted-foreground" />
                                                     <span className="font-semibold">
-                                                        {rack.device_count}
+                                                        {rack.devices_count}
                                                     </span>
                                                 </div>
                                             </TableCell>
@@ -817,9 +838,15 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                 <div className="grid gap-2">
                                     <Label htmlFor="edit-rack_type_id">
                                         {t('rackManagement.rackType')}
+                                        {editingRack?.devices_count && editingRack.devices_count > 0 && (
+                                            <span className="ml-2 text-xs text-muted-foreground">
+                                                ({t('rackManagement.hasDevicesLocked')})
+                                            </span>
+                                        )}
                                     </Label>
                                     <Select
                                         value={form.rack_type_id}
+                                        disabled={editingRack?.devices_count ? editingRack.devices_count > 0 : false}
                                         onValueChange={(value) =>
                                             handleRackTypeChange(value, true)
                                         }

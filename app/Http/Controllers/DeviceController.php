@@ -103,15 +103,15 @@ class DeviceController extends Controller
         // 检查请求来源，如果是可视化编辑页面则保持在该页面
         $referer = $request->headers->get('referer');
         if ($referer && str_contains($referer, '/racks/visual-edit')) {
-            return back();
+            return back()->with('success', __('validation.created'));
         }
 
         // 如果是 Inertia 请求且接受 JSON 响应（AJAX）
         if ($request->header('X-Inertia') && $request->wantsJson()) {
-            return back();
+            return back()->with('success', __('validation.created'));
         }
 
-        return redirect()->route('devices.index');
+        return redirect()->route('devices.index')->with('success', __('validation.created'));
     }
 
     public function show(Device $device)
@@ -181,15 +181,15 @@ class DeviceController extends Controller
         // 检查请求来源，如果是可视化编辑页面则保持在该页面
         $referer = $request->headers->get('referer');
         if ($referer && str_contains($referer, '/racks/visual-edit')) {
-            return back();
+            return back()->with('success', __('validation.updated'));
         }
 
         // 如果是 Inertia 请求且接受 JSON 响应（AJAX）
         if ($request->header('X-Inertia') && $request->wantsJson()) {
-            return back();
+            return back()->with('success', __('validation.updated'));
         }
 
-        return redirect()->route('devices.index');
+        return redirect()->route('devices.index')->with('success', __('validation.updated'));
     }
 
     public function destroy(Device $device, Request $request)
@@ -199,15 +199,15 @@ class DeviceController extends Controller
         // 检查请求来源，如果是可视化编辑页面则保持在该页面
         $referer = $request->headers->get('referer');
         if ($referer && str_contains($referer, '/racks/visual-edit')) {
-            return back();
+            return back()->with('success', __('validation.deleted'));
         }
 
         // 如果是 Inertia 请求且接受 JSON 响应（AJAX）
         if ($request->header('X-Inertia') && $request->wantsJson()) {
-            return back();
+            return back()->with('success', __('validation.deleted'));
         }
 
-        return redirect()->route('devices.index');
+        return redirect()->route('devices.index')->with('success', __('validation.deleted'));
     }
 
     public function export(): StreamedResponse

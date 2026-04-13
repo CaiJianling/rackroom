@@ -110,15 +110,15 @@ class RackController extends Controller
         // 检查请求来源，如果是可视化编辑页面则保持在该页面
         $referer = $request->headers->get('referer');
         if ($referer && str_contains($referer, '/racks/visual-edit')) {
-            return back();
+            return back()->with('success', __('validation.created'));
         }
 
         // 如果是 Inertia 请求且接受 JSON 响应（AJAX）
         if ($request->header('X-Inertia') && $request->wantsJson()) {
-            return back();
+            return back()->with('success', __('validation.created'));
         }
 
-        return redirect()->route('racks.index');
+        return redirect()->route('racks.index')->with('success', __('validation.created'));
     }
 
     public function show(Rack $rack)
@@ -146,21 +146,37 @@ class RackController extends Controller
 
         // 检查是否有关联设备
         if ($rack->devices()->exists()) {
-            if ($request->header('X-Inertia') && $request->wantsJson()) {
-                return back()->with('error', __('validation.rack_has_devices_update'));
+            // 如果有设备，只允许修改名称、所属机房、描述，不能修改机柜类型
+            $validated = $request->validate([
+                'room_id' => 'required|exists:rooms,id',
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+            ]);
+
+            // 如果尝试修改机柜类型，返回错误
+            if ($request->input('rack_type_id') != $rack->rack_type_id) {
+                if ($request->header('X-Inertia') && $request->wantsJson()) {
+                    return back()->with('error', __('validation.rack_type_locked'));
+                }
+
+                return redirect()->route('racks.index')
+                    ->with('error', __('validation.rack_type_locked'));
             }
 
-            return redirect()->route('racks.index')
-                ->with('error', __('validation.rack_has_devices_update'));
-        }
-
-        if ($validated['rack_type_id']) {
-            $rackType = RackType::find($validated['rack_type_id']);
-            $validated['u_count'] = $rackType->u_count;
-            $validated['power'] = $rackType->power;
+            // 保留原有的机柜类型信息
+            $validated['rack_type_id'] = $rack->rack_type_id;
+            $validated['u_count'] = $rack->u_count;
+            $validated['power'] = $rack->power;
         } else {
-            $validated['u_count'] = 42;
-            $validated['power'] = 0;
+            // 没有设备时可以修改所有字段
+            if ($validated['rack_type_id']) {
+                $rackType = RackType::find($validated['rack_type_id']);
+                $validated['u_count'] = $rackType->u_count;
+                $validated['power'] = $rackType->power;
+            } else {
+                $validated['u_count'] = 42;
+                $validated['power'] = 0;
+            }
         }
 
         $rack->update($validated);
@@ -168,15 +184,15 @@ class RackController extends Controller
         // 检查请求来源，如果是可视化编辑页面则保持在该页面
         $referer = $request->headers->get('referer');
         if ($referer && str_contains($referer, '/racks/visual-edit')) {
-            return back();
+            return back()->with('success', __('validation.updated'));
         }
 
         // 如果是 Inertia 请求且接受 JSON 响应（AJAX）
         if ($request->header('X-Inertia') && $request->wantsJson()) {
-            return back();
+            return back()->with('success', __('validation.updated'));
         }
 
-        return redirect()->route('racks.index');
+        return redirect()->route('racks.index')->with('success', __('validation.updated'));
     }
 
     public function destroy(Request $request, Rack $rack)
@@ -196,14 +212,14 @@ class RackController extends Controller
         // 检查请求来源，如果是可视化编辑页面则保持在该页面
         $referer = $request->headers->get('referer');
         if ($referer && str_contains($referer, '/racks/visual-edit')) {
-            return back();
+            return back()->with('success', __('validation.deleted'));
         }
 
         // 如果是 Inertia 请求且接受 JSON 响应（AJAX）
         if ($request->header('X-Inertia') && $request->wantsJson()) {
-            return back();
+            return back()->with('success', __('validation.deleted'));
         }
 
-        return redirect()->route('racks.index');
+        return redirect()->route('racks.index')->with('success', __('validation.deleted'));
     }
 }

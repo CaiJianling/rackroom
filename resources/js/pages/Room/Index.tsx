@@ -11,8 +11,9 @@ import {
     User,
     Eye,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -51,6 +52,12 @@ import AppLayout from '@/layouts/app-layout';
 
 interface PageProps {
     errors?: Record<string, string>;
+    flash?: {
+        success?: string;
+        error?: string;
+        warning?: string;
+        info?: string;
+    };
 }
 
 interface Room {
@@ -71,8 +78,25 @@ interface Props {
 
 export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
     const { t } = useTranslation();
-    const { errors } = usePage().props as PageProps;
+    const { errors, flash } = usePage().props as PageProps;
+    const { showToast } = useToast();
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+    // 监听 flash 消息并使用 toast 显示
+    useEffect(() => {
+        if (flash?.error) {
+            showToast(flash.error, 'error');
+        }
+        if (flash?.success) {
+            showToast(flash.success, 'success');
+        }
+        if (flash?.warning) {
+            showToast(flash.warning, 'warning');
+        }
+        if (flash?.info) {
+            showToast(flash.info, 'info');
+        }
+    }, [flash, showToast]);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
@@ -317,12 +341,6 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
                         </Select>
                     </div>
                 </div>
-
-                {errors?.error && (
-                    <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                        {errors.error}
-                    </div>
-                )}
 
                 <Card className="flex-1">
                     <CardHeader>

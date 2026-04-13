@@ -9,7 +9,7 @@ class RackTypeController extends Controller
 {
     public function index(Request $request)
     {
-        $query = RackType::query();
+        $query = RackType::withCount('racks');
 
         $search = $request->input('search');
         if ($search) {
@@ -37,7 +37,7 @@ class RackTypeController extends Controller
 
         RackType::create($validated);
 
-        return redirect()->route('rack-types.index');
+        return redirect()->route('rack-types.index')->with('success', __('validation.created'));
     }
 
     public function show(RackType $rackType)
@@ -61,19 +61,35 @@ class RackTypeController extends Controller
 
         // 检查是否有机柜正在使用该机柜类型
         if ($rackType->racks()->exists()) {
-            return redirect()->route('rack-types.index')
-                ->with('error', __('validation.rack_type_in_use'));
+            // 如果正在使用，只允许修改名称、功率、描述，不能修改U数
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'power' => 'required|integer|min:0',
+                'description' => 'nullable|string',
+            ]);
+
+            // 如果尝试修改U数，返回错误
+            if ($request->input('u_count') != $rackType->u_count) {
+                return redirect()->route('rack-types.index')
+                    ->with('error', __('validation.rack_type_u_count_locked'));
+            }
         }
 
         $rackType->update($validated);
 
-        return redirect()->route('rack-types.index');
+        return redirect()->route('rack-types.index')->with('success', __('validation.updated'));
     }
 
     public function destroy(RackType $rackType)
     {
+        // 检查是否有机柜正在使用该机柜类型
+        if ($rackType->racks()->exists()) {
+            return redirect()->route('rack-types.index')
+                ->with('error', __('validation.rack_type_in_use_delete'));
+        }
+
         $rackType->delete();
 
-        return redirect()->route('rack-types.index');
+        return redirect()->route('rack-types.index')->with('success', __('validation.deleted'));
     }
 }

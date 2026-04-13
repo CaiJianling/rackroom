@@ -8,8 +8,9 @@ import {
     Search,
     X,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -58,8 +59,26 @@ interface Props {
 
 export default function UserIndex({ users, breadcrumbs = [] }: Props) {
     const { t } = useTranslation();
-    const { auth, errors } = usePage().props as any;
+    const { auth, errors, flash } = usePage().props as any;
+    const { showToast } = useToast();
     const currentUserId = auth?.user?.id;
+
+    // 监听 flash 消息并使用 toast 显示
+    useEffect(() => {
+        if (flash?.error) {
+            showToast(flash.error, 'error');
+        }
+        if (flash?.success) {
+            showToast(flash.success, 'success');
+        }
+        if (flash?.warning) {
+            showToast(flash.warning, 'warning');
+        }
+        if (flash?.info) {
+            showToast(flash.info, 'info');
+        }
+    }, [flash, showToast]);
+
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);

@@ -10,8 +10,9 @@ import {
     Cpu,
     Eye,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -43,6 +44,12 @@ import AppLayout from '@/layouts/app-layout';
 
 interface PageProps {
     errors?: Record<string, string>;
+    flash?: {
+        success?: string;
+        error?: string;
+        warning?: string;
+        info?: string;
+    };
 }
 
 interface RackType {
@@ -51,6 +58,7 @@ interface RackType {
     u_count: number;
     power: number;
     description: string | null;
+    racks_count?: number;
     created_at: string;
     updated_at: string;
 }
@@ -62,8 +70,25 @@ interface Props {
 
 export default function RackTypeIndex({ rackTypes, breadcrumbs = [] }: Props) {
     const { t } = useTranslation();
-    const { errors } = usePage().props as PageProps;
+    const { errors, flash } = usePage().props as PageProps;
+    const { showToast } = useToast();
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+    // 监听 flash 消息并使用 toast 显示
+    useEffect(() => {
+        if (flash?.error) {
+            showToast(flash.error, 'error');
+        }
+        if (flash?.success) {
+            showToast(flash.success, 'success');
+        }
+        if (flash?.warning) {
+            showToast(flash.warning, 'warning');
+        }
+        if (flash?.info) {
+            showToast(flash.info, 'info');
+        }
+    }, [flash, showToast]);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
@@ -236,11 +261,7 @@ export default function RackTypeIndex({ rackTypes, breadcrumbs = [] }: Props) {
                     </div>
                 </div>
 
-                {errors?.error && (
-                    <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                        {errors.error}
-                    </div>
-                )}
+
 
                 <Card className="flex-1">
                     <CardHeader>
@@ -616,6 +637,11 @@ export default function RackTypeIndex({ rackTypes, breadcrumbs = [] }: Props) {
                                 <div className="grid gap-2">
                                     <Label htmlFor="edit-u_count">
                                         {t('rackTypeManagement.uCount')} *
+                                        {editingRackType?.racks_count && editingRackType.racks_count > 0 && (
+                                            <span className="ml-2 text-xs text-muted-foreground">
+                                                ({t('rackTypeManagement.inUseLocked')})
+                                            </span>
+                                        )}
                                     </Label>
                                     <Input
                                         id="edit-u_count"
@@ -623,6 +649,7 @@ export default function RackTypeIndex({ rackTypes, breadcrumbs = [] }: Props) {
                                         min="1"
                                         max="100"
                                         value={form.u_count}
+                                        disabled={editingRackType?.racks_count ? editingRackType.racks_count > 0 : false}
                                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                             setForm({
                                                 ...form,

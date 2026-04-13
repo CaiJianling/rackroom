@@ -459,7 +459,8 @@
         "confirmDelete": "Are you sure you want to delete this rack?",
         "deleteWarning": "Are you sure you want to delete this rack? This action cannot be undone.",
         "racksCount": "{{filtered}} of {{total}} racks",
-        "rackDetails": "Rack Details"
+        "rackDetails": "Rack Details",
+        "hasDevicesLocked": "Locked: devices exist"
     },
     "rackTypeManagement": {
         "title": "Rack Type Management",
@@ -489,7 +490,8 @@
         "delete": "Delete",
         "rackTypesCount": "{{filtered}} of {{total}} rack types",
         "rackTypeDetails": "Rack Type Details",
-        "rackTypeDetailsDesc": "View detailed information of the rack type"
+        "rackTypeDetailsDesc": "View detailed information of the rack type",
+        "inUseLocked": "Locked: in use"
     },
     "deviceManagement": {
         "title": "Device Management",

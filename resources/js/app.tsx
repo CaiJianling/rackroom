@@ -10,6 +10,13 @@ import './i18n';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
+// 忽略请求被取消的错误
+window.addEventListener('unhandledrejection', (event) => {
+    if (event.reason?.name === 'AbortError' || event.reason?.message?.includes('Request aborted')) {
+        event.preventDefault();
+    }
+});
+
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     resolve: (name) =>

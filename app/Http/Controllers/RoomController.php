@@ -39,7 +39,7 @@ class RoomController extends Controller
 
         Room::create($validated);
 
-        return redirect()->route('rooms.index');
+        return redirect()->route('rooms.index')->with('success', __('validation.created'));
     }
 
     public function show(Room $room)
@@ -63,7 +63,7 @@ class RoomController extends Controller
 
         $room->update($validated);
 
-        return redirect()->route('rooms.index');
+        return redirect()->route('rooms.index')->with('success', __('validation.updated'));
     }
 
     public function destroy(Room $room)
@@ -76,6 +76,6 @@ class RoomController extends Controller
 
         $room->delete();
 
-        return redirect()->route('rooms.index');
+        return redirect()->route('rooms.index')->with('success', __('validation.deleted'));
     }
 }

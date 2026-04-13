@@ -28,7 +28,7 @@ class DeviceTypeController extends Controller
 
         DeviceType::create($validated);
 
-        return redirect()->route('device-types.index');
+        return redirect()->route('device-types.index')->with('success', __('validation.created'));
     }
 
     public function update(Request $request, DeviceType $deviceType)
@@ -42,7 +42,7 @@ class DeviceTypeController extends Controller
 
         $deviceType->update($validated);
 
-        return redirect()->route('device-types.index');
+        return redirect()->route('device-types.index')->with('success', __('validation.updated'));
     }
 
     public function destroy(DeviceType $deviceType)
@@ -59,6 +59,6 @@ class DeviceTypeController extends Controller
 
         $deviceType->delete();
 
-        return redirect()->route('device-types.index');
+        return redirect()->route('device-types.index')->with('success', __('validation.deleted'));
     }
 }

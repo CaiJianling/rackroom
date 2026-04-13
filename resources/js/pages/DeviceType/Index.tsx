@@ -15,8 +15,9 @@ import {
     Box,
     Eye,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -48,6 +49,12 @@ import AppLayout from '@/layouts/app-layout';
 
 interface PageProps {
     errors?: Record<string, string>;
+    flash?: {
+        success?: string;
+        error?: string;
+        warning?: string;
+        info?: string;
+    };
 }
 
 interface DeviceType {
@@ -93,7 +100,25 @@ const getIconComponent = (iconName: string | null) => {
 
 export default function DeviceTypeIndex({ deviceTypes, breadcrumbs = [] }: Props) {
     const { t } = useTranslation();
-    const { errors } = usePage().props as PageProps;
+    const { errors, flash } = usePage().props as PageProps;
+    const { showToast } = useToast();
+
+    // 监听 flash 消息并使用 toast 显示
+    useEffect(() => {
+        if (flash?.error) {
+            showToast(flash.error, 'error');
+        }
+        if (flash?.success) {
+            showToast(flash.success, 'success');
+        }
+        if (flash?.warning) {
+            showToast(flash.warning, 'warning');
+        }
+        if (flash?.info) {
+            showToast(flash.info, 'info');
+        }
+    }, [flash, showToast]);
+
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
