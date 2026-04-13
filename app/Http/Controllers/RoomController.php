@@ -14,8 +14,8 @@ class RoomController extends Controller
         $search = $request->input('search');
         if ($search) {
             $query->where('name', 'like', "%{$search}%")
-                  ->orWhere('location', 'like', "%{$search}%")
-                  ->orWhere('manager', 'like', "%{$search}%");
+                ->orWhere('location', 'like', "%{$search}%")
+                ->orWhere('manager', 'like', "%{$search}%");
         }
 
         $rooms = $query->latest()->get();
@@ -68,7 +68,14 @@ class RoomController extends Controller
 
     public function destroy(Room $room)
     {
+        // 检查是否关联有机柜
+        if ($room->racks()->exists()) {
+            return redirect()->route('rooms.index')
+                ->with('error', __('validation.room_has_racks'));
+        }
+
         $room->delete();
+
         return redirect()->route('rooms.index');
     }
 }

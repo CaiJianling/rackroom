@@ -403,6 +403,8 @@
         "manager": "负责人",
         "description": "描述",
         "created": "创建时间",
+        "allManagers": "所有负责人",
+        "unassigned": "未分配",
         "actions": "操作",
         "allLocations": "所有位置",
         "allManagers": "所有负责人",

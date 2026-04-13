@@ -22,7 +22,7 @@ class RackController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Rack::with(['room', 'rackType']);
+        $query = Rack::with(['room', 'rackType'])->withCount('devices');
 
         $search = $request->input('search');
         if ($search) {
@@ -144,6 +144,16 @@ class RackController extends Controller
             'description' => 'nullable|string',
         ]);
 
+        // 检查是否有关联设备
+        if ($rack->devices()->exists()) {
+            if ($request->header('X-Inertia') && $request->wantsJson()) {
+                return back()->with('error', __('validation.rack_has_devices_update'));
+            }
+
+            return redirect()->route('racks.index')
+                ->with('error', __('validation.rack_has_devices_update'));
+        }
+
         if ($validated['rack_type_id']) {
             $rackType = RackType::find($validated['rack_type_id']);
             $validated['u_count'] = $rackType->u_count;
@@ -171,6 +181,16 @@ class RackController extends Controller
 
     public function destroy(Request $request, Rack $rack)
     {
+        // 检查是否有关联设备
+        if ($rack->devices()->exists()) {
+            if ($request->header('X-Inertia') && $request->wantsJson()) {
+                return back()->with('error', __('validation.rack_has_devices_delete'));
+            }
+
+            return redirect()->route('racks.index')
+                ->with('error', __('validation.rack_has_devices_delete'));
+        }
+
         $rack->delete();
 
         // 检查请求来源，如果是可视化编辑页面则保持在该页面

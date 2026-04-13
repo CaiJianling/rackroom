@@ -89,6 +89,16 @@ class DeviceLibraryController extends Controller
 
     public function destroy(Request $request, DeviceLibrary $deviceLibrary)
     {
+        // 检查设备是否已被使用（有关联的设备实例）
+        if ($deviceLibrary->devices()->exists()) {
+            if ($request->header('X-Inertia') && $request->wantsJson()) {
+                return back()->with('error', __('validation.device_library_in_use'));
+            }
+
+            return redirect()->route('device-library.index')
+                ->with('error', __('validation.device_library_in_use'));
+        }
+
         $deviceLibrary->delete();
 
         // 检查请求来源，如果是可视化编辑页面则保持在该页面

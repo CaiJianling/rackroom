@@ -59,6 +59,12 @@ class RackTypeController extends Controller
             'description' => 'nullable|string',
         ]);
 
+        // 检查是否有机柜正在使用该机柜类型
+        if ($rackType->racks()->exists()) {
+            return redirect()->route('rack-types.index')
+                ->with('error', __('validation.rack_type_in_use'));
+        }
+
         $rackType->update($validated);
 
         return redirect()->route('rack-types.index');
@@ -67,6 +73,7 @@ class RackTypeController extends Controller
     public function destroy(RackType $rackType)
     {
         $rackType->delete();
+
         return redirect()->route('rack-types.index');
     }
 }

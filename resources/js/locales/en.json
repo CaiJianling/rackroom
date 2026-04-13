@@ -403,6 +403,8 @@
         "manager": "Manager",
         "description": "Description",
         "created": "Created",
+        "allManagers": "All Managers",
+        "unassigned": "Unassigned",
         "actions": "Actions",
         "allLocations": "All Locations",
         "allManagers": "All Managers",

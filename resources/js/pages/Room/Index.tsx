@@ -306,7 +306,7 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
                                     {t('roomManagement.allManagers')}
                                 </SelectItem>
                                 <SelectItem value="none">
-                                    æœªåˆ†é…
+                                    {t('roomManagement.unassigned')}
                                 </SelectItem>
                                 {uniqueManagers.map((manager) => (
                                     <SelectItem key={manager} value={manager}>

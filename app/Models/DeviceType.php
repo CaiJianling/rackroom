@@ -13,6 +13,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class DeviceType extends Model
 {
@@ -28,5 +29,10 @@ class DeviceType extends Model
     public function deviceLibrary(): HasMany
     {
         return $this->hasMany(DeviceLibrary::class);
+    }
+
+    public function devices(): HasManyThrough
+    {
+        return $this->hasManyThrough(Device::class, DeviceLibrary::class);
     }
 }
