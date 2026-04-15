@@ -10,6 +10,7 @@ import {
     Activity,
     Settings,
     Eye,
+    Wrench,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { NavFooter } from '@/components/nav-footer';
@@ -100,9 +101,23 @@ export function AppSidebar() {
             ],
         },
         {
+            title: t('navigation.tools'),
+            icon: Wrench,
+            items: [
+                {
+                    title: t('navigation.h3cPassword'),
+                    href: '/tools/h3c-password',
+                },
+            ],
+        },
+        {
             title: t('navigation.system'),
             icon: Settings,
             items: [
+                {
+                    title: t('navigation.systemSettings'),
+                    href: '/settings/system',
+                },
                 {
                     title: t('navigation.backup'),
                     href: '/backup',

@@ -314,6 +314,21 @@ export default function DeviceLibraryIndex({ deviceLibrary, deviceTypes, breadcr
         return type?.color || '#3b82f6';
     };
 
+    // 计算对比度并返回合适的文字颜色
+    const getContrastTextColor = (bgColor: string): string => {
+        // 将十六进制颜色转换为RGB
+        const hex = bgColor.replace('#', '');
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+
+        // 计算相对亮度 (YIQ公式)
+        const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+
+        // 根据亮度返回黑色或白色
+        return yiq >= 128 ? '#000000' : '#ffffff';
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('navigation.deviceLibrary')} />
@@ -493,13 +508,20 @@ export default function DeviceLibraryIndex({ deviceLibrary, deviceTypes, breadcr
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="px-4 py-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <div
-                                                            className="w-3 h-3 rounded-full flex-shrink-0"
-                                                            style={{ backgroundColor: getTypeColor(item.device_type_id) }}
-                                                        />
-                                                        {getTypeName(item.device_type_id)}
-                                                    </div>
+                                                    {(() => {
+                                                        const bgColor = getTypeColor(item.device_type_id);
+                                                        return (
+                                                            <span
+                                                                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                                                style={{
+                                                                    backgroundColor: bgColor,
+                                                                    color: getContrastTextColor(bgColor),
+                                                                }}
+                                                            >
+                                                                {getTypeName(item.device_type_id)}
+                                                            </span>
+                                                        );
+                                                    })()}
                                                 </TableCell>
                                                 <TableCell className="px-4 py-3 text-muted-foreground">
                                                     {item.model || '-'}
@@ -876,12 +898,21 @@ export default function DeviceLibraryIndex({ deviceLibrary, deviceTypes, breadcr
                                 <Label className="text-right font-medium">
                                     {t('deviceLibrary.type')}
                                 </Label>
-                                <div className="col-span-3 flex items-center gap-2">
-                                    <div
-                                        className="w-3 h-3 rounded-full flex-shrink-0"
-                                        style={{ backgroundColor: getTypeColor(viewingItem.device_type_id) }}
-                                    />
-                                    {getTypeName(viewingItem.device_type_id)}
+                                <div className="col-span-3">
+                                    {(() => {
+                                        const bgColor = getTypeColor(viewingItem.device_type_id);
+                                        return (
+                                            <span
+                                                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                                style={{
+                                                    backgroundColor: bgColor,
+                                                    color: getContrastTextColor(bgColor),
+                                                }}
+                                            >
+                                                {getTypeName(viewingItem.device_type_id)}
+                                            </span>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">

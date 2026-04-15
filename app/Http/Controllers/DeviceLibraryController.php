@@ -26,6 +26,10 @@ class DeviceLibraryController extends Controller
         return Inertia::render('DeviceLibrary/Index', [
             'deviceLibrary' => $deviceLibrary,
             'deviceTypes' => $deviceTypes,
+            'breadcrumbs' => [
+                ['title' => '设备管理', 'href' => '#'],
+                ['title' => '设备库管理', 'href' => '/device-library'],
+            ],
         ]);
     }
 

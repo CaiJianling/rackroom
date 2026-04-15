@@ -29,6 +29,9 @@ class DashboardController extends Controller
             'recentAlerts' => $recentAlerts,
             'recentDevices' => $recentDevices,
             'categoryDistribution' => $categoryDistribution,
+            'breadcrumbs' => [
+                ['title' => '仪表盘', 'href' => '/dashboard'],
+            ],
         ]);
     }
 

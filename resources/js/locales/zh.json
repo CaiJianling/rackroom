@@ -193,8 +193,11 @@
         "monitor": "实时监控",
         "reports": "报表生成",
         "alerts": "告警列表",
-        "system": "系统",
+        "system": "系统管理",
+        "systemSettings": "系统设置",
         "backup": "数据备份/恢复",
+        "tools": "小工具",
+        "h3cPassword": "批量修改H3C交换机密码",
         "error404": "404页面",
         "error403": "权限不足"
     },

@@ -20,7 +20,12 @@ class RoomController extends Controller
 
         $rooms = $query->latest()->get();
 
-        return inertia('Room/Index', compact('rooms'));
+        return inertia('Room/Index', [
+            'rooms' => $rooms,
+            'breadcrumbs' => [
+                ['title' => '机房管理', 'href' => '/rooms'],
+            ],
+        ]);
     }
 
     public function create()

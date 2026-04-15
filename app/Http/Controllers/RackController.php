@@ -41,7 +41,15 @@ class RackController extends Controller
         $rooms = Room::all();
         $rackTypes = RackType::all();
 
-        return inertia('Rack/Index', compact('racks', 'rooms', 'rackTypes'));
+        return inertia('Rack/Index', [
+            'racks' => $racks,
+            'rooms' => $rooms,
+            'rackTypes' => $rackTypes,
+            'breadcrumbs' => [
+                ['title' => '机柜管理', 'href' => '#'],
+                ['title' => '机柜列表', 'href' => '/racks'],
+            ],
+        ]);
     }
 
     public function visualEdit(Request $request)
@@ -75,6 +83,9 @@ class RackController extends Controller
             'deviceTypes' => $deviceTypes,
             'selectedRoom' => $roomId,
             'usedLibraryIds' => $usedLibraryIds,
+            'breadcrumbs' => [
+                ['title' => '机柜可视化编辑', 'href' => '/racks/visual-edit'],
+            ],
         ]);
     }
 

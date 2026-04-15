@@ -39,7 +39,16 @@ class DeviceController extends Controller
         $deviceLibrary = DeviceLibrary::with('deviceType')->get();
         $deviceTypes = DeviceType::all();
 
-        return inertia('Device/Index', compact('devices', 'racks', 'deviceLibrary', 'deviceTypes'));
+        return inertia('Device/Index', [
+            'devices' => $devices,
+            'racks' => $racks,
+            'deviceLibrary' => $deviceLibrary,
+            'deviceTypes' => $deviceTypes,
+            'breadcrumbs' => [
+                ['title' => '设备管理', 'href' => '#'],
+                ['title' => '设备列表', 'href' => '/devices'],
+            ],
+        ]);
     }
 
     public function create()

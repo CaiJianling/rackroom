@@ -24,13 +24,16 @@ use App\Http\Controllers\DataExportController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\DeviceLibraryController;
 use App\Http\Controllers\DeviceTypeController;
+use App\Http\Controllers\H3cPasswordController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\PingController;
 use App\Http\Controllers\RackController;
 use App\Http\Controllers\RackTypeController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoomController;
+use App\Http\Controllers\SystemSettingController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserPreferenceController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -85,6 +88,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('alerts', [AlertController::class, 'index'])->name('alerts.index');
 
+    // 小工具 - H3C交换机批量修改密码
+    Route::prefix('tools')->name('tools.')->group(function () {
+        Route::get('h3c-password', [H3cPasswordController::class, 'index'])->name('h3c-password.index');
+        Route::get('h3c-password/template', [H3cPasswordController::class, 'downloadTemplate'])->name('h3c-password.template');
+        Route::post('h3c-password/upload', [H3cPasswordController::class, 'upload'])->name('h3c-password.upload');
+        Route::post('h3c-password/execute', [H3cPasswordController::class, 'execute'])->name('h3c-password.execute');
+        Route::get('h3c-password/logs', [H3cPasswordController::class, 'logs'])->name('h3c-password.logs');
+        Route::delete('h3c-password/logs', [H3cPasswordController::class, 'deleteLogs'])->name('h3c-password.logs.delete');
+        Route::delete('h3c-password/logs/clear', [H3cPasswordController::class, 'clearLogs'])->name('h3c-password.logs.clear');
+    });
+
     // 监控/报表 API 路由（使用 web 中间件共享 session）
     Route::prefix('api')->group(function () {
         // 监控API
@@ -110,6 +124,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('reports/templates', [ReportController::class, 'saveTemplate']);
         Route::get('reports/{report}/download', [ReportController::class, 'download']);
         Route::delete('reports/{report}', [ReportController::class, 'destroy']);
+
+        // 用户偏好设置API - 特定路由必须在通用路由之前
+        Route::get('preferences/device-status-colors', [UserPreferenceController::class, 'getDeviceStatusColors']);
+        Route::post('preferences/device-status-colors', [UserPreferenceController::class, 'saveDeviceStatusColors']);
+        Route::get('preferences/{key}', [UserPreferenceController::class, 'show']);
+        Route::post('preferences/{key}', [UserPreferenceController::class, 'store']);
+
+        // 系统设置API
+        Route::get('system-settings', [SystemSettingController::class, 'getAll']);
+        Route::get('system-settings/{key}', [SystemSettingController::class, 'get']);
+        Route::post('system-settings/{key}', [SystemSettingController::class, 'update']);
     });
 });
 

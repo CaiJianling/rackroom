@@ -70,6 +70,7 @@ class AlertController extends Controller
             ],
             'alertTypes' => $alertTypes,
             'breadcrumbs' => [
+                ['title' => '监控/报表', 'href' => '#'],
                 ['title' => '告警列表', 'href' => '/alerts'],
             ],
         ]);

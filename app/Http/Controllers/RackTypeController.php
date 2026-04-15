@@ -18,7 +18,13 @@ class RackTypeController extends Controller
 
         $rackTypes = $query->latest()->get();
 
-        return inertia('RackType/Index', compact('rackTypes'));
+        return inertia('RackType/Index', [
+            'rackTypes' => $rackTypes,
+            'breadcrumbs' => [
+                ['title' => '机柜管理', 'href' => '#'],
+                ['title' => '机柜类型管理', 'href' => '/rack-types'],
+            ],
+        ]);
     }
 
     public function create()

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
 use App\Models\Device;
 use App\Models\GeneratedReport;
 use App\Models\ReportTemplate;
@@ -19,12 +20,14 @@ class ReportController extends Controller
      */
     public function index(): Response
     {
-        $templates = ReportTemplate::accessibleBy(auth()->id())
+        $userId = Auth::id();
+
+        $templates = ReportTemplate::accessibleBy($userId)
             ->orderByDesc('created_at')
             ->get();
 
         $generatedReports = GeneratedReport::with('template')
-            ->byUser(auth()->id())
+            ->byUser($userId)
             ->orderByDesc('started_at')
             ->limit(10)
             ->get();
@@ -42,6 +45,7 @@ class ReportController extends Controller
                 'deviceStatuses' => ['online', 'offline', 'maintenance'],
             ],
             'breadcrumbs' => [
+                ['title' => '监控/报表', 'href' => '#'],
                 ['title' => '报表生成', 'href' => '/reports'],
             ],
         ]);
@@ -163,7 +167,10 @@ class ReportController extends Controller
             default => 'txt',
         };
 
-        return Storage::disk('reports')->download(
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('reports');
+
+        return $disk->download(
             $report->file_path,
             $report->name.'.'.$extension
         );

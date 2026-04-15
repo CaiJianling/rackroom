@@ -190,6 +190,16 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
         return type?.color || '#3b82f6';
     };
 
+    // 计算对比度并返回合适的文字颜色
+    const getContrastTextColor = (bgColor: string): string => {
+        const hex = bgColor.replace('#', '');
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+        const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+        return yiq >= 128 ? '#000000' : '#ffffff';
+    };
+
     const getDeviceLibraryInfo = (deviceLibraryId: number | null) => {
         if (!deviceLibraryId) return null;
         return deviceLibrary.find(item => item.id === deviceLibraryId);
@@ -638,15 +648,22 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                                                     {device.name}
                                                 </TableCell>
                                                 <TableCell className="px-4 py-3">
-                                                    <div className="flex items-center gap-2">
-                                                        {deviceLib?.device_type && (
-                                                            <div
-                                                                className="w-3 h-3 rounded-full flex-shrink-0"
-                                                                style={{ backgroundColor: getDeviceTypeColor(deviceLib.device_type_id) }}
-                                                            />
-                                                        )}
-                                                        {deviceLib?.device_type ? getDeviceTypeName(deviceLib.device_type_id) : '-'}
-                                                    </div>
+                                                    {deviceLib?.device_type ? (
+                                                        (() => {
+                                                            const bgColor = getDeviceTypeColor(deviceLib.device_type_id);
+                                                            return (
+                                                                <span
+                                                                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                                                    style={{
+                                                                        backgroundColor: bgColor,
+                                                                        color: getContrastTextColor(bgColor),
+                                                                    }}
+                                                                >
+                                                                    {getDeviceTypeName(deviceLib.device_type_id)}
+                                                                </span>
+                                                            );
+                                                        })()
+                                                    ) : '-'}
                                                 </TableCell>
                                                 <TableCell className="px-4 py-3 text-muted-foreground">
                                                     {deviceLib ? `${deviceLib.manufacturer || ''} ${deviceLib.model || ''}`.trim() || '-' : '-'}

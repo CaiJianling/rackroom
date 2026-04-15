@@ -1,4 +1,5 @@
 <?php
+
 /*
  * @Author: CaiJianling caijianling@outlook.com
  * @Date: 2026-02-25 00:31:13
@@ -19,7 +20,13 @@ class UserController extends Controller
     public function index()
     {
         $users = User::all();
-        return inertia('User/Index', compact('users'));
+
+        return inertia('User/Index', [
+            'users' => $users,
+            'breadcrumbs' => [
+                ['title' => '用户管理', 'href' => '/users'],
+            ],
+        ]);
     }
 
     public function create()
@@ -73,6 +80,7 @@ class UserController extends Controller
     public function destroy(User $user)
     {
         $user->delete();
+
         return redirect()->route('users.index')->with('success', __('validation.deleted'));
     }
 
@@ -82,7 +90,8 @@ class UserController extends Controller
             return redirect()->back()->withErrors(['error' => __('userManagement.cannotChangeOwnStatus')]);
         }
 
-        $user->update(['is_active' => !$user->is_active]);
+        $user->update(['is_active' => ! $user->is_active]);
+
         return redirect()->back()->with('success', __('validation.updated'));
     }
 }

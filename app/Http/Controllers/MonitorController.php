@@ -28,6 +28,7 @@ class MonitorController extends Controller
             'initialStats' => $stats,
             'recentAlerts' => $recentAlerts,
             'breadcrumbs' => [
+                ['title' => '监控/报表', 'href' => '#'],
                 ['title' => '实时监控', 'href' => '/monitor'],
             ],
         ]);

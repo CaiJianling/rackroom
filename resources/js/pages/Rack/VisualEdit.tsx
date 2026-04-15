@@ -18,6 +18,7 @@ import {
     Activity,
     Link2,
     Pencil,
+    Palette,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -233,6 +234,72 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
         results: [],
     });
 
+    // 颜色设置状态
+    const [colorSettingsOpen, setColorSettingsOpen] = useState(false);
+    const [statusColors, setStatusColors] = useState({
+        online: { bg: '#22c55e', text: '#ffffff' },
+        offline: { bg: '#f97316', text: '#ffffff' },
+        maintenance: { bg: '#6b7280', text: '#ffffff' },
+    });
+
+    // 加载用户自定义颜色
+    useEffect(() => {
+        const loadColors = async () => {
+            try {
+                const response = await fetch('/api/preferences/device-status-colors', {
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                if (data.success && data.colors) {
+                    setStatusColors(data.colors);
+                }
+            } catch (error) {
+                console.error('加载颜色设置失败:', error);
+                // 使用默认颜色，不显示错误
+            }
+        };
+        loadColors();
+    }, []);
+
+    // 保存颜色设置
+    const saveStatusColors = async (colors: typeof statusColors) => {
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const response = await fetch('/api/preferences/device-status-colors', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                },
+                body: JSON.stringify({ colors }),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                setStatusColors(colors);
+                showToast('颜色设置已保存', 'success');
+                return true;
+            } else {
+                throw new Error(data.message || '保存失败');
+            }
+        } catch (error) {
+            console.error('保存颜色设置失败:', error);
+            showToast('保存失败: ' + (error instanceof Error ? error.message : '未知错误'), 'error');
+            return false;
+        }
+    };
+
     // 右键菜单状态
     const [contextMenu, setContextMenu] = useState<{
         open: boolean;
@@ -364,14 +431,28 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                     deviceLibraryId: e.dataTransfer?.getData('deviceLibraryId'),
                 }
             });
+            // 无论在哪里释放，都清除拖动预览状态
+            setDragPreviewPosition(null);
+            setDraggingDevice(null);
+            setIsDraggingOverLibrary(false);
+        };
+
+        // 监听拖拽结束事件，确保即使drop事件没有被正确触发也能清理状态
+        const handleGlobalDragEnd = (e: DragEvent) => {
+            console.log('Global dragend event');
+            setDragPreviewPosition(null);
+            setDraggingDevice(null);
+            setIsDraggingOverLibrary(false);
         };
 
         document.addEventListener('dragover', handleGlobalDragOver);
         document.addEventListener('drop', handleGlobalDrop);
+        document.addEventListener('dragend', handleGlobalDragEnd);
 
         return () => {
             document.removeEventListener('dragover', handleGlobalDragOver);
             document.removeEventListener('drop', handleGlobalDrop);
+            document.removeEventListener('dragend', handleGlobalDragEnd);
         };
     }, []);
 
@@ -1457,6 +1538,16 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
         return type?.color || '#3b82f6';
     };
 
+    // 根据背景色计算对比度文字颜色 (YIQ算法)
+    const getContrastTextColor = (backgroundColor: string): string => {
+        const hex = backgroundColor.replace('#', '');
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+        const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+        return yiq >= 128 ? '#000000' : '#ffffff';
+    };
+
     const getStatusLabel = (status: string) => {
         return t(`visualEdit.${status}`);
     };
@@ -1610,6 +1701,15 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                             <Activity className={`mr-2 h-4 w-4 ${isPinging ? 'animate-spin' : ''}`} />
                             {isPinging ? t('visualEdit.pinging') : t('visualEdit.batchPing')}
                         </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setColorSettingsOpen(true)}
+                            title="设置状态颜色"
+                        >
+                            <Palette className="mr-2 h-4 w-4" />
+                            颜色设置
+                        </Button>
                     </div>
                 </div>
 
@@ -1647,14 +1747,13 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                         onClick={() => setActiveCategory(cat.value)}
                                         className="h-6 text-xs px-2"
                                         title={cat.label}
+                                        style={cat.color ? {
+                                            backgroundColor: activeCategory === cat.value ? cat.color : undefined,
+                                            color: activeCategory === cat.value ? getContrastTextColor(cat.color) : undefined,
+                                            borderColor: cat.color,
+                                        } : undefined}
                                     >
                                         {cat.icon === 'all' ? <Layers className="h-3 w-3 mr-1" /> : getIconForType(cat.icon || null)}
-                                        {cat.color && (
-                                            <div
-                                                className="w-2 h-2 rounded-full mr-1"
-                                                style={{ backgroundColor: cat.color }}
-                                            />
-                                        )}
                                         {cat.label}
                                     </Button>
                                 ))}
@@ -1695,12 +1794,18 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                                         {item.name}
                                                     </TableCell>
                                                     <TableCell className="py-2 px-4">
-                                                        <div className="flex items-center gap-2">
+                                                        <div className="flex items-center justify-center">
                                                             <div
-                                                                className="w-3 h-3 rounded-full flex-shrink-0"
-                                                                style={{ backgroundColor: getTypeColor(item.device_type_id) }}
-                                                            />
-                                                            {getIconForType(item.device_type?.icon || null)}
+                                                                className="w-5 h-5 rounded flex items-center justify-center"
+                                                                style={{
+                                                                    backgroundColor: getTypeColor(item.device_type_id),
+                                                                }}
+                                                                title={item.device_type?.name || '-'}
+                                                            >
+                                                                <span style={{ color: getContrastTextColor(getTypeColor(item.device_type_id)) }}>
+                                                                    {getIconForType(item.device_type?.icon || null)}
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="py-2 px-4 text-sm text-muted-foreground">
@@ -1840,35 +1945,42 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                                                                 // 从设备的任何U位开始拖动，都使用起始U位
                                                                                 handleDragStart(e, slot.device!);
                                                                             } : undefined}
-                                                                            className={`flex h-full w-full items-center justify-center truncate px-1 text-[9px] font-medium text-white absolute inset-0 z-10 ${!previewMode ? 'cursor-grab' : 'cursor-default'}`}
+                                                                            className={`flex h-full w-full items-center truncate text-[9px] font-medium absolute inset-0 z-10 ${!previewMode ? 'cursor-grab' : 'cursor-default'}`}
                                                                             style={{
-                                                                                backgroundColor: slot.device.status === 'online' ? '#3b82f6' :
-                                                                                    slot.device.status === 'offline' ? '#f97316' : '#64748b'
+                                                                                backgroundColor: getTypeColor(slot.device.device_library?.device_type_id || 0),
+                                                                                color: getContrastTextColor(getTypeColor(slot.device.device_library?.device_type_id || 0)),
                                                                             }}
                                                                             onDoubleClick={!previewMode ? () => openEditModal(rack.id, slot.uPosition - 1, slot.device!) : undefined}
                                                                             onContextMenu={!previewMode ? (e) => handleContextMenu(e, slot.device!) : undefined}
                                                                             title={`${cleanDeviceName(slot.device.name)}
-${getCategoryLabel(slot.device.device_library?.device_type?.name || slot.device.category || 'visualEdit.other')} | ${getStatusLabel(slot.device.status)} | ${slot.device.device_library?.power || slot.device.power || 0}W
+${getCategoryLabel(slot.device.device_library?.device_type?.name || slot.device.category || 'visualEdit.other')} | ${getStatusLabel(slot.device.status)} | ${slot.device.device_library?.power || slot.device.power || 0}W | U位: ${slot.uPosition}-${slot.uPosition + slot.uHeight - 1}U
 ${t('visualEdit.model')}: ${slot.device.model || slot.device.device_library?.model || '-'}
 ${t('visualEdit.manufacturer')}: ${slot.device.manufacturer || slot.device.device_library?.manufacturer || '-'}
 ${t('visualEdit.serialNumber')}: ${slot.device.serial_number || slot.device.device_library?.serial_number || '-'}`}
                                                                         >
-                                                                            <div className="flex items-center gap-1">
-                                                                                <div
-                                                                                    className="w-2 h-2 rounded-full flex-shrink-0"
-                                                                                    style={{ backgroundColor: getTypeColor(slot.device.device_library?.device_type_id || 0) }}
-                                                                                />
+                                                                            {/* 状态颜色条 */}
+                                                                            <div
+                                                                                className="h-full flex-shrink-0"
+                                                                                style={{
+                                                                                    width: '5px',
+                                                                                    backgroundColor: slot.device.status === 'online' ? statusColors.online.bg :
+                                                                                        slot.device.status === 'offline' ? statusColors.offline.bg : statusColors.maintenance.bg,
+                                                                                }}
+                                                                            />
+                                                                            {/* 设备类型图标 - 通过 device_type_id 从 deviceTypes 数组查找 */}
+                                                                            <div className="flex-shrink-0 ml-1 flex items-center">
+                                                                                {(() => {
+                                                                                    const typeId = slot.device.device_library?.device_type_id || slot.device.device_library?.device_type?.id;
+                                                                                    const deviceType = typeId ? deviceTypes.find(dt => dt.id === typeId) : null;
+                                                                                    return getIconForType(deviceType?.icon || null);
+                                                                                })()}
+                                                                            </div>
+                                                                            <div className="flex-1 px-1 truncate">
                                                                                 {cleanDeviceName(slot.device.name).length > 18
                                                                                     ? cleanDeviceName(slot.device.name).slice(0, 16) + '..'
                                                                                     : cleanDeviceName(slot.device.name)}
                                                                             </div>
                                                                         </div>
-                                                                        {/* 显示设备占据的所有U位标识 */}
-                                                                        {slot.uHeight > 1 && (
-                                                                            <div className="absolute right-1 top-1/2 -translate-y-1/2 text-[8px] text-white/70 font-mono z-20">
-                                                                                {slot.uPosition}-{slot.uPosition + slot.uHeight - 1}U
-                                                                            </div>
-                                                                        )}
                                                                     </>
                                                                 )}
                                                                 {/* 被占用的U位（非起始位置）显示半透明覆盖层，也可以拖动 */}
@@ -2806,7 +2918,7 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
 
             {/* 批量检测结果对话框 */}
             <Dialog open={pingResults.open} onOpenChange={(open) => setPingResults({ ...pingResults, open })}>
-                <DialogContent className="max-h-[90vh] flex flex-col max-w-3xl p-0">
+                <DialogContent className="max-h-[90vh] flex flex-col w-[95vw] p-0" style={{ maxWidth: '1000px' }}>
                     <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
                         <DialogTitle>{t('visualEdit.pingResults')}</DialogTitle>
                         <DialogDescription>
@@ -2855,13 +2967,21 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                                                 <TableCell className="py-2 text-sm whitespace-nowrap">{cleanDeviceName(result.name)}</TableCell>
                                                 <TableCell className="py-2 text-sm font-mono whitespace-nowrap">{result.ip || '-'}</TableCell>
                                                 <TableCell className="py-2 whitespace-nowrap">
-                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                                        result.status === 'online'
-                                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                                                            : result.status === 'offline'
-                                                                ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
-                                                                : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
-                                                    }`}>
+                                                    <span
+                                                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                                                        style={{
+                                                            backgroundColor: result.status === 'online'
+                                                                ? statusColors.online.bg
+                                                                : result.status === 'offline'
+                                                                    ? statusColors.offline.bg
+                                                                    : statusColors.maintenance.bg,
+                                                            color: result.status === 'online'
+                                                                ? statusColors.online.text
+                                                                : result.status === 'offline'
+                                                                    ? statusColors.offline.text
+                                                                    : statusColors.maintenance.text,
+                                                        }}
+                                                    >
                                                         {t(`visualEdit.${result.status}`)}
                                                     </span>
                                                 </TableCell>
@@ -2875,6 +2995,134 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                     <DialogFooter className="px-6 py-4 border-t shrink-0">
                         <Button variant="outline" onClick={() => setPingResults({ ...pingResults, open: false })}>
                             {t('common.close')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* 颜色设置对话框 */}
+            <Dialog open={colorSettingsOpen} onOpenChange={setColorSettingsOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>设备状态颜色设置</DialogTitle>
+                        <DialogDescription>
+                            自定义批量检测结果的设备状态显示颜色
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-6 py-4">
+                        {/* 在线状态 */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div
+                                    className="w-8 h-8 rounded border"
+                                    style={{ backgroundColor: statusColors.online.bg }}
+                                />
+                                <span className="font-medium">在线</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Label className="text-xs">背景</Label>
+                                <Input
+                                    type="color"
+                                    value={statusColors.online.bg}
+                                    onChange={(e) => {
+                                        const newColors = { ...statusColors, online: { ...statusColors.online, bg: e.target.value } };
+                                        setStatusColors(newColors);
+                                    }}
+                                    className="w-16 h-8 p-1"
+                                />
+                            </div>
+                        </div>
+
+                        {/* 离线状态 */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div
+                                    className="w-8 h-8 rounded border"
+                                    style={{ backgroundColor: statusColors.offline.bg }}
+                                />
+                                <span className="font-medium">离线</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Label className="text-xs">背景</Label>
+                                <Input
+                                    type="color"
+                                    value={statusColors.offline.bg}
+                                    onChange={(e) => {
+                                        const newColors = { ...statusColors, offline: { ...statusColors.offline, bg: e.target.value } };
+                                        setStatusColors(newColors);
+                                    }}
+                                    className="w-16 h-8 p-1"
+                                />
+                            </div>
+                        </div>
+
+                        {/* 维护中状态 */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div
+                                    className="w-8 h-8 rounded border"
+                                    style={{ backgroundColor: statusColors.maintenance.bg }}
+                                />
+                                <span className="font-medium">维护中</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Label className="text-xs">背景</Label>
+                                <Input
+                                    type="color"
+                                    value={statusColors.maintenance.bg}
+                                    onChange={(e) => {
+                                        const newColors = { ...statusColors, maintenance: { ...statusColors.maintenance, bg: e.target.value } };
+                                        setStatusColors(newColors);
+                                    }}
+                                    className="w-16 h-8 p-1"
+                                />
+                            </div>
+                        </div>
+
+                        {/* 预览 */}
+                        <div className="border rounded-md p-4 space-y-2">
+                            <div className="text-sm text-muted-foreground mb-2">预览</div>
+                            <div className="flex gap-2">
+                                <span
+                                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                                    style={{ backgroundColor: statusColors.online.bg, color: statusColors.online.text }}
+                                >
+                                    在线
+                                </span>
+                                <span
+                                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                                    style={{ backgroundColor: statusColors.offline.bg, color: statusColors.offline.text }}
+                                >
+                                    离线
+                                </span>
+                                <span
+                                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                                    style={{ backgroundColor: statusColors.maintenance.bg, color: statusColors.maintenance.text }}
+                                >
+                                    维护中
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter className="gap-2">
+                        <Button variant="outline" onClick={() => {
+                            // 重置为默认颜色
+                            const defaultColors = {
+                                online: { bg: '#22c55e', text: '#ffffff' },
+                                offline: { bg: '#f97316', text: '#ffffff' },
+                                maintenance: { bg: '#6b7280', text: '#ffffff' },
+                            };
+                            setStatusColors(defaultColors);
+                            saveStatusColors(defaultColors);
+                            setColorSettingsOpen(false);
+                        }}>
+                            重置默认
+                        </Button>
+                        <Button onClick={() => {
+                            saveStatusColors(statusColors);
+                            setColorSettingsOpen(false);
+                        }}>
+                            保存设置
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -3207,11 +3455,15 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                                 </Label>
                                 <span className="col-span-3">
                                     <div className="flex items-center gap-2">
-                                        <div
-                                            className="w-3 h-3 rounded-full flex-shrink-0"
-                                            style={{ backgroundColor: getTypeColor(viewingLibraryItem.device_type_id) }}
-                                        />
-                                        {viewingLibraryItem.device_type?.name || '-'}
+                                        <span
+                                            className="px-2 py-0.5 rounded text-xs font-medium"
+                                            style={{
+                                                backgroundColor: getTypeColor(viewingLibraryItem.device_type_id),
+                                                color: getContrastTextColor(getTypeColor(viewingLibraryItem.device_type_id)),
+                                            }}
+                                        >
+                                            {viewingLibraryItem.device_type?.name || '-'}
+                                        </span>
                                     </div>
                                 </span>
                             </div>

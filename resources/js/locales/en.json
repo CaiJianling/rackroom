@@ -194,8 +194,11 @@
         "monitor": "Real-time Monitor",
         "reports": "Reports",
         "alerts": "Alerts",
-        "system": "System",
+        "system": "System Management",
+        "systemSettings": "System Settings",
         "backup": "Data Backup/Restore",
+        "tools": "Tools",
+        "h3cPassword": "Batch Change H3C Switch Password",
         "error404": "404 Page",
         "error403": "Access Denied",
         "uheight": "U Height"
