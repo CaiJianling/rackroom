@@ -15,8 +15,8 @@ class DeviceTypeController extends Controller
         return Inertia::render('DeviceType/Index', [
             'deviceTypes' => $deviceTypes,
             'breadcrumbs' => [
-                ['title' => '设备管理', 'href' => '#'],
-                ['title' => '设备类型管理', 'href' => '/device-types'],
+                ['title' => __('navigation.deviceManagement'), 'href' => '#'],
+                ['title' => __('navigation.deviceTypeManagement'), 'href' => '/device-types'],
             ],
         ]);
     }

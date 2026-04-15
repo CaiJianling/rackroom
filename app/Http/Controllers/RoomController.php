@@ -23,7 +23,7 @@ class RoomController extends Controller
         return inertia('Room/Index', [
             'rooms' => $rooms,
             'breadcrumbs' => [
-                ['title' => '机房管理', 'href' => '/rooms'],
+                ['title' => __('navigation.roomManagement'), 'href' => '/rooms'],
             ],
         ]);
     }

@@ -45,8 +45,8 @@ class DeviceController extends Controller
             'deviceLibrary' => $deviceLibrary,
             'deviceTypes' => $deviceTypes,
             'breadcrumbs' => [
-                ['title' => '设备管理', 'href' => '#'],
-                ['title' => '设备列表', 'href' => '/devices'],
+                ['title' => __('navigation.deviceManagement'), 'href' => '#'],
+                ['title' => __('navigation.deviceList'), 'href' => '/devices'],
             ],
         ]);
     }

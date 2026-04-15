@@ -21,8 +21,8 @@ class RackTypeController extends Controller
         return inertia('RackType/Index', [
             'rackTypes' => $rackTypes,
             'breadcrumbs' => [
-                ['title' => '机柜管理', 'href' => '#'],
-                ['title' => '机柜类型管理', 'href' => '/rack-types'],
+                ['title' => __('navigation.rackManagement'), 'href' => '#'],
+                ['title' => __('navigation.rackTypeManagement'), 'href' => '/rack-types'],
             ],
         ]);
     }

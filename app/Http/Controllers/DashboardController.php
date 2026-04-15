@@ -30,7 +30,7 @@ class DashboardController extends Controller
             'recentDevices' => $recentDevices,
             'categoryDistribution' => $categoryDistribution,
             'breadcrumbs' => [
-                ['title' => '仪表盘', 'href' => '/dashboard'],
+                ['title' => __('navigation.dashboard'), 'href' => '/dashboard'],
             ],
         ]);
     }

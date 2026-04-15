@@ -30,6 +30,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('settings/two-factor', [TwoFactorAuthenticationController::class, 'show'])
         ->name('two-factor.show');
 
-    Route::get('settings/system', [SystemSettingController::class, 'index'])
-        ->name('settings.system');
+    Route::get('auto-detection', [SystemSettingController::class, 'index'])
+        ->name('auto-detection');
 });

@@ -46,8 +46,8 @@ class RackController extends Controller
             'rooms' => $rooms,
             'rackTypes' => $rackTypes,
             'breadcrumbs' => [
-                ['title' => '机柜管理', 'href' => '#'],
-                ['title' => '机柜列表', 'href' => '/racks'],
+                ['title' => __('navigation.rackManagement'), 'href' => '#'],
+                ['title' => __('navigation.rackList'), 'href' => '/racks'],
             ],
         ]);
     }
@@ -84,7 +84,7 @@ class RackController extends Controller
             'selectedRoom' => $roomId,
             'usedLibraryIds' => $usedLibraryIds,
             'breadcrumbs' => [
-                ['title' => '机柜可视化编辑', 'href' => '/racks/visual-edit'],
+                ['title' => __('navigation.rackVisualEdit'), 'href' => '/racks/visual-edit'],
             ],
         ]);
     }

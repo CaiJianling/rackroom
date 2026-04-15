@@ -24,7 +24,7 @@ class UserController extends Controller
         return inertia('User/Index', [
             'users' => $users,
             'breadcrumbs' => [
-                ['title' => '用户管理', 'href' => '/users'],
+                ['title' => __('navigation.userManagement'), 'href' => '/users'],
             ],
         ]);
     }

@@ -10,11 +10,14 @@
  */
 
 use App\Http\Controllers\AlertController;
+use App\Http\Controllers\DetectionLogController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified'])->group(function () {
+// API routes that use session-based authentication
+// Note: These routes require session cookies (credentials: 'same-origin' in fetch)
+Route::middleware(['web', 'auth', 'verified'])->group(function () {
     // 监控API
     Route::get('monitor/stats', [MonitorController::class, 'stats']);
     Route::get('monitor/devices', [MonitorController::class, 'devices']);
@@ -38,4 +41,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('reports/templates', [ReportController::class, 'saveTemplate']);
     Route::get('reports/{report}/download', [ReportController::class, 'download']);
     Route::delete('reports/{report}', [ReportController::class, 'destroy']);
+
+    // 检测日志API
+    Route::get('detection-logs', [DetectionLogController::class, 'index']);
+    Route::get('detection-logs/stats', [DetectionLogController::class, 'stats']);
+    Route::get('detection-logs/{log}', [DetectionLogController::class, 'show']);
+    Route::post('detection-logs/detect', [DetectionLogController::class, 'detect']);
 });

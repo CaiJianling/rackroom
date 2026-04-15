@@ -115,8 +115,8 @@ export function AppSidebar() {
             icon: Settings,
             items: [
                 {
-                    title: t('navigation.systemSettings'),
-                    href: '/settings/system',
+                    title: t('navigation.autoDetection'),
+                    href: '/auto-detection',
                 },
                 {
                     title: t('navigation.backup'),

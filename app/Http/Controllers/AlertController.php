@@ -70,8 +70,8 @@ class AlertController extends Controller
             ],
             'alertTypes' => $alertTypes,
             'breadcrumbs' => [
-                ['title' => '监控/报表', 'href' => '#'],
-                ['title' => '告警列表', 'href' => '/alerts'],
+                ['title' => __('navigation.monitorReports'), 'href' => '#'],
+                ['title' => __('navigation.alerts'), 'href' => '/alerts'],
             ],
         ]);
     }

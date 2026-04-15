@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,8 +7,11 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { useToast } from '@/hooks/use-toast';
-import { Activity, Loader2, Clock, RotateCcw, Save } from 'lucide-react';
+import { Activity, Loader2, Clock, RotateCcw, Save, Play, History, CheckCircle, XCircle, AlertCircle, Server } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
 
 interface SystemSetting {
     value: boolean | number | string;
@@ -27,6 +30,47 @@ interface EditableSettings {
     auto_detection_interval: number;
 }
 
+// 检测日志接口
+interface DetectionLog {
+    id: number;
+    type: 'auto' | 'manual';
+    total_devices: number;
+    online_count: number;
+    offline_count: number;
+    maintenance_count: number;
+    updated_count: number;
+    duration_ms: number;
+    status: 'success' | 'failed' | 'skipped' | 'running';
+    message: string;
+    created_at: string;
+    completed_at: string | null;
+}
+
+// 检测统计接口
+interface DetectionStats {
+    auto_detection_enabled: boolean;
+    auto_detection_interval: number;
+    last_auto_detection: {
+        created_at: string;
+        status: string;
+        total_devices: number;
+        updated_count: number;
+        duration_ms: number;
+    } | null;
+    last_manual_detection: {
+        created_at: string;
+        status: string;
+        total_devices: number;
+        updated_count: number;
+    } | null;
+    today: {
+        total: number;
+        success: number;
+        failed: number;
+        total_updated: number;
+    };
+}
+
 export default function SystemSettings() {
     const { t } = useTranslation();
     const { showToast } = useToast();
@@ -39,6 +83,50 @@ export default function SystemSettings() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
+    // 检测日志状态
+    const [detectionStats, setDetectionStats] = useState<DetectionStats | null>(null);
+    const [detectionLogs, setDetectionLogs] = useState<DetectionLog[]>([]);
+    const [isDetecting, setIsDetecting] = useState(false);
+    const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+
+    // 加载检测统计和日志
+    const loadDetectionData = useCallback(async () => {
+        setIsLoadingLogs(true);
+        try {
+            // 加载统计
+            const statsResponse = await fetch('/api/detection-logs/stats', {
+                headers: { 'Accept': 'application/json' },
+                credentials: 'same-origin',
+            });
+            if (statsResponse.ok) {
+                const statsData = await statsResponse.json();
+                if (statsData.success) {
+                    setDetectionStats(statsData.stats);
+                }
+            } else if (statsResponse.status === 401) {
+                console.error('检测日志统计获取失败: 未授权');
+            }
+
+            // 加载日志
+            const logsResponse = await fetch('/api/detection-logs?limit=10', {
+                headers: { 'Accept': 'application/json' },
+                credentials: 'same-origin',
+            });
+            if (logsResponse.ok) {
+                const logsData = await logsResponse.json();
+                if (logsData.success) {
+                    setDetectionLogs(logsData.logs);
+                }
+            } else if (logsResponse.status === 401) {
+                console.error('检测日志获取失败: 未授权');
+            }
+        } catch (error) {
+            console.error('加载检测日志失败:', error);
+        } finally {
+            setIsLoadingLogs(false);
+        }
+    }, []);
+
     // 加载系统设置
     useEffect(() => {
         const loadSettings = async () => {
@@ -47,6 +135,7 @@ export default function SystemSettings() {
                     headers: {
                         'Accept': 'application/json',
                     },
+                    credentials: 'same-origin',
                 });
 
                 if (!response.ok) {
@@ -71,7 +160,12 @@ export default function SystemSettings() {
         };
 
         loadSettings();
-    }, []);
+        loadDetectionData();
+
+        // 定时刷新检测日志(每30秒)
+        const interval = setInterval(loadDetectionData, 30000);
+        return () => clearInterval(interval);
+    }, [loadDetectionData]);
 
     // 检测是否有修改
     useEffect(() => {
@@ -108,13 +202,14 @@ export default function SystemSettings() {
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': token,
                         },
+                        credentials: 'same-origin',
                         body: JSON.stringify({ value }),
                     });
-                    
+
                     if (!response.ok) {
                         throw new Error(`保存 ${key} 失败`);
                     }
-                    
+
                     return response.json();
                 })
             );
@@ -150,7 +245,7 @@ export default function SystemSettings() {
     // 重置设置
     const handleReset = () => {
         if (!settings) return;
-        
+
         setEditableSettings({
             auto_detection_enabled: Boolean(settings?.auto_detection_enabled?.value ?? true),
             auto_detection_interval: Number(settings?.auto_detection_interval?.value ?? 5),
@@ -164,10 +259,85 @@ export default function SystemSettings() {
         window.location.reload();
     };
 
+    // 执行手动检测
+    const handleManualDetect = async () => {
+        setIsDetecting(true);
+        try {
+            const response = await fetch('/api/detection-logs/detect', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                credentials: 'same-origin',
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                showToast(data.message || '检测完成', 'success');
+                // 刷新日志
+                await loadDetectionData();
+            } else {
+                showToast(data.message || '检测失败', 'error');
+            }
+        } catch (error) {
+            console.error('手动检测失败:', error);
+            showToast('检测执行失败', 'error');
+        } finally {
+            setIsDetecting(false);
+        }
+    };
+
+    // 格式化时间
+    const formatTime = (dateStr: string) => {
+        const date = new Date(dateStr);
+        return date.toLocaleString('zh-CN', {
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+        });
+    };
+
+    // 格式化相对时间
+    const getRelativeTime = (dateStr: string | null) => {
+        if (!dateStr) return '从未';
+        const date = new Date(dateStr);
+        const now = new Date();
+        const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+        if (diff < 60) return '刚刚';
+        if (diff < 3600) return `${Math.floor(diff / 60)} 分钟前`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)} 小时前`;
+        return `${Math.floor(diff / 86400)} 天前`;
+    };
+
+    // 获取状态图标
+    const getStatusIcon = (status: string) => {
+        switch (status) {
+            case 'success': return <CheckCircle className="h-4 w-4 text-green-500" />;
+            case 'failed': return <XCircle className="h-4 w-4 text-red-500" />;
+            case 'skipped': return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+            default: return <Activity className="h-4 w-4 text-blue-500" />;
+        }
+    };
+
+    // 获取状态文本
+    const getStatusText = (status: string) => {
+        switch (status) {
+            case 'success': return '成功';
+            case 'failed': return '失败';
+            case 'skipped': return '跳过';
+            case 'running': return '进行中';
+            default: return status;
+        }
+    };
+
     if (isLoading) {
         return (
             <AppLayout>
-                <Head title="系统设置" />
+                <Head title="自动检测" />
                 <div className="container mx-auto py-6 px-4">
                     <div className="flex items-center justify-center h-64">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -179,21 +349,21 @@ export default function SystemSettings() {
 
     return (
         <AppLayout breadcrumbs={[
-            { title: '系统', href: '#' },
-            { title: '系统设置', href: '/settings/system' },
+            { title: t('navigation.system'), href: '#' },
+            { title: t('navigation.autoDetection'), href: '/auto-detection' },
         ]}>
-            <Head title="系统设置" />
+            <Head title={t('navigation.autoDetection')} />
 
-            <div className="container mx-auto py-6 px-4 max-w-4xl">
+            <div className="container mx-auto py-6 px-4 max-w-4xl pb-24">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold">系统设置</h1>
+                    <h1 className="text-2xl font-bold">{t('navigation.autoDetection')}</h1>
                     <p className="text-muted-foreground mt-1">
-                        管理系统全局配置和自动化功能
+                        {t('autoDetection.description', '配置设备自动检测功能，管理检测计划和查看检测日志')}
                     </p>
                 </div>
 
                 {/* 可滚动的设置内容区域 */}
-                <div className="space-y-6 pb-24">
+                <div className="space-y-6">
                     {/* 自动检测设置 */}
                     <Card>
                         <CardHeader>
@@ -277,11 +447,195 @@ export default function SystemSettings() {
                             </div>
                         </CardContent>
                     </Card>
+
+                    {/* 检测状态概览 */}
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                                        <Server className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                                    </div>
+                                    <div>
+                                        <CardTitle>检测状态</CardTitle>
+                                        <CardDescription>
+                                            查看自动检测运行状态和统计
+                                        </CardDescription>
+                                    </div>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleManualDetect}
+                                    disabled={isDetecting}
+                                    className="gap-2"
+                                >
+                                    {isDetecting ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Play className="h-4 w-4" />
+                                    )}
+                                    立即检测
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            {isLoadingLogs ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                </div>
+                            ) : detectionStats ? (
+                                <div className="space-y-4">
+                                    {/* 状态概览 */}
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="bg-muted/50 rounded-lg p-3 text-center">
+                                            <div className="text-2xl font-bold text-primary">
+                                                {detectionStats.today.total}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">今日检测次数</div>
+                                        </div>
+                                        <div className="bg-muted/50 rounded-lg p-3 text-center">
+                                            <div className="text-2xl font-bold text-green-600">
+                                                {detectionStats.today.total_updated}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">今日更新设备</div>
+                                        </div>
+                                        <div className="bg-muted/50 rounded-lg p-3 text-center">
+                                            <div className="text-2xl font-bold text-blue-600">
+                                                {detectionStats.last_auto_detection?.total_devices || 0}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">上次检测设备</div>
+                                        </div>
+                                        <div className="bg-muted/50 rounded-lg p-3 text-center">
+                                            <div className="text-2xl font-bold text-orange-600">
+                                                {detectionStats.last_auto_detection?.duration_ms || 0}ms
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">上次耗时</div>
+                                        </div>
+                                    </div>
+
+                                    {/* 最后检测时间 */}
+                                    <div className="flex items-center gap-4 py-3 px-4 bg-muted/30 rounded-lg">
+                                        <div className="flex-1">
+                                            <div className="text-sm font-medium">自动检测状态</div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {editableSettings.auto_detection_enabled ? (
+                                                    <span className="text-green-600 flex items-center gap-1">
+                                                        <CheckCircle className="h-3 w-3" />
+                                                        已启用 (每 {editableSettings.auto_detection_interval} 分钟)
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-yellow-600 flex items-center gap-1">
+                                                        <AlertCircle className="h-3 w-3" />
+                                                        已暂停
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-sm font-medium">
+                                                上次自动检测
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {getRelativeTime(detectionStats.last_auto_detection?.created_at || null)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    暂无检测数据
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* 检测日志 */}
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-amber-100 dark:bg-amber-900 rounded-lg">
+                                    <History className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                                </div>
+                                <div>
+                                    <CardTitle>检测日志</CardTitle>
+                                    <CardDescription>
+                                        最近10次设备检测记录
+                                    </CardDescription>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            {isLoadingLogs ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                </div>
+                            ) : detectionLogs.length > 0 ? (
+                                <div className="h-[300px] overflow-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead className="w-[100px]">时间</TableHead>
+                                                <TableHead>类型</TableHead>
+                                                <TableHead>状态</TableHead>
+                                                <TableHead className="text-right">设备</TableHead>
+                                                <TableHead className="text-right">更新</TableHead>
+                                                <TableHead className="text-right">耗时</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {detectionLogs.map((log) => (
+                                                <TableRow key={log.id}>
+                                                    <TableCell className="text-xs">
+                                                        {formatTime(log.created_at)}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge variant={log.type === 'auto' ? 'secondary' : 'default'} className="text-xs">
+                                                            {log.type === 'auto' ? '自动' : '手动'}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-1">
+                                                            {getStatusIcon(log.status)}
+                                                            <span className="text-xs">{getStatusText(log.status)}</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-right text-xs">
+                                                        {log.total_devices > 0 ? (
+                                                            <span className="text-muted-foreground">
+                                                                {log.online_count}/{log.offline_count}/{log.maintenance_count}
+                                                            </span>
+                                                        ) : (
+                                                            '-'
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        {log.updated_count > 0 ? (
+                                                            <span className="text-green-600 font-medium text-xs">+{log.updated_count}</span>
+                                                        ) : (
+                                                            <span className="text-muted-foreground text-xs">-</span>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="text-right text-xs text-muted-foreground">
+                                                        {log.duration_ms}ms
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    暂无检测日志
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
 
-                {/* 固定在底部的按钮栏 */}
-                <div className="fixed bottom-0 left-0 right-0 bg-background border-t py-4 px-4 z-50">
-                    <div className="container mx-auto max-w-4xl flex items-center justify-between">
+                {/* 底部按钮栏 - 固定在视口底部，避开侧边栏 */}
+                <div className="fixed bottom-0 left-0 right-0 md:left-[16rem] bg-background border-t py-4 px-4 z-50 transition-all duration-200">
+                    <div className="flex items-center justify-between max-w-4xl mx-auto">
                         <div className="flex items-center gap-2">
                             {hasChanges && (
                                 <span className="text-sm text-amber-600 font-medium">

@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Auth;
 use App\Models\Device;
 use App\Models\GeneratedReport;
 use App\Models\ReportTemplate;
 use App\Models\Room;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -45,8 +45,8 @@ class ReportController extends Controller
                 'deviceStatuses' => ['online', 'offline', 'maintenance'],
             ],
             'breadcrumbs' => [
-                ['title' => '监控/报表', 'href' => '#'],
-                ['title' => '报表生成', 'href' => '/reports'],
+                ['title' => __('navigation.monitorReports'), 'href' => '#'],
+                ['title' => __('navigation.reports'), 'href' => '/reports'],
             ],
         ]);
     }

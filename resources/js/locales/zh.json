@@ -195,6 +195,8 @@
         "alerts": "告警列表",
         "system": "系统管理",
         "systemSettings": "系统设置",
+        "autoDetection": "自动检测",
+        "autoDetectionDescription": "配置设备自动检测功能，管理检测计划和查看检测日志",
         "backup": "数据备份/恢复",
         "tools": "小工具",
         "h3cPassword": "批量修改H3C交换机密码",
@@ -411,7 +413,6 @@
         "unassigned": "未分配",
         "actions": "操作",
         "allLocations": "所有位置",
-        "allManagers": "所有负责人",
         "searchPlaceholder": "按名称、位置或负责人搜索...",
         "noRoomsFound": "未找到符合您条件的机房",
         "clearFilters": "清除筛选",
@@ -685,7 +686,7 @@
     },
     "nav": {
         "system": "系统管理",
-        "backup": "数据备份"
+        "backup": "数据备份/恢复"
     },
     "general": {
         "previousPage": "上一页",
