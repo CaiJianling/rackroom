@@ -13,6 +13,12 @@ import {
     ShieldCheck,
     AlertCircle,
     Link2,
+    Monitor,
+    Database,
+    Layers,
+    HardDrive,
+    Network,
+    ExternalLink,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -86,6 +92,7 @@ interface DeviceLibraryItem {
     u_height: number;
     power: number;
     device_type?: DeviceType;
+    description?: string;
 }
 
 interface Device {
@@ -127,6 +134,28 @@ const connectionTypes = [
     { value: 'vnc', label: 'VNC' },
     { value: 'radmin', label: 'Radmin' },
 ];
+
+// 获取设备类型图标
+const getDeviceTypeIcon = (iconName: string | null) => {
+    switch (iconName) {
+        case 'server': return <Monitor className="h-4 w-4" />;
+        case 'network': return <Network className="h-4 w-4" />;
+        case 'storage': return <Database className="h-4 w-4" />;
+        case 'cpu': return <Cpu className="h-4 w-4" />;
+        case 'layers': return <Layers className="h-4 w-4" />;
+        default: return <HardDrive className="h-4 w-4" />;
+    }
+};
+
+// 根据背景色计算对比度文字颜色
+const getContrastTextColor = (backgroundColor: string): string => {
+    const hex = backgroundColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+    return yiq >= 128 ? '#000000' : '#ffffff';
+};
 
 export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes, breadcrumbs = [], message }: Props) {
     const { t } = useTranslation();
@@ -1218,13 +1247,16 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                                 <span className="col-span-3">
                                     {viewingDevice.device_library?.device_type
                                         ? (
-                                            <div className="flex items-center gap-2">
-                                                <div
-                                                    className="w-3 h-3 rounded-full flex-shrink-0"
-                                                    style={{ backgroundColor: getDeviceTypeColor(viewingDevice.device_library.device_type_id) }}
-                                                />
+                                            <span
+                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium"
+                                                style={{
+                                                    backgroundColor: getDeviceTypeColor(viewingDevice.device_library.device_type_id),
+                                                    color: getContrastTextColor(getDeviceTypeColor(viewingDevice.device_library.device_type_id)),
+                                                }}
+                                            >
+                                                {getDeviceTypeIcon(viewingDevice.device_library.device_type.icon)}
                                                 {getDeviceTypeName(viewingDevice.device_library.device_type_id)}
-                                            </div>
+                                            </span>
                                         )
                                         : '-'}
                                 </span>
@@ -1234,9 +1266,15 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                                     {t('deviceLibrary.model')}
                                 </Label>
                                 <span className="col-span-3 text-muted-foreground">
-                                    {viewingDevice.device_library
-                                        ? `${viewingDevice.device_library.manufacturer || ''} ${viewingDevice.device_library.model || ''}`.trim() || '-'
-                                        : '-'}
+                                    {viewingDevice.device_library?.model || '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceLibrary.manufacturer')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground">
+                                    {viewingDevice.device_library?.manufacturer || '-'}
                                 </span>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
@@ -1245,6 +1283,14 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                                 </Label>
                                 <span className="col-span-3 text-muted-foreground">
                                     {viewingDevice.serial_number || '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-start gap-4">
+                                <Label className="text-right font-medium pt-2">
+                                    {t('deviceLibrary.description')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground whitespace-pre-wrap">
+                                    {viewingDevice.device_library?.description || '-'}
                                 </span>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">

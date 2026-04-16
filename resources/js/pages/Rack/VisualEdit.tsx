@@ -19,6 +19,7 @@ import {
     Link2,
     Pencil,
     Palette,
+    ExternalLink,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -3146,7 +3147,28 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                         style={{ left: contextMenu.x, top: contextMenu.y }}
                     >
                         <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                            {cleanDeviceName(contextMenu.device.name)}
+                            <div className="font-medium truncate">{cleanDeviceName(contextMenu.device.name)}</div>
+                            <div className="flex items-center gap-1 mt-1">
+                                <span
+                                    className="px-1.5 py-0.5 rounded text-[10px] font-medium"
+                                    style={{
+                                        backgroundColor: getTypeColor(contextMenu.device.device_library?.device_type_id || 0),
+                                        color: getContrastTextColor(getTypeColor(contextMenu.device.device_library?.device_type_id || 0)),
+                                    }}
+                                >
+                                    {contextMenu.device.device_library?.device_type?.name || contextMenu.device.category || '-'}
+                                </span>
+                                <span className="text-[10px] text-gray-400">|</span>
+                                <span className={`text-[10px] ${
+                                    contextMenu.device.status === 'online' ? 'text-green-500' :
+                                    contextMenu.device.status === 'offline' ? 'text-red-500' :
+                                    'text-gray-400'
+                                }`}>
+                                    {contextMenu.device.status === 'online' ? t('visualEdit.online') :
+                                     contextMenu.device.status === 'offline' ? t('visualEdit.offline') :
+                                     t('visualEdit.maintenance')}
+                                </span>
+                            </div>
                         </div>
                         <button
                             className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
@@ -3225,7 +3247,20 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                                     {t('deviceLibrary.type')}
                                 </Label>
                                 <span className="col-span-3">
-                                    {viewingDevice.device_library?.device_type?.name || '-'}
+                                    {viewingDevice.device_library?.device_type
+                                        ? (
+                                            <span
+                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium"
+                                                style={{
+                                                    backgroundColor: getTypeColor(viewingDevice.device_library.device_type.id),
+                                                    color: getContrastTextColor(getTypeColor(viewingDevice.device_library.device_type.id)),
+                                                }}
+                                            >
+                                                {getIconForType(viewingDevice.device_library.device_type.icon)}
+                                                {viewingDevice.device_library.device_type.name}
+                                            </span>
+                                        )
+                                        : '-'}
                                 </span>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
@@ -3233,9 +3268,15 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                                     {t('deviceLibrary.model')}
                                 </Label>
                                 <span className="col-span-3 text-muted-foreground">
-                                    {viewingDevice.device_library
-                                        ? `${viewingDevice.device_library.manufacturer || ''} ${viewingDevice.device_library.model || ''}`.trim() || '-'
-                                        : '-'}
+                                    {viewingDevice.device_library?.model || '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right font-medium">
+                                    {t('deviceLibrary.manufacturer')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground">
+                                    {viewingDevice.device_library?.manufacturer || '-'}
                                 </span>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
@@ -3244,6 +3285,14 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                                 </Label>
                                 <span className="col-span-3 text-muted-foreground">
                                     {viewingDevice.serial_number || '-'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-start gap-4">
+                                <Label className="text-right font-medium pt-2">
+                                    {t('deviceLibrary.description')}
+                                </Label>
+                                <span className="col-span-3 text-muted-foreground whitespace-pre-wrap">
+                                    {viewingDevice.device_library?.description || '-'}
                                 </span>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">

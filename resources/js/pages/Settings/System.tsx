@@ -63,6 +63,7 @@ interface DetectionStats {
         total_devices: number;
         updated_count: number;
     } | null;
+    next_scheduled_at: string | null;
     today: {
         total: number;
         success: number;
@@ -540,6 +541,27 @@ export default function SystemSettings() {
                                                 {getRelativeTime(detectionStats.last_auto_detection?.created_at || null)}
                                             </div>
                                         </div>
+                                        {editableSettings.auto_detection_enabled && detectionStats?.next_scheduled_at && (
+                                            <div className="text-right border-l pl-4">
+                                                <div className="text-sm font-medium">
+                                                    下次检测
+                                                </div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {(() => {
+                                                        const nextTime = new Date(detectionStats.next_scheduled_at!);
+                                                        const now = new Date();
+                                                        const diff = nextTime.getTime() - now.getTime();
+                                                        if (diff <= 0) return '即将执行';
+                                                        const minutes = Math.floor(diff / 60000);
+                                                        if (minutes < 1) return '即将执行';
+                                                        if (minutes < 60) return `${minutes} 分钟后`;
+                                                        const hours = Math.floor(minutes / 60);
+                                                        const remainingMinutes = minutes % 60;
+                                                        return `${hours}小时${remainingMinutes}分钟后`;
+                                                    })()}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ) : (

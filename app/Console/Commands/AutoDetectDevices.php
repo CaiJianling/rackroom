@@ -36,17 +36,28 @@ class AutoDetectDevices extends Command
             $enabled = SystemSetting::get('auto_detection_enabled', true);
             if (! $enabled) {
                 $this->info('自动检测已关闭，跳过检测');
-                // 记录跳过的日志
-                DetectionLog::create([
-                    'type' => 'auto',
-                    'status' => 'skipped',
-                    'message' => '自动检测已关闭',
-                    'started_at' => now(),
-                    'completed_at' => now(),
-                ]);
 
                 return self::SUCCESS;
             }
+
+            // 检查是否到达检测间隔
+            $interval = SystemSetting::get('auto_detection_interval', 5);
+            $lastAutoDetection = DetectionLog::getLastAutoRun();
+
+            if ($lastAutoDetection) {
+                $minutesSinceLastDetection = now()->diffInMinutes($lastAutoDetection->created_at);
+
+                if ($minutesSinceLastDetection < $interval) {
+                    $remainingMinutes = $interval - $minutesSinceLastDetection;
+                    $this->info("距离上次检测仅 {$minutesSinceLastDetection} 分钟，还需等待 {$remainingMinutes} 分钟");
+
+                    return self::SUCCESS;
+                }
+            }
+
+            $this->info("检测间隔已满足（{$interval} 分钟），准备执行检测");
+
+            $this->info("自动检测已启用，检测间隔: {$interval} 分钟");
         }
 
         $this->info("开始设备状态检测... [{$type}]");

@@ -59,6 +59,7 @@ class DetectionLogController extends Controller
     {
         // 最后一次检测
         $lastAuto = DetectionLog::getLastAuto();
+        $lastAutoRun = DetectionLog::getLastAutoRun();
         $lastManual = DetectionLog::where('type', 'manual')
             ->where('status', 'success')
             ->orderByDesc('created_at')
@@ -70,6 +71,15 @@ class DetectionLogController extends Controller
         // 自动检测设置
         $enabled = SystemSetting::get('auto_detection_enabled', true);
         $interval = SystemSetting::get('auto_detection_interval', 5);
+
+        // 计算下次检测时间
+        $nextScheduledAt = null;
+        if ($enabled && $lastAutoRun) {
+            $nextScheduledAt = $lastAutoRun->created_at->clone()->addMinutes($interval);
+            if ($nextScheduledAt->isPast()) {
+                $nextScheduledAt = now()->addMinute(); // 如果已过，则下次将在1分钟内执行
+            }
+        }
 
         return response()->json([
             'success' => true,
@@ -89,6 +99,7 @@ class DetectionLogController extends Controller
                     'total_devices' => $lastManual->total_devices,
                     'updated_count' => $lastManual->updated_count,
                 ] : null,
+                'next_scheduled_at' => $nextScheduledAt?->toDateTimeString(),
                 'today' => $todayStats,
             ],
         ]);

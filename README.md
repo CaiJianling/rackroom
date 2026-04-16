@@ -141,6 +141,81 @@ php artisan serve
 npm run build
 ```
 
+7. **配置定时任务（重要）**
+
+系统依赖 Laravel 调度器执行自动检测等定时任务。
+
+**快速配置（推荐）**
+```bash
+# 运行自动配置脚本，按提示选择运行方式
+bash scripts/setup-scheduler.sh
+```
+
+**手动配置**
+
+<details>
+<summary>方式一：Cron（简单部署）</summary>
+
+```bash
+# 编辑 crontab
+crontab -e
+
+# 添加以下行（每分钟执行）
+* * * * * cd /www/wwwroot/rackroom.local.host/rackroom && php artisan schedule:run >> /dev/null 2>&1
+```
+</details>
+
+<details>
+<summary>方式二：Supervisor（生产环境推荐）</summary>
+
+```ini
+# /etc/supervisor/conf.d/rackroom-scheduler.conf
+[program:rackroom-scheduler]
+process_name=%(program_name)s
+command=php /www/wwwroot/rackroom.local.host/rackroom/artisan schedule:work
+autostart=true
+autorestart=true
+user=www-data
+redirect_stderr=true
+stdout_logfile=/var/log/rackroom-scheduler.log
+```
+
+```bash
+supervisorctl reread
+supervisorctl update
+supervisorctl start rackroom-scheduler
+```
+</details>
+
+<details>
+<summary>方式三：手动运行（仅开发测试）</summary>
+
+```bash
+php artisan schedule:work
+```
+⚠️ 此命令需要保持运行，关闭终端后定时任务将停止
+</details>
+
+**验证定时任务**
+```bash
+# 检查定时任务状态
+php artisan scheduler:status
+
+# 手动执行一次自动检测（测试用）
+php artisan devices:auto-detect --type=manual
+```
+
+**删除/停用定时任务**
+```bash
+# 运行配置脚本，选择选项 6 删除配置
+bash scripts/setup-scheduler.sh
+
+# 或直接删除 Cron 任务
+crontab -l | grep -v "schedule:run" | crontab -
+```
+
+> ⚠️ **注意**：如果不配置定时任务，自动检测功能将无法正常运行。
+
 ### Docker 部署
 
 ```bash

@@ -41,12 +41,22 @@ class DetectionLog extends Model
     }
 
     /**
-     * 获取最后一次自动检测
+     * 获取最后一次自动检测（成功状态）
      */
     public static function getLastAuto(): ?self
     {
         return self::where('type', 'auto')
             ->where('status', 'success')
+            ->orderByDesc('created_at')
+            ->first();
+    }
+
+    /**
+     * 获取最后一次自动检测（任何状态，用于计算间隔）
+     */
+    public static function getLastAutoRun(): ?self
+    {
+        return self::where('type', 'auto')
             ->orderByDesc('created_at')
             ->first();
     }

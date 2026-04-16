@@ -58,7 +58,7 @@ class RackController extends Controller
         $rackTypes = RackType::all();
 
         $roomId = $request->input('room_id');
-        $query = Rack::with(['room', 'devices.deviceLibrary']);
+        $query = Rack::with(['room', 'devices.deviceLibrary.deviceType']);
 
         if ($roomId) {
             $query->where('room_id', $roomId);

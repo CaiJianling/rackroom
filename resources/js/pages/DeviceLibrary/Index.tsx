@@ -901,14 +901,17 @@ export default function DeviceLibraryIndex({ deviceLibrary, deviceTypes, breadcr
                                 <div className="col-span-3">
                                     {(() => {
                                         const bgColor = getTypeColor(viewingItem.device_type_id);
+                                        const deviceType = deviceTypes.find(dt => dt.id === viewingItem.device_type_id);
+                                        const IconComponent = getDeviceTypeIcon(deviceType?.icon || null);
                                         return (
                                             <span
-                                                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium"
                                                 style={{
                                                     backgroundColor: bgColor,
                                                     color: getContrastTextColor(bgColor),
                                                 }}
                                             >
+                                                <IconComponent className="h-4 w-4" />
                                                 {getTypeName(viewingItem.device_type_id)}
                                             </span>
                                         );
