@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Alert;
 use App\Models\Device;
+use App\Models\DeviceType;
 use App\Models\Rack;
 use App\Models\Room;
 use Inertia\Response;
@@ -21,6 +22,7 @@ class DashboardController extends Controller
         $recentAlerts = $this->getRecentAlerts();
         $recentDevices = $this->getRecentDevices();
         $categoryDistribution = $this->getCategoryDistribution();
+        $deviceTypes = $this->getDeviceTypes();
 
         return inertia('dashboard', [
             'stats' => $stats,
@@ -29,6 +31,7 @@ class DashboardController extends Controller
             'recentAlerts' => $recentAlerts,
             'recentDevices' => $recentDevices,
             'categoryDistribution' => $categoryDistribution,
+            'deviceTypes' => $deviceTypes,
             'breadcrumbs' => [
                 ['title' => __('navigation.dashboard'), 'href' => '/dashboard'],
             ],
@@ -168,7 +171,7 @@ class DashboardController extends Controller
      */
     private function getRecentDevices(): array
     {
-        return Device::with(['rack.room'])
+        return Device::with(['rack.room', 'deviceLibrary.deviceType'])
             ->latest()
             ->limit(5)
             ->get()
@@ -176,9 +179,24 @@ class DashboardController extends Controller
                 'id' => $device->id,
                 'name' => $device->name,
                 'status' => $device->status,
-                'category' => $device->category,
+                'device_type_id' => $device->deviceLibrary?->device_type_id,
                 'room_name' => $device->rack?->room?->name,
                 'created_at' => $device->created_at->diffForHumans(),
+            ])
+            ->toArray();
+    }
+
+    /**
+     * 获取设备类型列表
+     */
+    private function getDeviceTypes(): array
+    {
+        return DeviceType::all()
+            ->map(fn ($type) => [
+                'id' => $type->id,
+                'name' => $type->name,
+                'icon' => $type->icon,
+                'color' => $type->color,
             ])
             ->toArray();
     }

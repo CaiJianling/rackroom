@@ -69,9 +69,16 @@ interface DeviceItem {
     id: number;
     name: string;
     status: 'online' | 'offline' | 'maintenance';
-    category: string;
+    device_type_id: number | null;
     room_name: string | null;
     created_at: string;
+}
+
+interface DeviceType {
+    id: number;
+    name: string;
+    icon: string | null;
+    color: string | null;
 }
 
 interface Props {
@@ -87,6 +94,7 @@ interface Props {
     recentAlerts: AlertItem[];
     recentDevices: DeviceItem[];
     categoryDistribution: ChartData[];
+    deviceTypes: DeviceType[];
 }
 
 const iconMap: Record<string, React.ElementType> = {
@@ -113,8 +121,16 @@ export default function Dashboard({
     recentAlerts,
     recentDevices,
     categoryDistribution,
+    deviceTypes,
 }: Props) {
     const { t } = useTranslation();
+
+    // 获取设备类型名称（与 /devices 页面完全一致）
+    const getDeviceTypeName = (deviceTypeId: number | null) => {
+        if (!deviceTypeId) return '-';
+        const type = deviceTypes.find(t => t.id === deviceTypeId);
+        return type ? type.name : '-';
+    };
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -501,7 +517,7 @@ export default function Dashboard({
                                                 <div>
                                                     <p className="font-medium">{device.name}</p>
                                                     <p className="text-xs text-muted-foreground">
-                                                        {device.category} · {device.room_name || '未分配机房'}
+                                                        {getDeviceTypeName(device.device_type_id)} · {device.room_name || '未分配机房'}
                                                     </p>
                                                 </div>
                                             </div>
