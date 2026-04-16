@@ -11,6 +11,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SystemSetting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,9 +21,11 @@ class UserController extends Controller
     public function index()
     {
         $users = User::all();
+        $registrationEnabled = SystemSetting::get('registration_enabled', true);
 
         return inertia('User/Index', [
             'users' => $users,
+            'registrationEnabled' => $registrationEnabled,
             'breadcrumbs' => [
                 ['title' => __('navigation.userManagement'), 'href' => '/users'],
             ],

@@ -85,7 +85,8 @@ class SystemSettingController extends Controller
             default => $value,
         };
 
-        $setting->update(['value' => json_encode($validatedValue)]);
+        // 由于模型有 $casts，直接存储原始值，让模型自动处理编码
+        $setting->update(['value' => $validatedValue]);
 
         return response()->json([
             'success' => true,

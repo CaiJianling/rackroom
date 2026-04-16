@@ -37,6 +37,18 @@ use App\Http\Controllers\UserPreferenceController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
+use Laravel\Fortify\Http\Controllers\RegisteredUserController;
+
+// 覆盖 Fortify 注册路由，添加注册开关检查
+Route::middleware(['guest:web'])->group(function () {
+    Route::get('/register', [RegisteredUserController::class, 'create'])
+        ->middleware('registration.enabled')
+        ->name('register');
+
+    Route::post('/register', [RegisteredUserController::class, 'store'])
+        ->middleware('registration.enabled')
+        ->name('register.store');
+});
 
 Route::get('/', function () {
     return Inertia::render('welcome', [

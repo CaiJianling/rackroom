@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\CheckRegistrationEnabled;
 use App\Http\Middleware\CheckUserActive;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -31,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => AdminMiddleware::class,
             'active' => CheckUserActive::class,
+            'registration.enabled' => CheckRegistrationEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

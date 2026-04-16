@@ -3,10 +3,9 @@ import {
     Pencil,
     Trash2,
     UserPlus,
-    ToggleLeft,
-    ToggleRight,
     Search,
     X,
+    UserCheck,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -31,6 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
     Table,
     TableBody,
@@ -54,10 +54,11 @@ interface User {
 
 interface Props {
     users: User[];
+    registrationEnabled: boolean;
     breadcrumbs?: Array<{ title: string; href: string }>;
 }
 
-export default function UserIndex({ users, breadcrumbs = [] }: Props) {
+export default function UserIndex({ users, registrationEnabled, breadcrumbs = [] }: Props) {
     const { t } = useTranslation();
     const { auth, errors, flash } = usePage().props as any;
     const { showToast } = useToast();
@@ -98,6 +99,13 @@ export default function UserIndex({ users, breadcrumbs = [] }: Props) {
     const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>(
         'all',
     );
+    const [isRegistrationEnabled, setIsRegistrationEnabled] = useState(registrationEnabled);
+    const [isTogglingRegistration, setIsTogglingRegistration] = useState(false);
+
+    // 当 props 中的 registrationEnabled 变化时，更新本地状态
+    useEffect(() => {
+        setIsRegistrationEnabled(registrationEnabled);
+    }, [registrationEnabled]);
 
     const handleDelete = (userId: number) => {
         setDeletingUserId(userId);
@@ -186,6 +194,46 @@ export default function UserIndex({ users, breadcrumbs = [] }: Props) {
         router.put(`/users/${userId}/toggle-status`, {});
     };
 
+    // 切换注册功能开关
+    const toggleRegistration = async (checked: boolean) => {
+        setIsTogglingRegistration(true);
+
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const response = await fetch('/api/system-settings/registration_enabled', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({ value: checked }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                setIsRegistrationEnabled(checked);
+                showToast(
+                    checked ? '已开启用户注册功能' : '已关闭用户注册功能',
+                    'success'
+                );
+            } else if (response.status === 419) {
+                // CSRF token 过期，提示用户刷新页面
+                showToast('会话已过期，正在刷新页面...', 'warning');
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                throw new Error(data.message || '更新失败');
+            }
+        } catch (error) {
+            console.error('切换注册设置失败:', error);
+            showToast(error instanceof Error ? error.message : '设置更新失败，请刷新页面后重试', 'error');
+        } finally {
+            setIsTogglingRegistration(false);
+        }
+    };
+
     // 搜索和筛选逻辑
     const filteredUsers = useMemo(() => {
         return users.filter((user) => {
@@ -223,10 +271,24 @@ export default function UserIndex({ users, breadcrumbs = [] }: Props) {
                     <h1 className="text-2xl font-bold">
                         {t('userManagement.title')}
                     </h1>
-                    <Button onClick={openCreateDialog}>
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        {t('userManagement.addUser')}
-                    </Button>
+                    <div className="flex items-center gap-4">
+                        {/* 注册开关 */}
+                        <div className="flex items-center gap-3 bg-muted/50 px-4 py-2 rounded-lg">
+                            <UserCheck className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                                允许注册
+                            </span>
+                            <Switch
+                                checked={isRegistrationEnabled}
+                                onCheckedChange={toggleRegistration}
+                                disabled={isTogglingRegistration}
+                            />
+                        </div>
+                        <Button onClick={openCreateDialog}>
+                            <UserPlus className="mr-2 h-4 w-4" />
+                            {t('userManagement.addUser')}
+                        </Button>
+                    </div>
                 </div>
 
                 {/* 搜索和筛选栏 */}
@@ -416,24 +478,13 @@ export default function UserIndex({ users, breadcrumbs = [] }: Props) {
                                                 {user.email}
                                             </TableCell>
                                             <TableCell className="px-4 py-3">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        toggleStatus(
-                                                            user.id,
-                                                            user.is_active,
-                                                        )
+                                                <Switch
+                                                    checked={user.is_active}
+                                                    onCheckedChange={() =>
+                                                        toggleStatus(user.id, user.is_active)
                                                     }
                                                     disabled={user.id === currentUserId}
-                                                    className="h-8 w-8 p-0 hover:bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-                                                >
-                                                    {user.is_active ? (
-                                                        <ToggleRight className="h-5 w-5 text-green-500 hover:text-green-600" />
-                                                    ) : (
-                                                        <ToggleLeft className="h-5 w-5 text-gray-400 hover:text-gray-500" />
-                                                    )}
-                                                </Button>
+                                                />
                                             </TableCell>
                                             <TableCell className="px-4 py-3">
                                                 {user.is_admin ? (

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Models\SystemSetting;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -53,7 +54,7 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::loginView(fn (Request $request) => Inertia::render('auth/login', [
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
-            'canRegister' => Features::enabled(Features::registration()),
+            'canRegister' => Features::enabled(Features::registration()) && SystemSetting::get('registration_enabled', true),
             'status' => $request->session()->get('status'),
             'error' => $request->session()->get('error'),
         ]));
@@ -71,7 +72,18 @@ class FortifyServiceProvider extends ServiceProvider
             'status' => $request->session()->get('status'),
         ]));
 
-        Fortify::registerView(fn () => Inertia::render('auth/register'));
+        Fortify::registerView(function (Request $request) {
+            // 检查是否允许注册（第一个用户总是可以注册）
+            $isFirstUser = User::count() === 0;
+            $registrationEnabled = SystemSetting::get('registration_enabled', true);
+
+            if (! $isFirstUser && ! $registrationEnabled) {
+                // 注册关闭时重定向到登录页面
+                return redirect()->route('login')->with('error', __('auth.registration_disabled'));
+            }
+
+            return Inertia::render('auth/register');
+        });
 
         Fortify::twoFactorChallengeView(fn () => Inertia::render('auth/two-factor-challenge'));
 
@@ -119,5 +131,6 @@ class FortifyServiceProvider extends ServiceProvider
 
             return $user;
         });
+
     }
 }
