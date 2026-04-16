@@ -187,26 +187,26 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
     const [importDialogOpen, setImportDialogOpen] = useState(false);
     const [importFile, setImportFile] = useState<File | null>(null);
     const [importPreview, setImportPreview] = useState<{
-        version: string;
-        exported_at: string | null;
-        counts: {
-            rooms: number;
-            rack_types: number;
-            racks: number;
-            device_types: number;
-            device_library: number;
-            devices: number;
+        success: boolean;
+        preview: Array<{
+            row: number;
+            room_name: string;
+            rack_name: string;
+            device_name: string;
+            device_model: string;
+            device_type: string;
+        }>;
+        stats: {
+            total: number;
+            new_racks: number;
+            new_device_types: number;
+            new_device_library: number;
+            new_devices: number;
+            update_devices: number;
         };
+        errors: string[];
+        total_rows: number;
     } | null>(null);
-    const [importData, setImportData] = useState<Record<string, unknown> | null>(null);
-    const [importOptions, setImportOptions] = useState({
-        rooms: true,
-        rack_types: true,
-        racks: true,
-        device_types: true,
-        device_library: true,
-        devices: true,
-    });
     const [isImporting, setIsImporting] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
 
@@ -755,31 +755,52 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
         }
     };
 
-    // 导出数据
+    // 导出数据到 Excel
     const handleExport = async () => {
         setIsExporting(true);
         try {
-            const response = await fetch('/data/export');
+            const response = await fetch('/racks/excel/export');
             if (!response.ok) throw new Error('导出失败');
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `rackroom_backup_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+            const filename = response.headers.get('content-disposition')?.match(/filename="?([^"]+)"?/)?.[1] || 'rackroom_devices.xlsx';
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
-            showToast(t('visualEdit.exportSuccess'), 'success');
+            showToast('Excel 导出成功', 'success');
         } catch (error) {
-            showToast(t('visualEdit.exportFailed'), 'error');
+            showToast('导出失败，请重试', 'error');
         } finally {
             setIsExporting(false);
             setExportDialogOpen(false);
         }
     };
 
-    // 处理导入文件选择
+    // 下载导入模板
+    const handleDownloadTemplate = async () => {
+        try {
+            const response = await fetch('/racks/excel/template');
+            if (!response.ok) throw new Error('下载模板失败');
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'rackroom_import_template.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            showToast('模板下载成功', 'success');
+        } catch (error) {
+            showToast('下载模板失败', 'error');
+        }
+    };
+
+    // 处理 Excel 导入文件选择
     const handleImportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -790,7 +811,7 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
 
         try {
             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-            const response = await fetch('/data/import-preview', {
+            const response = await fetch('/racks/excel/preview', {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -800,116 +821,55 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                 credentials: 'same-origin',
             });
 
+            const result = await response.json();
+
             if (!response.ok) {
-                const error = await response.json();
-                showToast(error.error || t('visualEdit.importPreviewFailed'), 'error');
+                showToast(result.errors?.[0] || '预览生成失败', 'error');
                 return;
             }
 
-            const result = await response.json();
-            if (result.success) {
-                setImportPreview(result.preview);
-                setImportData(result.data);
-                // 默认全选
-                setImportOptions({
-                    rooms: true,
-                    rack_types: true,
-                    racks: true,
-                    device_types: true,
-                    device_library: true,
-                    devices: true,
-                });
-            }
+            setImportPreview(result);
         } catch (error) {
-            showToast(t('visualEdit.importPreviewFailed'), 'error');
+            showToast('预览生成失败', 'error');
         }
     };
 
-    // 处理导入选项的级联选择
-    const handleImportOptionChange = (key: keyof typeof importOptions, checked: boolean) => {
-        const newOptions = { ...importOptions, [key]: checked };
-
-        // 级联逻辑：如果取消选择某一项，则取消选择所有依赖它的项
-        if (!checked) {
-            if (key === 'rooms') {
-                newOptions.racks = false;
-            }
-            if (key === 'rack_types') {
-                newOptions.racks = false;
-            }
-            if (key === 'racks') {
-                newOptions.devices = false;
-            }
-            if (key === 'device_types') {
-                newOptions.device_library = false;
-            }
-            if (key === 'device_library') {
-                newOptions.devices = false;
-            }
-        }
-
-        // 级联逻辑：如果要选择某一项，必须先选择它的依赖项
-        if (checked) {
-            if (key === 'racks') {
-                newOptions.rooms = true;
-                newOptions.rack_types = true;
-            }
-            if (key === 'devices') {
-                newOptions.racks = true;
-                newOptions.device_library = true;
-            }
-            if (key === 'device_library') {
-                newOptions.device_types = true;
-            }
-        }
-
-        setImportOptions(newOptions);
-    };
-
-    // 提交导入
+    // 提交 Excel 导入
     const handleImportSubmit = async () => {
-        if (!importData) return;
+        if (!importFile) return;
 
         setIsImporting(true);
         try {
             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-            const response = await fetch('/data/import', {
+            const formData = new FormData();
+            formData.append('file', importFile);
+
+            const response = await fetch('/racks/excel/import', {
                 method: 'POST',
+                body: formData,
                 headers: {
-                    'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': token,
                     'X-Requested-With': 'XMLHttpRequest',
                 },
                 credentials: 'same-origin',
-                body: JSON.stringify({
-                    data: importData,
-                    options: importOptions,
-                }),
             });
 
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || '导入失败');
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.errors?.[0] || '导入失败');
             }
 
-            const result = await response.json();
             showToast(
-                t('visualEdit.importSuccess', {
-                    rooms: result.stats.rooms,
-                    racks: result.stats.racks,
-                    devices: result.stats.devices,
-                }),
+                `导入完成：新增机柜 ${result.stats.new_racks} 个，新建设备类型 ${result.stats.new_device_types} 个，新建设备库 ${result.stats.new_device_library} 个，新建设备 ${result.stats.new_devices} 个，更新设备 ${result.stats.updated_devices} 个`,
                 'success'
             );
 
             // 重置状态并刷新页面
-            setImportDialogOpen(false);
-            setImportFile(null);
-            setImportPreview(null);
-            setImportData(null);
+            closeImportDialog();
             router.reload();
         } catch (error) {
-            showToast(error instanceof Error ? error.message : t('visualEdit.importFailed'), 'error');
+            showToast(error instanceof Error ? error.message : '导入失败', 'error');
         } finally {
             setIsImporting(false);
         }
@@ -920,15 +880,6 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
         setImportDialogOpen(false);
         setImportFile(null);
         setImportPreview(null);
-        setImportData(null);
-        setImportOptions({
-            rooms: true,
-            rack_types: true,
-            racks: true,
-            device_types: true,
-            device_library: true,
-            devices: true,
-        });
     };
 
     // 批量 Ping 检测
@@ -2755,22 +2706,22 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
             <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>{t('visualEdit.exportData')}</DialogTitle>
+                        <DialogTitle>导出设备数据</DialogTitle>
                         <DialogDescription>
-                            {t('visualEdit.exportDesc')}
+                            将所有机柜设备数据导出为 Excel 文件
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
                         <p className="text-sm text-muted-foreground mb-4">
-                            {t('visualEdit.exportContent')}
+                            导出内容包括：
                         </p>
                         <ul className="text-sm space-y-1 text-muted-foreground list-disc list-inside">
-                            <li>{t('visualEdit.exportRooms')}</li>
-                            <li>{t('visualEdit.exportRackTypes')}</li>
-                            <li>{t('visualEdit.exportRacks')}</li>
-                            <li>{t('visualEdit.exportDeviceTypes')}</li>
-                            <li>{t('visualEdit.exportDeviceLibrary')}</li>
-                            <li>{t('visualEdit.exportDevices')}</li>
+                            <li>机房信息</li>
+                            <li>机柜信息</li>
+                            <li>设备基本信息</li>
+                            <li>设备库信息</li>
+                            <li>设备类型信息</li>
+                            <li>U位、IP、状态等详细信息</li>
                         </ul>
                     </div>
                     <DialogFooter>
@@ -2778,7 +2729,7 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                             {t('common.cancel')}
                         </Button>
                         <Button onClick={handleExport} disabled={isExporting}>
-                            {isExporting ? t('common.loading') : t('visualEdit.export')}
+                            {isExporting ? '导出中...' : '导出 Excel'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -2786,120 +2737,118 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
 
             {/* 导入对话框 */}
             <Dialog open={importDialogOpen} onOpenChange={closeImportDialog}>
-                <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col max-w-2xl">
+                <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col max-w-3xl">
                     <DialogHeader>
-                        <DialogTitle>{t('visualEdit.importData')}</DialogTitle>
+                        <DialogTitle>导入设备数据</DialogTitle>
                         <DialogDescription>
-                            {t('visualEdit.importDesc')}
+                            从 Excel 文件导入机柜设备数据，支持自动创建设备类型和设备库
                         </DialogDescription>
                     </DialogHeader>
                     <div className="flex flex-col flex-1 overflow-hidden">
                         {!importPreview ? (
-                            <div className="py-8">
-                                <Label htmlFor="import-file" className="block text-sm font-medium mb-2">
-                                    {t('visualEdit.selectImportFile')}
-                                </Label>
-                                <Input
-                                    id="import-file"
-                                    type="file"
-                                    accept=".json"
-                                    onChange={handleImportFileChange}
-                                    className="cursor-pointer"
-                                />
-                                <p className="text-xs text-muted-foreground mt-2">
-                                    {t('visualEdit.importFileHint')}
-                                </p>
+                            <div className="py-8 space-y-4">
+                                <div>
+                                    <Label htmlFor="import-file" className="block text-sm font-medium mb-2">
+                                        选择 Excel 文件
+                                    </Label>
+                                    <Input
+                                        id="import-file"
+                                        type="file"
+                                        accept=".xlsx,.xls"
+                                        onChange={handleImportFileChange}
+                                        className="cursor-pointer"
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                        支持 .xlsx 和 .xls 格式，请使用模板格式导入
+                                    </p>
+                                </div>
+                                <div className="pt-4 border-t">
+                                    <p className="text-sm font-medium mb-2">没有模板？</p>
+                                    <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+                                        <Download className="mr-2 h-4 w-4" />
+                                        下载导入模板
+                                    </Button>
+                                </div>
                             </div>
                         ) : (
                             <div className="flex flex-col flex-1 overflow-hidden">
                                 <div className="py-4 border-b">
-                                    <h4 className="text-sm font-medium mb-2">{t('visualEdit.importPreview')}</h4>
-                                    <div className="text-sm text-muted-foreground space-y-1">
-                                        <p>{t('visualEdit.exportVersion')}: {importPreview.version}</p>
-                                        <p>{t('visualEdit.exportDate')}: {importPreview.exported_at ? new Date(importPreview.exported_at).toLocaleString() : '-'}</p>
+                                    <h4 className="text-sm font-medium mb-2">导入预览</h4>
+                                    <div className="text-sm text-muted-foreground">
+                                        <p>共 {importPreview.total_rows} 行数据</p>
                                     </div>
                                 </div>
                                 <div className="flex-1 overflow-y-auto py-4">
-                                    <h4 className="text-sm font-medium mb-3">{t('visualEdit.selectImportContent')}</h4>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center space-x-2">
-                                            <Checkbox
-                                                id="import-rooms"
-                                                checked={importOptions.rooms}
-                                                onCheckedChange={(checked) => handleImportOptionChange('rooms', checked as boolean)}
-                                            />
-                                            <Label htmlFor="import-rooms" className="text-sm cursor-pointer">
-                                                {t('visualEdit.importRoomsLabel')} ({importPreview.counts.rooms} {t('visualEdit.items')})
-                                            </Label>
+                                    <h4 className="text-sm font-medium mb-3">数据预览（前10行）</h4>
+                                    <div className="border rounded-md overflow-hidden">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow className="bg-muted/50">
+                                                    <TableHead className="h-8 text-xs">行号</TableHead>
+                                                    <TableHead className="h-8 text-xs">机房</TableHead>
+                                                    <TableHead className="h-8 text-xs">机柜</TableHead>
+                                                    <TableHead className="h-8 text-xs">设备名称</TableHead>
+                                                    <TableHead className="h-8 text-xs">型号</TableHead>
+                                                    <TableHead className="h-8 text-xs">类型</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {importPreview.preview.map((row, idx) => (
+                                                    <TableRow key={idx} className="hover:bg-muted/30">
+                                                        <TableCell className="py-1 text-xs">{row.row}</TableCell>
+                                                        <TableCell className="py-1 text-xs">{row.room_name}</TableCell>
+                                                        <TableCell className="py-1 text-xs">{row.rack_name}</TableCell>
+                                                        <TableCell className="py-1 text-xs">{row.device_name}</TableCell>
+                                                        <TableCell className="py-1 text-xs">{row.device_model}</TableCell>
+                                                        <TableCell className="py-1 text-xs">{row.device_type}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+
+                                    <h4 className="text-sm font-medium mb-3 mt-4">导入统计</h4>
+                                    <div className="grid grid-cols-2 gap-2 text-sm">
+                                        <div className="bg-muted/50 p-2 rounded">
+                                            <span className="text-muted-foreground">新机柜：</span>
+                                            <span className="font-medium">{importPreview.stats.new_racks}</span>
                                         </div>
-                                        <div className="flex items-center space-x-2 ml-4">
-                                            <Checkbox
-                                                id="import-rack-types"
-                                                checked={importOptions.rack_types}
-                                                onCheckedChange={(checked) => handleImportOptionChange('rack_types', checked as boolean)}
-                                            />
-                                            <Label htmlFor="import-rack-types" className="text-sm cursor-pointer">
-                                                {t('visualEdit.importRackTypesLabel')} ({importPreview.counts.rack_types} {t('visualEdit.items')})
-                                            </Label>
+                                        <div className="bg-muted/50 p-2 rounded">
+                                            <span className="text-muted-foreground">新设备类型：</span>
+                                            <span className="font-medium">{importPreview.stats.new_device_types}</span>
                                         </div>
-                                        <div className="flex items-center space-x-2 ml-4">
-                                            <Checkbox
-                                                id="import-racks"
-                                                checked={importOptions.racks}
-                                                disabled={!importOptions.rooms || !importOptions.rack_types}
-                                                onCheckedChange={(checked) => handleImportOptionChange('racks', checked as boolean)}
-                                            />
-                                            <Label htmlFor="import-racks" className={`text-sm cursor-pointer ${(!importOptions.rooms || !importOptions.rack_types) ? 'text-muted-foreground' : ''}`}>
-                                                {t('visualEdit.importRacksLabel')} ({importPreview.counts.racks} {t('visualEdit.items')})
-                                                {(!importOptions.rooms || !importOptions.rack_types) && (
-                                                    <span className="text-xs text-muted-foreground ml-1">({t('visualEdit.requiresRoomsAndTypes')})</span>
-                                                )}
-                                            </Label>
+                                        <div className="bg-muted/50 p-2 rounded">
+                                            <span className="text-muted-foreground">新设备库：</span>
+                                            <span className="font-medium">{importPreview.stats.new_device_library}</span>
                                         </div>
-                                        <div className="flex items-center space-x-2 ml-4">
-                                            <Checkbox
-                                                id="import-device-types"
-                                                checked={importOptions.device_types}
-                                                onCheckedChange={(checked) => handleImportOptionChange('device_types', checked as boolean)}
-                                            />
-                                            <Label htmlFor="import-device-types" className="text-sm cursor-pointer">
-                                                {t('visualEdit.importDeviceTypesLabel')} ({importPreview.counts.device_types} {t('visualEdit.items')})
-                                            </Label>
+                                        <div className="bg-muted/50 p-2 rounded">
+                                            <span className="text-muted-foreground">新设备：</span>
+                                            <span className="font-medium">{importPreview.stats.new_devices}</span>
                                         </div>
-                                        <div className="flex items-center space-x-2 ml-4">
-                                            <Checkbox
-                                                id="import-device-library"
-                                                checked={importOptions.device_library}
-                                                disabled={!importOptions.device_types}
-                                                onCheckedChange={(checked) => handleImportOptionChange('device_library', checked as boolean)}
-                                            />
-                                            <Label htmlFor="import-device-library" className={`text-sm cursor-pointer ${!importOptions.device_types ? 'text-muted-foreground' : ''}`}>
-                                                {t('visualEdit.importDeviceLibraryLabel')} ({importPreview.counts.device_library} {t('visualEdit.items')})
-                                                {!importOptions.device_types && (
-                                                    <span className="text-xs text-muted-foreground ml-1">({t('visualEdit.requiresDeviceTypes')})</span>
-                                                )}
-                                            </Label>
-                                        </div>
-                                        <div className="flex items-center space-x-2 ml-4">
-                                            <Checkbox
-                                                id="import-devices"
-                                                checked={importOptions.devices}
-                                                disabled={!importOptions.racks || !importOptions.device_library}
-                                                onCheckedChange={(checked) => handleImportOptionChange('devices', checked as boolean)}
-                                            />
-                                            <Label htmlFor="import-devices" className={`text-sm cursor-pointer ${(!importOptions.racks || !importOptions.device_library) ? 'text-muted-foreground' : ''}`}>
-                                                {t('visualEdit.importDevicesLabel')} ({importPreview.counts.devices} {t('visualEdit.items')})
-                                                {(!importOptions.racks || !importOptions.device_library) && (
-                                                    <span className="text-xs text-muted-foreground ml-1">({t('visualEdit.requiresRacksAndLibrary')})</span>
-                                                )}
-                                            </Label>
+                                        <div className="bg-muted/50 p-2 rounded">
+                                            <span className="text-muted-foreground">更新设备：</span>
+                                            <span className="font-medium">{importPreview.stats.update_devices}</span>
                                         </div>
                                     </div>
-                                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                                        <p className="text-xs text-yellow-800">
-                                            {t('visualEdit.importCascadeHint')}
-                                        </p>
-                                    </div>
+
+                                    {importPreview.errors.length > 0 && (
+                                        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                                            <p className="text-xs text-red-800 font-medium mb-1">发现以下错误：</p>
+                                            <ul className="text-xs text-red-800 space-y-1 list-disc list-inside max-h-32 overflow-y-auto">
+                                                {importPreview.errors.map((error, idx) => (
+                                                    <li key={idx}>{error}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {importPreview.success && (
+                                        <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                                            <p className="text-xs text-green-800">
+                                                数据验证通过！系统将自动创建不存在的机柜、设备类型和设备库条目。
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -2908,9 +2857,9 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                         <Button variant="outline" onClick={closeImportDialog}>
                             {t('common.cancel')}
                         </Button>
-                        {importPreview && (
+                        {importPreview?.success && (
                             <Button onClick={handleImportSubmit} disabled={isImporting}>
-                                {isImporting ? t('common.loading') : t('visualEdit.import')}
+                                {isImporting ? '导入中...' : '确认导入'}
                             </Button>
                         )}
                     </DialogFooter>

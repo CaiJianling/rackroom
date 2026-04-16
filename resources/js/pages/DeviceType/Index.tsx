@@ -461,7 +461,7 @@ export default function DeviceTypeIndex({ deviceTypes, breadcrumbs = [] }: Props
                                     onClick={() => setCurrentPage(currentPage - 1)}
                                     disabled={currentPage === 1}
                                 >
-                                    {t('common.previous')}
+                                    {t('general.nextPage')}
                                 </Button>
                                 <span className="text-sm text-muted-foreground">
                                     {currentPage} / {totalPages}
@@ -472,7 +472,7 @@ export default function DeviceTypeIndex({ deviceTypes, breadcrumbs = [] }: Props
                                     onClick={() => setCurrentPage(currentPage + 1)}
                                     disabled={currentPage === totalPages}
                                 >
-                                    {t('common.next')}
+                                    {t('general.nextPage')}
                                 </Button>
                             </div>
                         )}

@@ -28,6 +28,7 @@ use App\Http\Controllers\H3cPasswordController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\PingController;
 use App\Http\Controllers\RackController;
+use App\Http\Controllers\RackExcelController;
 use App\Http\Controllers\RackTypeController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoomController;
@@ -71,10 +72,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('devices/export', [DeviceController::class, 'export'])->name('devices.export');
     Route::post('devices/import', [DeviceController::class, 'import'])->name('devices.import');
 
-    // 数据导出导入路由
+    // 数据导出导入路由 (JSON 备份)
     Route::get('data/export', [DataExportController::class, 'export'])->name('data.export');
     Route::post('data/import-preview', [DataExportController::class, 'preview'])->name('data.import-preview');
     Route::post('data/import', [DataExportController::class, 'import'])->name('data.import');
+
+    // Excel 导入导出路由 (机柜可视化编辑)
+    Route::get('racks/excel/export', [RackExcelController::class, 'export'])->name('racks.excel.export');
+    Route::get('racks/excel/template', [RackExcelController::class, 'downloadTemplate'])->name('racks.excel.template');
+    Route::post('racks/excel/preview', [RackExcelController::class, 'preview'])->name('racks.excel.preview');
+    Route::post('racks/excel/import', [RackExcelController::class, 'import'])->name('racks.excel.import');
 
     // Ping 检测路由
     Route::post('ping/batch', [PingController::class, 'batchPing'])->name('ping.batch');

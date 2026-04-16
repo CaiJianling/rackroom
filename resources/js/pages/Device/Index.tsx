@@ -6,8 +6,6 @@ import {
     Search,
     X,
     Server,
-    Download,
-    Upload,
     Eye,
     Cpu,
     ShieldCheck,
@@ -182,11 +180,9 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
-    const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
     const [deletingDeviceId, setDeletingDeviceId] = useState<number | null>(null);
     const [viewingDevice, setViewingDevice] = useState<Device | null>(null);
     const [editingDevice, setEditingDevice] = useState<Device | null>(null);
-    const [importFile, setImportFile] = useState<File | null>(null);
     const [selectedDeviceType, setSelectedDeviceType] = useState<string>('');
     const [form, setForm] = useState({
         rack_id: undefined as string | undefined,
@@ -404,23 +400,7 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
         });
     };
 
-    const handleExport = () => {
-        window.location.href = '/devices/export';
-    };
 
-    const handleImport = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (importFile) {
-            const formData = new FormData();
-            formData.append('file', importFile);
-            router.post('/devices/import', formData, {
-                onSuccess: () => {
-                    setIsImportDialogOpen(false);
-                    setImportFile(null);
-                },
-            });
-        }
-    };
 
     const filteredDevices = useMemo(() => {
         return devices.filter((device) => {
@@ -479,14 +459,6 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                         {t('deviceManagement.title')}
                     </h1>
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={handleExport}>
-                            <Download className="mr-2 h-4 w-4" />
-                            {t('deviceManagement.export')}
-                        </Button>
-                        <Button variant="outline" onClick={() => setIsImportDialogOpen(true)}>
-                            <Upload className="mr-2 h-4 w-4" />
-                            {t('deviceManagement.import')}
-                        </Button>
                         <Button onClick={openCreateDialog} disabled={deviceTypes.length === 0 || deviceLibrary.length === 0}>
                             <Plus className="mr-2 h-4 w-4" />
                             {t('deviceManagement.addDevice')}
@@ -1362,45 +1334,6 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                             {t('common.close')}
                         </Button>
                     </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{t('deviceManagement.import')}</DialogTitle>
-                        <DialogDescription>
-                            {t('deviceManagement.importDescription')}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleImport}>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="file" className="text-right">
-                                    {t('deviceManagement.selectFile')}
-                                </Label>
-                                <Input
-                                    id="file"
-                                    type="file"
-                                    accept=".csv"
-                                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                                    className="col-span-3"
-                                />
-                            </div>
-                            <div className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
-                                <p className="font-medium">{t('deviceManagement.importFormat')}</p>
-                                <p>{t('deviceManagement.importFormatDescription')}</p>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setIsImportDialogOpen(false)}>
-                                {t('common.cancel')}
-                            </Button>
-                            <Button type="submit" disabled={!importFile}>
-                                {t('deviceManagement.import')}
-                            </Button>
-                        </DialogFooter>
-                    </form>
                 </DialogContent>
             </Dialog>
         </AppLayout>

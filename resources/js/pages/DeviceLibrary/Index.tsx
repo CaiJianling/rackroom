@@ -13,6 +13,8 @@ import {
     Wifi,
     Box,
     Eye,
+    Network,
+    Layers,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -110,10 +112,12 @@ const getDeviceTypeIcon = (iconName: string | null) => {
         server: Server,
         cpu: Cpu,
         'hard-drive': HardDrive,
-        network: Wifi,
+        network: Network,
+        storage: Database,
         monitor: Monitor,
         database: Database,
         wifi: Wifi,
+        layers: Layers,
         box: Box,
     };
     return iconName ? iconMap[iconName] || Server : Server;
@@ -588,7 +592,7 @@ export default function DeviceLibraryIndex({ deviceLibrary, deviceTypes, breadcr
                                     onClick={() => setCurrentPage(currentPage - 1)}
                                     disabled={currentPage === 1}
                                 >
-                                    {t('common.previous')}
+                                    {t('general.nextPage')}
                                 </Button>
                                 <span className="text-sm text-muted-foreground">
                                     {currentPage} / {totalPages}
@@ -599,7 +603,7 @@ export default function DeviceLibraryIndex({ deviceLibrary, deviceTypes, breadcr
                                     onClick={() => setCurrentPage(currentPage + 1)}
                                     disabled={currentPage === totalPages}
                                 >
-                                    {t('common.next')}
+                                    {t('general.nextPage')}
                                 </Button>
                             </div>
                         )}
