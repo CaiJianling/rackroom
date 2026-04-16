@@ -9,11 +9,13 @@
 </p>
 
 <p align="center">
-  <a href="#功能特性">功能特性</a> •
-  <a href="#技术栈">技术栈</a> •
-  <a href="#安装部署">安装部署</a> •
-  <a href="#使用说明">使用说明</a> •
-  <a href="#开发规范">开发规范</a>
+  <a href="#-功能特性">功能特性</a> •
+  <a href="#-技术栈">技术栈</a> •
+  <a href="#-安装部署">安装部署</a> •
+  <a href="#-使用说明">使用说明</a> •
+  <a href="#-api-接口">API 接口</a> •
+  <a href="#-故障排除">故障排除</a> •
+  <a href="#-开发规范">开发规范</a>
 </p>
 
 ---
@@ -66,6 +68,23 @@ RackRoom 是一个现代化的机房设备管理系统，专为数据中心和�
 - 数据备份与恢复
 - 数据导入导出
 - 国际化支持（中/英文）
+- 自动检测设备在线状态
+- 定时任务调度
+
+## 🔌 API 接口
+
+系统提供 RESTful API 接口，主要端点包括：
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/detection-logs` | GET | 获取检测日志 |
+| `/api/detection-logs/stats` | GET | 获取检测统计 |
+| `/api/detection-logs/detect` | POST | 执行手动检测 |
+| `/api/system-settings` | GET | 获取系统设置 |
+| `/api/monitor/stats` | GET | 获取监控统计 |
+| `/api/monitor/devices` | GET | 获取设备列表 |
+
+详细 API 文档请参考源码中的路由定义：`routes/api.php`
 
 ## 🛠️ 技术栈
 
@@ -117,21 +136,99 @@ npm install
 3. **环境配置**
 ```bash
 cp .env.example .env
+
+# 编辑 .env 文件，修改以下关键配置
+APP_NAME=RackRoom
+APP_ENV=production
+APP_URL=https://your-domain.com
+APP_KEY=  # 留空，下一步会自动生成
+
+# 数据库配置（默认 SQLite，无需修改）
+# 如需 MySQL，取消注释并配置：
+# DB_CONNECTION=mysql
+# DB_HOST=127.0.0.1
+# DB_PORT=3306
+# DB_DATABASE=rackroom
+# DB_USERNAME=root
+# DB_PASSWORD=your_password
+
+# Session 配置
+SESSION_DRIVER=database
+SESSION_SECURE_COOKIE=true  # HTTPS 环境下设为 true
+SESSION_DOMAIN=null
+
+# 生成应用密钥
 php artisan key:generate
 ```
 
 4. **数据库迁移**
 ```bash
+# 创建数据库表
 php artisan migrate
-php artisan db:seed  # 可选：填充测试数据
+
+# 可选：填充测试数据（开发环境）
+php artisan db:seed
 ```
 
-5. **构建前端资源**
+5. **创建管理员账户**
 ```bash
+# 启动服务后，访问 /register 创建第一个管理员账户
+# 或手动创建（Tinker）
+php artisan tinker
+>>> \App\Models\User::create(['name' => 'Admin', 'email' => 'admin@example.com', 'password' => bcrypt('password'), 'email_verified_at' => now()])
+```
+
+6. **构建前端资源**
+```bash
+# 开发环境（带热重载）
+npm run dev
+
+# 生产环境（优化构建）
 npm run build
 ```
 
-6. **启动服务**
+7. **配置 Web 服务器**
+
+**Nginx 配置示例：**
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+    root /www/wwwroot/rackroom.local.host/rackroom/public;
+    index index.php;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}
+```
+
+**Apache 配置（使用 .htaccess）：**
+```apache
+# 确保 mod_rewrite 已启用
+# 无需额外配置，项目已包含 public/.htaccess
+```
+
+8. **设置文件权限**
+```bash
+chmod -R 775 storage bootstrap/cache
+chmod -R 775 storage/logs
+chmod -R 775 storage/framework
+chown -R www-data:www-data storage bootstrap/cache  # 根据实际 Web 服务器用户调整
+```
+
+9. **启动服务**
 ```bash
 # 开发模式
 composer run dev
@@ -327,6 +424,23 @@ npm run test
 - 数据库索引优化
 - 前端资源压缩和懒加载
 
+## ⚙️ 环境变量配置
+
+| 变量名 | 说明 | 默认值 | 建议值 |
+|--------|------|--------|--------|
+| `APP_NAME` | 应用名称 | `Laravel` | `RackRoom` |
+| `APP_ENV` | 运行环境 | `local` | `production` |
+| `APP_KEY` | 应用密钥 | - | 运行 `key:generate` 生成 |
+| `APP_URL` | 应用URL | `http://localhost` | 实际域名 |
+| `DB_CONNECTION` | 数据库类型 | `sqlite` | `sqlite` 或 `mysql` |
+| `SESSION_DRIVER` | Session驱动 | `database` | `database` 或 `redis` |
+| `SESSION_LIFETIME` | Session有效期 | `120` | `120`（分钟） |
+| `SESSION_SECURE_COOKIE` | 安全Cookie | `false` | `true`（HTTPS环境） |
+| `SESSION_DOMAIN` | Cookie域名 | `null` | 域名或 `null` |
+| `BROADCAST_CONNECTION` | 广播驱动 | `log` | `pusher`（实时功能） |
+| `CACHE_STORE` | 缓存驱动 | `database` | `redis`（高性能） |
+| `QUEUE_CONNECTION` | 队列驱动 | `database` | `redis` |
+
 ## 🔒 安全建议
 
 1. 生产环境修改 APP_KEY
@@ -334,6 +448,73 @@ npm run test
 3. 定期备份数据库
 4. 启用双因素认证
 5. 设置适当的文件权限
+
+## 🐛 故障排除
+
+### CSRF Token Mismatch 错误
+
+服务器迁移后出现 "CSRF token mismatch" 错误，按以下步骤解决：
+
+```bash
+# 1. 更新 .env 配置
+APP_URL=https://your-new-domain.com  # 确保与新服务器地址匹配
+SESSION_SECURE_COOKIE=true           # 如果使用 HTTPS，设为 true
+SESSION_DOMAIN=null                  # 清除域名限制，让框架自动检测
+
+# 2. 清除所有缓存
+cd /www/wwwroot/rackroom.local.host/rackroom
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+php artisan optimize:clear
+
+# 3. 重新生成应用密钥（如果迁移后未设置）
+php artisan key:generate
+
+# 4. 检查 sessions 表（如果使用 database 驱动）
+php artisan migrate --force
+
+# 5. 检查文件权限
+chmod -R 775 storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache
+
+# 6. 重新缓存配置（生产环境）
+php artisan config:cache
+```
+
+**其他注意事项：**
+- 让用户清除浏览器缓存和 Cookie，然后重新登录
+- 如果跨域部署，检查 `SESSION_SAME_SITE` 设置（可选值：lax, strict, none）
+- 确保 `APP_KEY` 与之前一致（用于解密数据库中的加密数据）
+
+### 自动检测不执行
+
+如果自动检测功能不工作，请检查：
+
+```bash
+# 检查定时任务状态
+php artisan scheduler:status
+
+# 查看定时任务日志
+tail -f storage/logs/scheduler.log
+
+# 确保定时任务在运行
+ps aux | grep "schedule:work"
+```
+
+### 页面显示 500 错误
+
+```bash
+# 查看 Laravel 错误日志
+tail -f storage/logs/laravel.log
+
+# 检查数据库连接
+php artisan db:monitor
+
+# 运行数据库迁移
+php artisan migrate --force
+```
 
 ## 🤝 贡献指南
 
