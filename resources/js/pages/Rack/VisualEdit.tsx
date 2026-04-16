@@ -11,7 +11,7 @@ import {
     Save,
     Server,
     Trash2,
-    Layers,
+    Box,
     Monitor,
     Database,
     Cpu,
@@ -20,6 +20,8 @@ import {
     Pencil,
     Palette,
     ExternalLink,
+    Wifi,
+    Layers,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -1569,12 +1571,15 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
 
     const getIconForType = (iconName: string | null) => {
         switch (iconName) {
-            case 'server': return <Monitor className="h-3 w-3" />;
-            case 'network': return <Network className="h-3 w-3" />;
-            case 'storage': return <Database className="h-3 w-3" />;
+            case 'server': return <Server className="h-3 w-3" />;
             case 'cpu': return <Cpu className="h-3 w-3" />;
-            case 'layers': return <Layers className="h-3 w-3" />;
-            default: return <HardDrive className="h-3 w-3" />;
+            case 'hard-drive': return <HardDrive className="h-3 w-3" />;
+            case 'network': return <Network className="h-3 w-3" />;
+            case 'monitor': return <Monitor className="h-3 w-3" />;
+            case 'database': return <Database className="h-3 w-3" />;
+            case 'wifi': return <Wifi className="h-3 w-3" />;
+            case 'box': return <Box className="h-3 w-3" />;
+            default: return <Server className="h-3 w-3" />;
         }
     };
 

@@ -13,10 +13,12 @@ import {
     Link2,
     Monitor,
     Database,
-    Layers,
     HardDrive,
     Network,
     ExternalLink,
+    Wifi,
+    Box,
+    Layers,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -90,6 +92,7 @@ interface DeviceLibraryItem {
     u_height: number;
     power: number;
     device_type?: DeviceType;
+
     description?: string;
 }
 
@@ -133,15 +136,18 @@ const connectionTypes = [
     { value: 'radmin', label: 'Radmin' },
 ];
 
-// 获取设备类型图标
+// 获取设备类型图标 - 与 /device-types 页面保持一致
 const getDeviceTypeIcon = (iconName: string | null) => {
     switch (iconName) {
-        case 'server': return <Monitor className="h-4 w-4" />;
-        case 'network': return <Network className="h-4 w-4" />;
-        case 'storage': return <Database className="h-4 w-4" />;
+        case 'server': return <Server className="h-4 w-4" />;
         case 'cpu': return <Cpu className="h-4 w-4" />;
-        case 'layers': return <Layers className="h-4 w-4" />;
-        default: return <HardDrive className="h-4 w-4" />;
+        case 'hard-drive': return <HardDrive className="h-4 w-4" />;
+        case 'network': return <Network className="h-4 w-4" />;
+        case 'monitor': return <Monitor className="h-4 w-4" />;
+        case 'database': return <Database className="h-4 w-4" />;
+        case 'wifi': return <Wifi className="h-4 w-4" />;
+        case 'box': return <Box className="h-4 w-4" />;
+        default: return <Server className="h-4 w-4" />;
     }
 };
 
@@ -569,8 +575,8 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                                     </TableHead>
                                     <TableHead className="h-10 px-4">
                                         <div className="flex items-center gap-2">
-                                            <Cpu className="h-4 w-4" />
-                                            {t('deviceManagement.category')}
+                                            <Layers className="h-4 w-4" />
+                                            设备类型
                                         </div>
                                     </TableHead>
                                     <TableHead className="h-10 px-4">
@@ -654,12 +660,13 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                                                             const bgColor = getDeviceTypeColor(deviceLib.device_type_id);
                                                             return (
                                                                 <span
-                                                                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                                                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
                                                                     style={{
                                                                         backgroundColor: bgColor,
                                                                         color: getContrastTextColor(bgColor),
                                                                     }}
                                                                 >
+                                                                    {getDeviceTypeIcon(deviceLib.device_type.icon)}
                                                                     {getDeviceTypeName(deviceLib.device_type_id)}
                                                                 </span>
                                                             );

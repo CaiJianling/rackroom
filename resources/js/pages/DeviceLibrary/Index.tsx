@@ -14,7 +14,6 @@ import {
     Box,
     Eye,
     Network,
-    Layers,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -113,11 +112,9 @@ const getDeviceTypeIcon = (iconName: string | null) => {
         cpu: Cpu,
         'hard-drive': HardDrive,
         network: Network,
-        storage: Database,
         monitor: Monitor,
         database: Database,
         wifi: Wifi,
-        layers: Layers,
         box: Box,
     };
     return iconName ? iconMap[iconName] || Server : Server;
@@ -506,22 +503,20 @@ export default function DeviceLibraryIndex({ deviceLibrary, deviceTypes, breadcr
                                                 className="border-b border-border/50 transition-colors hover:bg-muted/30"
                                             >
                                                 <TableCell className="px-4 py-3 font-medium">
-                                                    <div className="flex items-center gap-2">
-                                                        <IconComponent className="h-4 w-4" />
-                                                        {item.name}
-                                                    </div>
+                                                    {item.name}
                                                 </TableCell>
                                                 <TableCell className="px-4 py-3">
                                                     {(() => {
                                                         const bgColor = getTypeColor(item.device_type_id);
                                                         return (
                                                             <span
-                                                                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                                                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
                                                                 style={{
                                                                     backgroundColor: bgColor,
                                                                     color: getContrastTextColor(bgColor),
                                                                 }}
                                                             >
+                                                                <IconComponent className="h-4 w-4" />
                                                                 {getTypeName(item.device_type_id)}
                                                             </span>
                                                         );
