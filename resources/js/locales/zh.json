@@ -465,7 +465,9 @@
         "deleteWarning": "您确定要删除此机柜吗？此操作无法撤销。",
         "racksCount": "{filtered} / {total} 机柜",
         "rackDetails": "机柜详情",
-        "hasDevicesLocked": "有设备不可修改"
+        "hasDevicesLocked": "有设备不可修改",
+        "curPower": "当前功率",
+        "d/*  */evices": "设备"
     },
     "rackTypeManagement": {
         "title": "机柜类型管理",

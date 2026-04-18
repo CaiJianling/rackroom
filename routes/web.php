@@ -64,8 +64,15 @@ Route::get('dashboard', [DashboardController::class, 'index'])
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('rooms', RoomController::class);
     Route::resource('rack-types', RackTypeController::class);
+
+    // 机柜自定义路由（必须放在 Route::resource 之前）
     Route::get('racks/visual-edit', [RackController::class, 'visualEdit'])->name('racks.visual-edit');
+    Route::get('racks/export-excel', [RackController::class, 'exportExcel'])->name('racks.export-excel');
+    Route::get('racks/import-template', [RackController::class, 'downloadTemplate'])->name('racks.import-template');
+    Route::post('racks/import-preview', [RackController::class, 'importPreview'])->name('racks.import-preview');
+    Route::post('racks/import-excel', [RackController::class, 'importExcel'])->name('racks.import-excel');
     Route::resource('racks', RackController::class);
+
     Route::resource('device-types', DeviceTypeController::class);
     Route::resource('device-library', DeviceLibraryController::class);
     Route::resource('devices', DeviceController::class);

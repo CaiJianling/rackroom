@@ -10,6 +10,8 @@ import {
     Cpu,
     Building2,
     Eye,
+    Download,
+    Upload,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -123,6 +125,29 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
     const [deletingRackId, setDeletingRackId] = useState<number | null>(null);
     const [viewingRack, setViewingRack] = useState<Rack | null>(null);
     const [editingRack, setEditingRack] = useState<Rack | null>(null);
+
+    // Excel 导入导出状态
+    const [importDialogOpen, setImportDialogOpen] = useState(false);
+    const [importFile, setImportFile] = useState<File | null>(null);
+    const [importPreview, setImportPreview] = useState<{
+        success: boolean;
+        preview: Array<{
+            row: number;
+            room_name: string;
+            rack_name: string;
+            rack_type: string;
+            u_count: number;
+            power: number;
+        }>;
+        stats: {
+            total: number;
+            valid: number;
+            invalid: number;
+        };
+        errors: string[];
+    } | null>(null);
+    const [isImporting, setIsImporting] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [form, setForm] = useState({
         room_id: '',
         rack_type_id: '',
@@ -252,6 +277,132 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
         });
     };
 
+    // Excel 导出
+    const handleExport = async () => {
+        setIsExporting(true);
+        try {
+            const response = await fetch('/racks/export-excel');
+            if (!response.ok) throw new Error('导出失败');
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const filename = response.headers.get('content-disposition')?.match(/filename="?([^"]+)"?/)?.[1] || 'racks.xlsx';
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            showToast('Excel 导出成功', 'success');
+        } catch (error) {
+            showToast('导出失败，请重试', 'error');
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    // 下载导入模板
+    const handleDownloadTemplate = async () => {
+        try {
+            const response = await fetch('/racks/import-template');
+            if (!response.ok) throw new Error('下载模板失败');
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'rack_import_template.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            showToast('模板下载成功', 'success');
+        } catch (error) {
+            showToast('下载模板失败', 'error');
+        }
+    };
+
+    // 处理导入文件选择
+    const handleImportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setImportFile(file);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const response = await fetch('/racks/import-preview', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                showToast(result.errors?.[0] || '预览生成失败', 'error');
+                return;
+            }
+
+            setImportPreview(result);
+        } catch (error) {
+            showToast('预览生成失败', 'error');
+        }
+    };
+
+    // 提交导入
+    const handleImportSubmit = async () => {
+        if (!importFile) return;
+
+        setIsImporting(true);
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const formData = new FormData();
+            formData.append('file', importFile);
+
+            const response = await fetch('/racks/import-excel', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.errors?.[0] || '导入失败');
+            }
+
+            showToast(
+                `导入完成：成功导入 ${result.stats.imported} 条，跳过 ${result.stats.skipped} 条`,
+                'success'
+            );
+
+            // 重置状态并刷新页面
+            closeImportDialog();
+            router.reload();
+        } catch (error) {
+            showToast(error instanceof Error ? error.message : '导入失败', 'error');
+        } finally {
+            setIsImporting(false);
+        }
+    };
+
+    // 关闭导入对话框
+    const closeImportDialog = () => {
+        setImportDialogOpen(false);
+        setImportFile(null);
+        setImportPreview(null);
+    };
+
     const handleRackTypeChange = (value: string, isEdit = false) => {
         const typeId = value === 'none' ? null : (value || null);
         const selectedType = rackTypes.find(t => t.id.toString() === value);
@@ -314,10 +465,20 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                     <h1 className="text-2xl font-bold">
                         {t('rackManagement.title')}
                     </h1>
-                    <Button onClick={openCreateDialog}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        {t('rackManagement.addRack')}
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={handleExport} disabled={isExporting}>
+                            <Download className="mr-2 h-4 w-4" />
+                            {isExporting ? '导出中...' : '导出'}
+                        </Button>
+                        <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+                            <Upload className="mr-2 h-4 w-4" />
+                            导入
+                        </Button>
+                        <Button onClick={openCreateDialog}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            {t('rackManagement.addRack')}
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1103,6 +1264,113 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                             >
                                 {t('common.delete')}
                             </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Excel 导入对话框 */}
+                <Dialog open={importDialogOpen} onOpenChange={closeImportDialog}>
+                    <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col max-w-3xl">
+                        <DialogHeader>
+                            <DialogTitle>导入机柜数据</DialogTitle>
+                            <DialogDescription>
+                                从 Excel 文件导入机柜数据，支持批量导入
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="flex flex-col flex-1 overflow-hidden">
+                            {!importPreview ? (
+                                <div className="py-8 space-y-4">
+                                    <div>
+                                        <Label htmlFor="import-file" className="block text-sm font-medium mb-2">
+                                            选择 Excel 文件
+                                        </Label>
+                                        <Input
+                                            id="import-file"
+                                            type="file"
+                                            accept=".xlsx,.xls"
+                                            onChange={handleImportFileChange}
+                                            className="cursor-pointer"
+                                        />
+                                        <p className="text-xs text-muted-foreground mt-2">
+                                            支持 .xlsx 和 .xls 格式，请先下载模板了解数据格式
+                                        </p>
+                                    </div>
+                                    <div className="pt-4 border-t">
+                                        <p className="text-sm font-medium mb-2">需要模板？</p>
+                                        <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+                                            <Download className="mr-2 h-4 w-4" />
+                                            下载导入模板
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col flex-1 overflow-hidden">
+                                    <div className="py-4 border-b">
+                                        <h4 className="text-sm font-medium mb-2">导入预览</h4>
+                                        <div className="text-sm text-muted-foreground">
+                                            <p>共 {importPreview.stats.total} 行数据，有效 {importPreview.stats.valid} 行，无效 {importPreview.stats.invalid} 行</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto py-4">
+                                        <h4 className="text-sm font-medium mb-3">数据预览（前10行）</h4>
+                                        <div className="border rounded-md overflow-hidden">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow className="bg-muted/50">
+                                                        <TableHead className="h-8 text-xs">行号</TableHead>
+                                                        <TableHead className="h-8 text-xs">机房</TableHead>
+                                                        <TableHead className="h-8 text-xs">机柜名称</TableHead>
+                                                        <TableHead className="h-8 text-xs">类型</TableHead>
+                                                        <TableHead className="h-8 text-xs">U数</TableHead>
+                                                        <TableHead className="h-8 text-xs">功率</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {importPreview.preview.map((row, idx) => (
+                                                        <TableRow key={idx} className="hover:bg-muted/30">
+                                                            <TableCell className="py-1 text-xs">{row.row}</TableCell>
+                                                            <TableCell className="py-1 text-xs">{row.room_name}</TableCell>
+                                                            <TableCell className="py-1 text-xs">{row.rack_name}</TableCell>
+                                                            <TableCell className="py-1 text-xs">{row.rack_type}</TableCell>
+                                                            <TableCell className="py-1 text-xs">{row.u_count}</TableCell>
+                                                            <TableCell className="py-1 text-xs">{row.power}W</TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+
+                                        {importPreview.errors.length > 0 && (
+                                            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                                                <p className="text-xs text-red-800 font-medium mb-1">发现以下错误：</p>
+                                                <ul className="text-xs text-red-800 space-y-1 list-disc list-inside max-h-32 overflow-y-auto">
+                                                    {importPreview.errors.map((error, idx) => (
+                                                        <li key={idx}>{error}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+
+                                        {importPreview.success && (
+                                            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                                                <p className="text-xs text-green-800">
+                                                    数据验证通过！点击确认导入开始导入数据。
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={closeImportDialog}>
+                                {t('common.cancel')}
+                            </Button>
+                            {importPreview?.success && (
+                                <Button onClick={handleImportSubmit} disabled={isImporting}>
+                                    {isImporting ? '导入中...' : '确认导入'}
+                                </Button>
+                            )}
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>

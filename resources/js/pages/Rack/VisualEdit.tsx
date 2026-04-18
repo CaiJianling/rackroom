@@ -188,6 +188,23 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [importDialogOpen, setImportDialogOpen] = useState(false);
     const [importFile, setImportFile] = useState<File | null>(null);
+
+    // 机柜查看详情弹窗状态
+    const [rackDetailDialogOpen, setRackDetailDialogOpen] = useState(false);
+    const [viewingRack, setViewingRack] = useState<RackDisplay | null>(null);
+
+    // 机柜悬停提示状态
+    const [rackTooltip, setRackTooltip] = useState<{
+        show: boolean;
+        x: number;
+        y: number;
+        rack: RackDisplay | null;
+    }>({
+        show: false,
+        x: 0,
+        y: 0,
+        rack: null,
+    });
     const [importPreview, setImportPreview] = useState<{
         success: boolean;
         preview: Array<{
@@ -711,6 +728,44 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
     // 关闭机柜右键菜单
     const closeRackContextMenu = () => {
         setRackContextMenu({ ...rackContextMenu, open: false });
+    };
+
+    // 打开机柜查看详情弹窗
+    const openRackDetailDialog = (rack: RackDisplay) => {
+        setViewingRack(rack);
+        setRackDetailDialogOpen(true);
+    };
+
+    // 关闭机柜查看详情弹窗
+    const closeRackDetailDialog = () => {
+        setRackDetailDialogOpen(false);
+        setViewingRack(null);
+    };
+
+    // 处理机柜悬停显示提示
+    const handleRackMouseEnter = (e: React.MouseEvent, rack: RackDisplay) => {
+        setRackTooltip({
+            show: true,
+            x: e.clientX + 10,
+            y: e.clientY + 10,
+            rack,
+        });
+    };
+
+    // 处理机柜悬停移动
+    const handleRackMouseMove = (e: React.MouseEvent) => {
+        if (rackTooltip.show) {
+            setRackTooltip({
+                ...rackTooltip,
+                x: e.clientX + 10,
+                y: e.clientY + 10,
+            });
+        }
+    };
+
+    // 处理机柜悬停离开
+    const handleRackMouseLeave = () => {
+        setRackTooltip({ ...rackTooltip, show: false, rack: null });
     };
 
     // 打开设备库详情弹窗
@@ -1823,6 +1878,9 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                                     <span
                                                         className="font-semibold cursor-pointer"
                                                         onContextMenu={!previewMode ? (e) => handleRackContextMenu(e, rack) : undefined}
+                                                        onMouseEnter={(e) => handleRackMouseEnter(e, rack)}
+                                                        onMouseMove={handleRackMouseMove}
+                                                        onMouseLeave={handleRackMouseLeave}
                                                     >
                                                         {rack.name}
                                                     </span>
@@ -1881,15 +1939,20 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                                                 data-u-position={slot.uPosition}
                                                                 className={`flex items-center justify-center border-b border-border/50 text-[10px] relative
                                                                     ${!previewMode && isDragPreview ? (canPlace ? 'bg-green-200 dark:bg-green-900/50' : 'bg-red-200 dark:bg-red-900/50') : ''}
-                                                                    ${slot.device && slot.isStart && !previewMode ? 'cursor-pointer' : 'cursor-default'}
-                                                                    ${slot.isOccupied && !slot.device ? 'bg-slate-200 dark:bg-slate-800' : ''}`}
+                                                                    ${slot.device && slot.isStart && !previewMode ? 'cursor-pointer' : 'cursor-default'}`}
+                                                                style={{
+                                                                    height: '24px',
+                                                                    // 被占用的U位（非起始位置）显示设备颜色（低透明度）
+                                                                    backgroundColor: slot.isOccupied && !slot.device && parentDevice
+                                                                        ? `${getTypeColor(parentDevice.device_library?.device_type_id || 0)}33`
+                                                                        : undefined,
+                                                                }}
                                                                 onDragOver={!previewMode ? (e) => handleDragOver(e, rack.id, slot.uPosition) : undefined}
                                                                 onDrop={!previewMode ? (e) => handleDrop(e, rack.id, slot.uPosition) : undefined}
-                                                                style={{ height: '24px' }}
                                                             >
                                                                 {/* 空U位或被占用的U位显示U编号 */}
                                                                 {(!slot.isStart || !slot.device) && (
-                                                                    <span className={`${slot.isOccupied ? 'text-slate-400 dark:text-slate-600' : 'text-muted-foreground'}`}>
+                                                                    <span className={`${slot.isOccupied ? 'text-slate-600 dark:text-slate-300 font-medium' : 'text-muted-foreground'}`}>
                                                                         {slot.uPosition}
                                                                     </span>
                                                                 )}
@@ -1949,7 +2012,11 @@ ${t('visualEdit.serialNumber')}: ${slot.device.serial_number || slot.device.devi
                                                                             handleDragStart(e, parentDevice);
                                                                         } : undefined}
                                                                         onContextMenu={!previewMode ? (e) => handleContextMenu(e, parentDevice) : undefined}
-                                                                        className={`absolute inset-0 bg-slate-400/20 dark:bg-slate-600/20 z-5 ${!previewMode ? 'cursor-grab' : 'cursor-default'}`}
+                                                                        className={`absolute inset-0 z-5 ${!previewMode ? 'cursor-grab' : 'cursor-default'}`}
+                                                                        style={{
+                                                                            // 使用设备颜色，但透明度较低（40%）以区分主U位
+                                                                            backgroundColor: `${getTypeColor(parentDevice.device_library?.device_type_id || 0)}66`,
+                                                                        }}
                                                                         title={`${cleanDeviceName(parentDevice.name)} (U${slot.uPosition})
 ${getCategoryLabel(parentDevice.device_library?.device_type?.name || parentDevice.category || 'visualEdit.other')} | ${getStatusLabel(parentDevice.status)} | ${parentDevice.device_library?.power || parentDevice.power || 0}W
 ${t('visualEdit.model')}: ${parentDevice.model || parentDevice.device_library?.model || '-'}
@@ -3391,8 +3458,7 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                         <button
                             className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
                             onClick={() => {
-                                // 查看机柜详情 - 可以显示机柜信息和设备列表
-                                showToast(`${t('rackManagement.name')}: ${rackContextMenu.rack!.name}\n${t('rackManagement.uCount')}: ${rackContextMenu.rack!.totalU}U\n${t('rackManagement.power')}: ${rackContextMenu.rack!.maxPower}W\n${t('rackManagement.deviceCount')}: ${rackContextMenu.rack!.devices.length}`, 'info');
+                                openRackDetailDialog(rackContextMenu.rack!);
                                 closeRackContextMenu();
                             }}
                         >
@@ -3434,6 +3500,137 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                     </div>
                 </>
             )}
+
+            {/* 机柜悬停提示 */}
+            {rackTooltip.show && rackTooltip.rack && (
+                <div
+                    className="fixed z-50 px-3 py-2 text-sm bg-white dark:bg-gray-900 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 pointer-events-none"
+                    style={{ left: rackTooltip.x, top: rackTooltip.y }}
+                >
+                    <div className="font-medium mb-1">{rackTooltip.rack.name}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
+                        <div>{t('rackManagement.uCount')}: {rackTooltip.rack.totalU}U</div>
+                        <div>{t('rackManagement.power')}: {rackTooltip.rack.maxPower}W</div>
+                        <div>{t('rackManagement.deviceCount')}: {rackTooltip.rack.devices.length}</div>
+                        <div>{t('rackManagement.curPower')}: {rackTooltip.rack.curPower}W</div>
+                    </div>
+                </div>
+            )}
+
+            {/* 机柜查看详情弹窗 */}
+            <Dialog open={rackDetailDialogOpen} onOpenChange={setRackDetailDialogOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>{t('rackManagement.rackDetails')}</DialogTitle>
+                        <DialogDescription>
+                            {viewingRack?.name}
+                        </DialogDescription>
+                    </DialogHeader>
+                    {viewingRack && (
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label className="text-sm font-medium">
+                                        {t('rackManagement.name')}
+                                    </Label>
+                                    <div className="mt-1 text-sm">
+                                        {viewingRack.name}
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium">
+                                        {t('rackManagement.room')}
+                                    </Label>
+                                    <div className="mt-1 text-sm">
+                                        {rooms.find(r => r.id === viewingRack.room_id)?.name || '-'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-4 gap-4">
+                                <div>
+                                    <Label className="text-sm font-medium">
+                                        {t('rackManagement.uCount')}
+                                    </Label>
+                                    <div className="mt-1 text-sm">
+                                        {viewingRack.totalU}U
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium">
+                                        {t('rackManagement.power')}
+                                    </Label>
+                                    <div className="mt-1 text-sm">
+                                        {viewingRack.maxPower}W
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium">
+                                        {t('rackManagement.deviceCount')}
+                                    </Label>
+                                    <div className="mt-1 text-sm">
+                                        {viewingRack.devices.length}
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium">
+                                        {t('rackManagement.curPower')}
+                                    </Label>
+                                    <div className="mt-1 text-sm">
+                                        {viewingRack.curPower}W
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium">
+                                    {t('rackManagement.description')}
+                                </Label>
+                                <div className="mt-1 text-sm">
+                                    {viewingRack.description || '-'}
+                                </div>
+                            </div>
+                            {/* 设备列表 */}
+                            <div>
+                                <Label className="text-sm font-medium">
+                                    {t('rackManagement.devices')}
+                                </Label>
+                                <div className="mt-2 max-h-48 overflow-y-auto border rounded-md">
+                                    {viewingRack.devices.length === 0 ? (
+                                        <div className="p-3 text-sm text-muted-foreground text-center">
+                                            {t('rackManagement.noDevices')}
+                                        </div>
+                                    ) : (
+                                        <div className="divide-y">
+                                            {viewingRack.devices.map((device) => (
+                                                <div key={device.id} className="p-3 flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <Server className="h-4 w-4 text-muted-foreground" />
+                                                        <span className="text-sm">{device.name}</span>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        U{device.u_position} · {device.power}W
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={closeRackDetailDialog}>
+                            {t('common.close')}
+                        </Button>
+                        <Button onClick={() => {
+                            closeRackDetailDialog();
+                            if (viewingRack) openEditRackModal(viewingRack);
+                        }}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            {t('common.edit')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* 设备库详情弹窗 */}
             <Dialog open={libraryDetailDialogOpen} onOpenChange={setLibraryDetailDialogOpen}>

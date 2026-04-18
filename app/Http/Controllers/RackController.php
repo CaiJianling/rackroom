@@ -16,7 +16,15 @@ use App\Models\DeviceType;
 use App\Models\Rack;
 use App\Models\RackType;
 use App\Models\Room;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RackController extends Controller
 {
@@ -232,5 +240,319 @@ class RackController extends Controller
         }
 
         return redirect()->route('racks.index')->with('success', __('validation.deleted'));
+    }
+
+    /**
+     * 导出机柜数据到 Excel
+     */
+    public function exportExcel(): StreamedResponse
+    {
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('机柜数据');
+
+        // 设置表头
+        $headers = ['机房名称', '机柜名称', '机柜类型', 'U数', '功率(W)', '设备数量', '描述'];
+        foreach ($headers as $index => $header) {
+            $col = chr(65 + $index);
+            $sheet->setCellValue($col.'1', $header);
+            $sheet->getStyle($col.'1')->applyFromArray([
+                'font' => ['bold' => true],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'E2E8F0'],
+                ],
+                'alignment' => [
+                    'horizontal' => Alignment::HORIZONTAL_CENTER,
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color' => ['rgb' => '94A3B8'],
+                    ],
+                ],
+            ]);
+        }
+
+        // 获取所有机柜数据
+        $racks = Rack::with(['room', 'rackType'])->withCount('devices')->get();
+
+        $row = 2;
+        foreach ($racks as $rack) {
+            $sheet->setCellValue('A'.$row, $rack->room?->name ?? '-');
+            $sheet->setCellValue('B'.$row, $rack->name);
+            $sheet->setCellValue('C'.$row, $rack->rackType?->name ?? '-');
+            $sheet->setCellValue('D'.$row, $rack->u_count);
+            $sheet->setCellValue('E'.$row, $rack->power);
+            $sheet->setCellValue('F'.$row, $rack->devices_count);
+            $sheet->setCellValue('G'.$row, $rack->description ?? '-');
+            $row++;
+        }
+
+        // 设置列宽
+        $columnWidths = [20, 20, 20, 10, 12, 12, 30];
+        foreach ($columnWidths as $index => $width) {
+            $sheet->getColumnDimension(chr(65 + $index))->setWidth($width);
+        }
+
+        $filename = 'racks_'.now()->format('Y-m-d_H-i-s').'.xlsx';
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    /**
+     * 下载机柜导入模板
+     */
+    public function downloadTemplate(): StreamedResponse
+    {
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('机柜导入模板');
+
+        // 设置表头
+        $headers = ['机房名称*', '机柜名称*', '机柜类型', 'U数', '功率(W)', '描述'];
+        foreach ($headers as $index => $header) {
+            $col = chr(65 + $index);
+            $sheet->setCellValue($col.'1', $header);
+            $sheet->getStyle($col.'1')->applyFromArray([
+                'font' => ['bold' => true],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'E2E8F0'],
+                ],
+                'alignment' => [
+                    'horizontal' => Alignment::HORIZONTAL_CENTER,
+                ],
+            ]);
+        }
+
+        // 添加示例数据
+        $exampleData = [
+            ['机房A', 'A01', '标准机柜', '42', '3000', '核心交换机机柜'],
+            ['机房A', 'A02', '标准机柜', '42', '3000', '服务器机柜'],
+            ['机房B', 'B01', '小型机柜', '24', '1500', '边缘机房机柜'],
+        ];
+
+        foreach ($exampleData as $rowIndex => $rowData) {
+            foreach ($rowData as $colIndex => $value) {
+                $sheet->setCellValue(chr(65 + $colIndex).($rowIndex + 2), $value);
+            }
+        }
+
+        // 设置列宽
+        $columnWidths = [20, 20, 20, 10, 12, 30];
+        foreach ($columnWidths as $index => $width) {
+            $sheet->getColumnDimension(chr(65 + $index))->setWidth($width);
+        }
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
+            $writer->save('php://output');
+        }, 'rack_import_template.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    /**
+     * 预览 Excel 导入数据
+     */
+    public function importPreview(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls|max:10240',
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $spreadsheet = IOFactory::load($file->getRealPath());
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray();
+
+            // 移除表头
+            array_shift($rows);
+
+            $preview = [];
+            $errors = [];
+            $stats = [
+                'total' => 0,
+                'valid' => 0,
+                'invalid' => 0,
+            ];
+
+            // 获取现有数据用于验证
+            $existingRooms = Room::pluck('name')->toArray();
+            $existingRackTypes = RackType::pluck('name')->toArray();
+
+            foreach ($rows as $index => $row) {
+                if (empty($row[0]) && empty($row[1])) {
+                    continue;
+                }
+
+                $stats['total']++;
+                $rowNum = $index + 2;
+
+                $roomName = trim($row[0] ?? '');
+                $rackName = trim($row[1] ?? '');
+                $rackTypeName = trim($row[2] ?? '');
+                $uCount = intval($row[3] ?? 42);
+                $power = intval($row[4] ?? 0);
+                $description = trim($row[5] ?? '');
+
+                // 验证必填字段
+                if (empty($roomName)) {
+                    $errors[] = "第 {$rowNum} 行：机房名称不能为空";
+                    $stats['invalid']++;
+
+                    continue;
+                }
+                if (empty($rackName)) {
+                    $errors[] = "第 {$rowNum} 行：机柜名称不能为空";
+                    $stats['invalid']++;
+
+                    continue;
+                }
+
+                // 检查机房是否存在
+                if (! in_array($roomName, $existingRooms)) {
+                    $errors[] = "第 {$rowNum} 行：机房 '{$roomName}' 不存在";
+                    $stats['invalid']++;
+
+                    continue;
+                }
+
+                $stats['valid']++;
+                $preview[] = [
+                    'row' => $rowNum,
+                    'room_name' => $roomName,
+                    'rack_name' => $rackName,
+                    'rack_type' => $rackTypeName ?: '-',
+                    'u_count' => $uCount,
+                    'power' => $power,
+                ];
+            }
+
+            return response()->json([
+                'success' => empty($errors),
+                'preview' => array_slice($preview, 0, 10),
+                'stats' => $stats,
+                'errors' => $errors,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['文件解析失败: '.$e->getMessage()],
+            ], 422);
+        }
+    }
+
+    /**
+     * 导入 Excel 数据
+     */
+    public function importExcel(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls|max:10240',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $file = $request->file('file');
+            $spreadsheet = IOFactory::load($file->getRealPath());
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray();
+
+            // 移除表头
+            array_shift($rows);
+
+            $stats = [
+                'imported' => 0,
+                'skipped' => 0,
+                'errors' => [],
+            ];
+
+            // 缓存
+            $rooms = Room::all()->keyBy('name');
+            $rackTypes = RackType::all()->keyBy('name');
+
+            foreach ($rows as $index => $row) {
+                if (empty($row[0]) && empty($row[1])) {
+                    continue;
+                }
+
+                $rowNum = $index + 2;
+
+                $roomName = trim($row[0] ?? '');
+                $rackName = trim($row[1] ?? '');
+                $rackTypeName = trim($row[2] ?? '');
+                $uCount = intval($row[3] ?: 42);
+                $power = intval($row[4] ?: 0);
+                $description = trim($row[5] ?? '');
+
+                // 跳过无效行
+                if (empty($roomName) || empty($rackName)) {
+                    $stats['skipped']++;
+
+                    continue;
+                }
+
+                // 获取机房
+                $room = $rooms->get($roomName);
+                if (! $room) {
+                    $stats['errors'][] = "第 {$rowNum} 行：机房 '{$roomName}' 不存在";
+                    $stats['skipped']++;
+
+                    continue;
+                }
+
+                // 获取机柜类型
+                $rackType = $rackTypeName ? $rackTypes->get($rackTypeName) : null;
+
+                // 检查机柜是否已存在（同机房同名）
+                $existingRack = Rack::where('room_id', $room->id)
+                    ->where('name', $rackName)
+                    ->first();
+
+                if ($existingRack) {
+                    $stats['errors'][] = "第 {$rowNum} 行：机柜 '{$rackName}' 在机房 '{$roomName}' 中已存在";
+                    $stats['skipped']++;
+
+                    continue;
+                }
+
+                // 创建机柜
+                Rack::create([
+                    'room_id' => $room->id,
+                    'rack_type_id' => $rackType?->id,
+                    'name' => $rackName,
+                    'u_count' => $rackType ? $rackType->u_count : $uCount,
+                    'power' => $rackType ? $rackType->power : $power,
+                    'device_count' => 0,
+                    'description' => $description,
+                ]);
+
+                $stats['imported']++;
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => '导入完成',
+                'stats' => $stats,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'errors' => ['导入失败: '.$e->getMessage()],
+            ], 500);
+        }
     }
 }

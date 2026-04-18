@@ -464,7 +464,9 @@
         "deleteWarning": "Are you sure you want to delete this rack? This action cannot be undone.",
         "racksCount": "{{filtered}} of {{total}} racks",
         "rackDetails": "Rack Details",
-        "hasDevicesLocked": "Locked: devices exist"
+        "hasDevicesLocked": "Locked: devices exist",
+        "curPower": "Current Power",
+        "devices": "Devices"
     },
     "rackTypeManagement": {
         "title": "Rack Type Management",
