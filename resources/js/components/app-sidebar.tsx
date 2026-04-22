@@ -108,6 +108,10 @@ export function AppSidebar() {
                     title: t('navigation.h3cPassword'),
                     href: '/tools/h3c-password',
                 },
+                {
+                    title: t('navigation.sshTerminal'),
+                    href: '/tools/ssh-terminal',
+                },
             ],
         },
         {

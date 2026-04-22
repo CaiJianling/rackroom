@@ -32,6 +32,7 @@ use App\Http\Controllers\RackExcelController;
 use App\Http\Controllers\RackTypeController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoomController;
+use App\Http\Controllers\SshTerminalController;
 use App\Http\Controllers\SystemSettingController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserPreferenceController;
@@ -123,6 +124,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('h3c-password/logs', [H3cPasswordController::class, 'logs'])->name('h3c-password.logs');
         Route::delete('h3c-password/logs', [H3cPasswordController::class, 'deleteLogs'])->name('h3c-password.logs.delete');
         Route::delete('h3c-password/logs/clear', [H3cPasswordController::class, 'clearLogs'])->name('h3c-password.logs.clear');
+
+        // SSH 远程终端
+        Route::get('ssh-terminal', [SshTerminalController::class, 'index'])->name('ssh-terminal.index');
+        Route::post('ssh-terminal/connect', [SshTerminalController::class, 'connect'])->name('ssh-terminal.connect');
+        Route::post('ssh-terminal/execute', [SshTerminalController::class, 'execute'])->name('ssh-terminal.execute');
+        Route::get('ssh-terminal/output', [SshTerminalController::class, 'getOutput'])->name('ssh-terminal.output');
+        Route::post('ssh-terminal/disconnect', [SshTerminalController::class, 'disconnect'])->name('ssh-terminal.disconnect');
+        Route::get('ssh-terminal/session-info', [SshTerminalController::class, 'sessionInfo'])->name('ssh-terminal.session-info');
     });
 
     // 监控/报表 API 路由（使用 web 中间件共享 session）

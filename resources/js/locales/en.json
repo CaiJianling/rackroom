@@ -200,6 +200,7 @@
         "backup": "Data Backup/Restore",
         "tools": "Tools",
         "h3cPassword": "Batch Change H3C Switch Password",
+        "sshTerminal": "SSH Remote Terminal",
         "error404": "404 Page",
         "error403": "Access Denied",
         "uheight": "U Height"
