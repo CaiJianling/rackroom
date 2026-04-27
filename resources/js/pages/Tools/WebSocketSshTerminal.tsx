@@ -745,7 +745,7 @@ export default function WebSocketSshTerminal() {
                                                 {conn.tags?.map((tag) => <Badge key={tag} variant="secondary" className="text-[10px] h-4 px-1">{tag}</Badge>)}
                                             </div>
                                         </div>
-                                        {conn.description && <div className="mt-1.5 text-xs text-muted-foreground/70 pl-6 truncate">{conn.description}{conn.u_position && ` ${conn.u_height && conn.u_height > 1 ? `${conn.u_position}U-${conn.u_position + conn.u_height - 1}U` : `${conn.u_position}U`}`}</div>}
+                                        {conn.description && <div className="mt-1.5 text-xs text-muted-foreground/70 pl-6 truncate">{conn.description} |{conn.u_position && ` ${conn.u_height && conn.u_height > 1 ? `${conn.u_position}U-${conn.u_position + conn.u_height - 1}U` : `${conn.u_position}U`}`}</div>}
                                         {!conn.description && conn.u_position && <div className="mt-1.5 text-xs text-muted-foreground/70 pl-6">{conn.u_height && conn.u_height > 1 ? `${conn.u_position}U-${conn.u_position + conn.u_height - 1}U` : `${conn.u_position}U`}</div>}
                                     </div>
                                 ))
