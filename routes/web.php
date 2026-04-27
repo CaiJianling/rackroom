@@ -4,7 +4,7 @@
  * @Author: CaiJianling caijianling@outlook.com
  * @Date: 2026-03-25 03:55:13
  * @LastEditors: CaiJianling caijianling@outlook.com
- * @LastEditTime: 2026-03-27 20:51:44
+ * @LastEditTime: 2026-04-23 17:53:58
  * @FilePath: /rackroom/routes/web.php
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -33,6 +33,7 @@ use App\Http\Controllers\RackTypeController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\SshTerminalController;
+use App\Http\Controllers\SshWebSocketController;
 use App\Http\Controllers\SystemSettingController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserPreferenceController;
@@ -125,13 +126,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('h3c-password/logs', [H3cPasswordController::class, 'deleteLogs'])->name('h3c-password.logs.delete');
         Route::delete('h3c-password/logs/clear', [H3cPasswordController::class, 'clearLogs'])->name('h3c-password.logs.clear');
 
-        // SSH 远程终端
-        Route::get('ssh-terminal', [SshTerminalController::class, 'index'])->name('ssh-terminal.index');
-        Route::post('ssh-terminal/connect', [SshTerminalController::class, 'connect'])->name('ssh-terminal.connect');
-        Route::post('ssh-terminal/execute', [SshTerminalController::class, 'execute'])->name('ssh-terminal.execute');
-        Route::get('ssh-terminal/output', [SshTerminalController::class, 'getOutput'])->name('ssh-terminal.output');
-        Route::post('ssh-terminal/disconnect', [SshTerminalController::class, 'disconnect'])->name('ssh-terminal.disconnect');
-        Route::get('ssh-terminal/session-info', [SshTerminalController::class, 'sessionInfo'])->name('ssh-terminal.session-info');
+        // SSH WebSocket 终端
+        Route::get('ssh-terminal-ws', [SshWebSocketController::class, 'index'])->name('ssh-terminal.ws');
+        Route::post('ssh-ws/connect', [SshWebSocketController::class, 'connect'])->name('ssh-ws.connect');
+        Route::post('ssh-ws/input', [SshWebSocketController::class, 'input'])->name('ssh-ws.input');
+        Route::post('ssh-ws/execute', [SshWebSocketController::class, 'execute'])->name('ssh-ws.execute');
+        Route::get('ssh-ws/output', [SshWebSocketController::class, 'output'])->name('ssh-ws.output');
+        Route::post('ssh-ws/disconnect', [SshWebSocketController::class, 'disconnect'])->name('ssh-ws.disconnect');
     });
 
     // 监控/报表 API 路由（使用 web 中间件共享 session）

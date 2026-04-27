@@ -109,8 +109,8 @@ export function AppSidebar() {
                     href: '/tools/h3c-password',
                 },
                 {
-                    title: t('navigation.sshTerminal'),
-                    href: '/tools/ssh-terminal',
+                    title: 'SSH WebSocket终端',
+                    href: '/tools/ssh-terminal-ws',
                 },
             ],
         },
