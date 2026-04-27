@@ -1,16 +1,16 @@
 import { Head } from '@inertiajs/react';
+import { Activity, Loader2, Clock, RotateCcw, Save, Play, History, CheckCircle, XCircle, AlertCircle, Server } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import AppLayout from '@/layouts/app-layout';
-import { useToast } from '@/hooks/use-toast';
-import { Activity, Loader2, Clock, RotateCcw, Save, Play, History, CheckCircle, XCircle, AlertCircle, Server } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
+import AppLayout from '@/layouts/app-layout';
 
 
 interface SystemSetting {

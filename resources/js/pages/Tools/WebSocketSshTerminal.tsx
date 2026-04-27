@@ -247,6 +247,45 @@ export default function WebSocketSshTerminal() {
         };
     }, []);
 
+    // 处理URL参数，自动打开连接对话框
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const deviceId = params.get('device_id');
+        const ipAddress = params.get('ip_address');
+        const deviceName = params.get('device_name');
+        const connectionType = params.get('connection_type');
+        const connectionPort = params.get('connection_port');
+        const rackName = params.get('rack_name');
+        const roomName = params.get('room_name');
+
+        if (deviceId && ipAddress) {
+            // 清理URL参数
+            window.history.replaceState({}, '', '/tools/ssh-terminal-ws');
+
+            // 创建连接对象
+            const connection: SshConnection = {
+                id: String(deviceId),
+                name: deviceName || ipAddress,
+                host: ipAddress,
+                port: connectionPort ? parseInt(connectionPort, 10) : 22,
+                username: 'root',
+                description: `${roomName || ''} ${rackName || ''}`.trim(),
+                tags: connectionType ? [connectionType] : undefined,
+            };
+
+            // 自动打开连接对话框
+            setSelectedConnection(connection);
+            setConnectForm({
+                host: connection.host,
+                port: connection.port,
+                username: connection.username,
+                password: '',
+            });
+            setConnectError('');
+            setConnectDialogOpen(true);
+        }
+    }, []);
+
     // 切换标签时恢复终端内容
     useEffect(() => {
         if (!termRef.current || !activeSessionId) return;

@@ -304,7 +304,8 @@
         "totalDevices": "总设备数",
         "connect": "连接",
         "noIpAddress": "无IP地址",
-        "deviceDeleted": "设备已删除"
+        "deviceDeleted": "设备已删除",
+        "onlySshSupported": "仅支持SSH设备"
     },
     "deleteAccount": {
         "title": "删除账户",
@@ -567,7 +568,9 @@
         "noRack": "未分配机柜",
         "selectRack": "选择机柜",
         "previousPage": "上一页",
-        "nextPage": "下一页"
+        "nextPage": "下一页",
+        "openTerminal": "打开终端",
+        "onlySshSupported": "仅支持SSH设备"
     },
     "deviceTypeManagement": {
         "title": "设备类型管理",

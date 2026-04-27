@@ -19,6 +19,7 @@ import {
     Wifi,
     Box,
     Layers,
+    Terminal,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -74,6 +75,10 @@ interface Rack {
     id: number;
     name: string;
     u_count: number;
+    room?: {
+        id: number;
+        name: string;
+    };
 }
 
 interface DeviceType {
@@ -343,6 +348,30 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
 
         // 打开连接
         window.open(url, '_blank');
+    };
+
+    // 处理终端连接
+    const handleTerminal = (device: Device) => {
+        if (!device.ip_address) {
+            alert(t('deviceManagement.noIpAddress'));
+            return;
+        }
+
+        // 构建URL查询参数
+        const params = new URLSearchParams({
+            device_id: String(device.id),
+            device_name: device.name,
+            ip_address: device.ip_address,
+            connection_type: device.connection_type || 'ssh',
+            connection_port: String(device.connection_port || 22),
+            rack_name: device.rack?.name || '',
+            room_name: device.rack?.room?.name || '',
+            device_library_name: device.device_library?.name || '',
+            u_position: String(device.u_position || 0)
+        });
+
+        // 跳转到SSH终端页面
+        window.location.href = `/tools/ssh-terminal-ws?${params.toString()}`;
     };
 
     const openCreateDialog = () => {
@@ -714,6 +743,20 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                                                             title={device.ip_address ? t('deviceManagement.connect') : t('deviceManagement.noIpAddress')}
                                                         >
                                                             <Link2 className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleTerminal(device)}
+                                                            disabled={!device.ip_address || device.connection_type !== 'ssh'}
+                                                            className="h-8 w-8 p-0"
+                                                            title={device.ip_address && device.connection_type === 'ssh'
+                                                                ? t('deviceManagement.openTerminal')
+                                                                : device.connection_type !== 'ssh'
+                                                                    ? t('deviceManagement.onlySshSupported')
+                                                                    : t('deviceManagement.noIpAddress')}
+                                                        >
+                                                            <Terminal className="h-4 w-4" />
                                                         </Button>
                                                         <Button
                                                             variant="ghost"

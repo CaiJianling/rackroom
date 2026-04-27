@@ -22,11 +22,13 @@ import {
     ExternalLink,
     Wifi,
     Layers,
+    Terminal,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -54,7 +56,6 @@ import {
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
-import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
 
 interface Device {
@@ -1035,7 +1036,7 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
         // 尝试多种方式读取拖拽数据
         let deviceType = e.dataTransfer.getData('deviceType');
         let deviceLibraryIdStr = e.dataTransfer.getData('deviceLibraryId');
-        let deviceIdStr = e.dataTransfer.getData('deviceId');
+        const deviceIdStr = e.dataTransfer.getData('deviceId');
         let uHeightStr = e.dataTransfer.getData('uHeight');
 
         // 如果直接读取失败，尝试从备用格式解析
@@ -1591,6 +1592,36 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
         }
 
         window.open(url, '_blank');
+        setContextMenu({ ...contextMenu, open: false });
+    };
+
+    // 处理终端连接 - 跳转到SSH终端页面
+    const handleTerminal = (device: Device) => {
+        if (!device.ip_address) {
+            showToast(t('visualEdit.noIpAddress'), 'warning');
+            setContextMenu({ ...contextMenu, open: false });
+            return;
+        }
+
+        // 获取机柜和机房信息
+        const rack = racks.find(r => r.devices?.some(d => d.id === device.id));
+        const room = rack?.room;
+
+        // 构建URL查询参数
+        const params = new URLSearchParams({
+            device_id: String(device.id),
+            device_name: device.name,
+            ip_address: device.ip_address,
+            connection_type: device.connection_type || 'ssh',
+            connection_port: String(device.connection_port || 22),
+            rack_name: rack?.name || '',
+            room_name: room?.name || '',
+            device_library_name: device.device_library?.name || '',
+            u_position: String(device.u_position || 0)
+        });
+
+        // 跳转到SSH终端页面
+        window.location.href = `/tools/ssh-terminal-ws?${params.toString()}`;
         setContextMenu({ ...contextMenu, open: false });
     };
 
@@ -3207,6 +3238,21 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                             <span>{t('visualEdit.connect')}</span>
                             {!contextMenu.device.ip_address && (
                                 <span className="text-xs text-gray-400 ml-auto">({t('visualEdit.noIpAddress')})</span>
+                            )}
+                        </button>
+                        <button
+                            className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => handleTerminal(contextMenu.device!)}
+                            disabled={!contextMenu.device.ip_address || contextMenu.device.connection_type !== 'ssh'}
+                            title={contextMenu.device.ip_address && contextMenu.device.connection_type !== 'ssh' ? t('visualEdit.onlySshSupported') : ''}
+                        >
+                            <Terminal className="h-4 w-4" />
+                            <span>{t('deviceManagement.openTerminal')}</span>
+                            {!contextMenu.device.ip_address && (
+                                <span className="text-xs text-gray-400 ml-auto">({t('visualEdit.noIpAddress')})</span>
+                            )}
+                            {contextMenu.device.ip_address && contextMenu.device.connection_type !== 'ssh' && (
+                                <span className="text-xs text-gray-400 ml-auto">({t('visualEdit.onlySshSupported')})</span>
                             )}
                         </button>
                         <button
