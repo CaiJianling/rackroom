@@ -38,6 +38,7 @@ interface Device {
     connection_port: number | null;
     status: string;
     description: string | null;
+    u_position: number | null;
     rack?: {
         id: number;
         name: string;
@@ -49,6 +50,7 @@ interface Device {
     device_library?: {
         id: number;
         name: string;
+        u_height?: number | null;
         device_type?: {
             id: number;
             name: string;
@@ -65,6 +67,8 @@ interface SshConnection {
     username: string;
     description?: string;
     tags?: string[];
+    u_position?: number | null;
+    u_height?: number | null;
 }
 
 interface TerminalSession {
@@ -106,10 +110,13 @@ export default function WebSocketSshTerminal() {
             username: 'root',
             description: device.description || `${device.rack?.room?.name || ''} ${device.rack?.name || ''}`.trim(),
             tags: device.device_library?.device_type?.name ? [device.device_library.device_type.name] : undefined,
+            u_position: device.u_position,
+            u_height: device.device_library?.u_height,
         }));
 
     const [sessions, setSessions] = useState<TerminalSession[]>([]);
-    const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+    const [activeSessionId, setActiveSessionId] = useState<
+    string | null>(null);
     const activeSessionIdRef = useRef<string | null>(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -132,6 +139,44 @@ export default function WebSocketSshTerminal() {
     const terminalContainerRef = useRef<HTMLDivElement>(null);
     const sessionWsMap = useRef<Map<string, WebSocket>>(new Map());
     const closingSessionIds = useRef<Set<string>>(new Set());
+    const sessionBufferMap = useRef<Map<string, string>>(new Map());
+
+    const STORAGE_KEY = 'ssh_terminal_buffers';
+
+    const saveBufferToStorage = useCallback((sessionId: string, buffer: string) => {
+        try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            const buffers = stored ? JSON.parse(stored) : {};
+            buffers[sessionId] = buffer;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(buffers));
+        } catch (e) {
+            console.error('保存终端内容失败:', e);
+        }
+    }, []);
+
+    const getBufferFromStorage = useCallback((sessionId: string): string | null => {
+        try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (!stored) return null;
+            const buffers = JSON.parse(stored);
+            return buffers[sessionId] || null;
+        } catch (e) {
+            console.error('读取终端内容失败:', e);
+            return null;
+        }
+    }, []);
+
+    const clearBufferFromStorage = useCallback((sessionId: string) => {
+        try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (!stored) return;
+            const buffers = JSON.parse(stored);
+            delete buffers[sessionId];
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(buffers));
+        } catch (e) {
+            console.error('清除终端内容失败:', e);
+        }
+    }, []);
 
     const breadcrumbs = [
         { title: '小工具', href: '#' },
@@ -183,8 +228,8 @@ export default function WebSocketSshTerminal() {
         const handleResize = () => {
             fitAddon.fit();
             const dims = fitAddon.proposeDimensions();
-            if (dims && activeSessionId) {
-                const ws = sessionWsMap.current.get(activeSessionId);
+            if (dims && activeSessionIdRef.current) {
+                const ws = sessionWsMap.current.get(activeSessionIdRef.current);
                 if (ws?.readyState === WebSocket.OPEN) {
                     ws.send(JSON.stringify({
                         type: 'resize',
@@ -200,10 +245,62 @@ export default function WebSocketSshTerminal() {
         return () => {
             window.removeEventListener('resize', handleResize);
         };
-    }, [activeSessionId]);
+    }, []);
+
+    // 切换标签时恢复终端内容
+    useEffect(() => {
+        if (!termRef.current || !activeSessionId) return;
+
+        // 检查是否有保存的缓冲区
+        const savedBuffer = sessionBufferMap.current.get(activeSessionId);
+        if (savedBuffer && savedBuffer.length > 0) {
+            termRef.current.clear();
+            termRef.current.write(savedBuffer);
+        } else {
+            // 尝试从 localStorage 恢复
+            const storedBuffer = getBufferFromStorage(activeSessionId);
+            if (storedBuffer && storedBuffer.length > 0) {
+                sessionBufferMap.current.set(activeSessionId, storedBuffer);
+                termRef.current.clear();
+                termRef.current.write(storedBuffer);
+            } else {
+                // 显示欢迎信息
+                termRef.current.clear();
+                termRef.current.writeln('\x1b[32m欢迎使用 WebSocket SSH 终端\x1b[0m');
+                termRef.current.writeln('\x1b[33m请从右侧设备列表双击设备连接\x1b[0m');
+            }
+        }
+
+        // 聚焦终端
+        termRef.current.focus();
+    }, [activeSessionId, getBufferFromStorage]);
 
     useEffect(() => {
         const cleanup = initTerminal();
+
+        // 页面加载时恢复会话
+        const restoreSessions = () => {
+            try {
+                const storedSessions = localStorage.getItem('ssh_sessions');
+                if (storedSessions) {
+                    const sessions = JSON.parse(storedSessions);
+                    if (Array.isArray(sessions) && sessions.length > 0) {
+                        setSessions(sessions);
+                        // 恢复第一个会话为活动会话
+                        if (sessions.length > 0) {
+                            setActiveSessionId(sessions[0].id);
+                            activeSessionIdRef.current = sessions[0].id;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('恢复会话失败:', e);
+            }
+        };
+
+        // 延迟恢复，确保终端已初始化
+        setTimeout(restoreSessions, 100);
+
         return () => {
             cleanup?.();
             // 清理所有 WebSocket 连接
@@ -254,14 +351,14 @@ export default function WebSocketSshTerminal() {
             console.log(`WebSocket 连接已关闭: ${sessionId}, wasClean: ${event.wasClean}, 主动关闭: ${closingSessionIds.current.has(sessionId)}`);
             updateSessionStatus(sessionId, false);
             sessionWsMap.current.delete(sessionId);
-            
+
             // 如果是主动关闭，不需要显示"连接错误"
             if (closingSessionIds.current.has(sessionId)) {
                 console.log('主动关闭，跳过显示错误');
                 closingSessionIds.current.delete(sessionId);
                 return;
             }
-            
+
             console.log('非主动关闭，显示连接错误');
             // 显示连接错误
             if (activeSessionIdRef.current === sessionId) {
@@ -304,8 +401,15 @@ export default function WebSocketSshTerminal() {
 
             case 'output':
                 console.log('收到输出，长度:', data.data?.length);
-                console.log('当前活动会话:', activeSessionId, '消息会话:', sessionId);
-                if (activeSessionId === sessionId) {
+                console.log('当前活动会话:', activeSessionIdRef.current, '消息会话:', sessionId);
+
+                // 保存内容到缓冲区
+                if (data.data) {
+                    const buffer = sessionBufferMap.current.get(sessionId) || '';
+                    sessionBufferMap.current.set(sessionId, buffer + data.data);
+                }
+
+                if (activeSessionIdRef.current === sessionId) {
                     if (data.data) {
                         termRef.current?.write(data.data);
                         console.log('已写入终端');
@@ -387,21 +491,45 @@ export default function WebSocketSshTerminal() {
     // 关闭会话
     const closeSession = useCallback((sessionId: string) => {
         const ws = sessionWsMap.current.get(sessionId);
-        
+
+        // 保存终端内容到 localStorage
+        const buffer = sessionBufferMap.current.get(sessionId);
+        if (buffer) {
+            saveBufferToStorage(sessionId, buffer);
+        }
+
         // 标记为正在主动关闭，避免 onclose 中显示"连接错误"
         closingSessionIds.current.add(sessionId);
-        
+
         // 发送断开连接消息到服务端
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'disconnect', sessionId }));
         }
-        
+
         if (ws) {
             ws.close();
         }
         sessionWsMap.current.delete(sessionId);
 
         setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+
+        // 保存会话列表到 localStorage
+        const remainingSessions = sessions.filter((s) => s.id !== sessionId);
+        if (remainingSessions.length > 0) {
+            const sessionData = remainingSessions.map(s => ({
+                id: s.id,
+                connectionId: s.connectionId,
+                title: s.title,
+                user: s.user,
+                host: s.host,
+                port: s.port,
+                isConnected: false,
+            }));
+            localStorage.setItem('ssh_sessions', JSON.stringify(sessionData));
+        } else {
+            localStorage.removeItem('ssh_sessions');
+        }
+
         if (activeSessionId === sessionId) {
             const remaining = sessions.filter((s) => s.id !== sessionId);
             setActiveSessionId(remaining.length > 0 ? remaining[remaining.length - 1].id : null);
@@ -415,7 +543,7 @@ export default function WebSocketSshTerminal() {
                 termRef.current.writeln('\x1b[33m请从右侧设备列表双击设备连接\x1b[0m');
             }
         }
-    }, [activeSessionId, sessions]);
+    }, [activeSessionId, sessions, saveBufferToStorage]);
 
     // 处理终端输入 - 在终端初始化后立即绑定
     useEffect(() => {
@@ -511,29 +639,29 @@ export default function WebSocketSshTerminal() {
                     </div>
 
                     {/* 终端内容区 */}
-                    <div className="flex-1 bg-black flex flex-col min-h-0">
-                        <div ref={terminalContainerRef} className="flex-1 min-h-0 p-2 overflow-hidden" />
-                    </div>
+                    <div className="flex-1 flex flex-col bg-black min-h-0 overflow-hidden">
+                        <div ref={terminalContainerRef} className="flex-1 overflow-hidden" />
 
-                    {/* 状态栏 */}
-                    <div className="h-7 bg-gray-900 border-t border-gray-800 flex items-center px-3 gap-4 text-xs shrink-0">
-                        <div className="flex items-center gap-1.5">
-                            <div className={cn('h-2 w-2 rounded-full', activeSession?.isConnected ? 'bg-green-500' : activeSession?.isConnecting ? 'bg-yellow-400' : 'bg-gray-500')} />
-                            <span className="text-gray-400">
-                                {activeSession?.isConnected ? '已连接' : activeSession?.isConnecting ? '连接中...' : '未连接'}
-                            </span>
+                        {/* 状态栏 */}
+                        <div className="h-7 bg-gray-900 border-t border-gray-800 flex items-center px-3 gap-4 text-xs shrink-0">
+                            <div className="flex items-center gap-1.5">
+                                <div className={cn('h-2 w-2 rounded-full', activeSession?.isConnected ? 'bg-green-500' : activeSession?.isConnecting ? 'bg-yellow-400' : 'bg-gray-500')} />
+                                <span className="text-gray-400">
+                                    {activeSession?.isConnected ? '已连接' : activeSession?.isConnecting ? '连接中...' : '未连接'}
+                                </span>
+                            </div>
+                            {activeSession && (
+                                <>
+                                    <div className="flex items-center gap-1.5 text-gray-400">
+                                        <Settings2 className="h-3 w-3" />
+                                        <span>WebSocket</span>
+                                    </div>
+                                    <div className="ml-auto text-gray-500">
+                                        {activeSession.user}@{activeSession.host}:{activeSession.port}
+                                    </div>
+                                </>
+                            )}
                         </div>
-                        {activeSession && (
-                            <>
-                                <div className="flex items-center gap-1.5 text-gray-400">
-                                    <Settings2 className="h-3 w-3" />
-                                    <span>WebSocket</span>
-                                </div>
-                                <div className="ml-auto text-gray-500">
-                                    {activeSession.user}@{activeSession.host}:{activeSession.port}
-                                </div>
-                            </>
-                        )}
                     </div>
                 </div>
 
@@ -578,7 +706,8 @@ export default function WebSocketSshTerminal() {
                                                 {conn.tags?.map((tag) => <Badge key={tag} variant="secondary" className="text-[10px] h-4 px-1">{tag}</Badge>)}
                                             </div>
                                         </div>
-                                        {conn.description && <div className="mt-1.5 text-xs text-muted-foreground/70 pl-6 truncate">{conn.description}</div>}
+                                        {conn.description && <div className="mt-1.5 text-xs text-muted-foreground/70 pl-6 truncate">{conn.description}{conn.u_position && ` ${conn.u_height && conn.u_height > 1 ? `${conn.u_position}U-${conn.u_position + conn.u_height - 1}U` : `${conn.u_position}U`}`}</div>}
+                                        {!conn.description && conn.u_position && <div className="mt-1.5 text-xs text-muted-foreground/70 pl-6">{conn.u_height && conn.u_height > 1 ? `${conn.u_position}U-${conn.u_position + conn.u_height - 1}U` : `${conn.u_position}U`}</div>}
                                     </div>
                                 ))
                             )}
