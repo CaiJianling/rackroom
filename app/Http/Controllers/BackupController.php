@@ -4,7 +4,7 @@
  * @Author: CaiJianling caijianling@outlook.com
  * @Date: 2026-04-10 10:00:00
  * @LastEditors: CaiJianling caijianling@outlook.com
- * @LastEditTime: 2026-04-10 10:00:00
+ * @LastEditTime: 2026-04-27 16:15:19
  * @FilePath: /rackroom/app/Http/Controllers/BackupController.php
  * @Description: 数据备份与恢复控制器
  */
@@ -37,6 +37,20 @@ class BackupController extends Controller
         $backups = $this->getBackupList();
 
         return Inertia::render('Backup/Index', [
+            'backups' => $backups,
+        ]);
+    }
+
+    /**
+     * 获取备份列表（JSON API）
+     */
+    public function list(): JsonResponse
+    {
+        $backups = $this->getBackupList();
+        $backups = array_slice($backups, 0, 10);
+
+        return response()->json([
+            'success' => true,
             'backups' => $backups,
         ]);
     }

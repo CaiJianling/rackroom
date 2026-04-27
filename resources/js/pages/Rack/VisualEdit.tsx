@@ -23,6 +23,9 @@ import {
     Wifi,
     Layers,
     Terminal,
+    Archive,
+    RotateCcw,
+    Loader2,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -262,6 +265,19 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
         offline: { bg: '#f97316', text: '#ffffff' },
         maintenance: { bg: '#6b7280', text: '#ffffff' },
     });
+
+    // 快速备份/恢复状态
+    const [isCreatingBackup, setIsCreatingBackup] = useState(false);
+    const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
+    const [restoreBackups, setRestoreBackups] = useState<Array<{
+        id: string;
+        filename: string;
+        size: string;
+        created_at: string;
+    }>>([]);
+    const [isLoadingBackups, setIsLoadingBackups] = useState(false);
+    const [selectedRestoreBackup, setSelectedRestoreBackup] = useState<typeof restoreBackups[0] | null>(null);
+    const [isRestoring, setIsRestoring] = useState(false);
 
     // 加载用户自定义颜色
     useEffect(() => {
@@ -979,6 +995,97 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
             showToast(t('visualEdit.pingFailed'), 'error');
         } finally {
             setIsPinging(false);
+        }
+    };
+
+    // 快速创建备份
+    const handleQuickBackup = async () => {
+        setIsCreatingBackup(true);
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const response = await fetch('/backup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({ name: '' }),
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(t('backup.createSuccess') || '备份创建成功', 'success');
+            } else {
+                showToast(result.message || '备份创建失败', 'error');
+            }
+        } catch (error) {
+            showToast(t('backup.createFailed') || '备份创建失败', 'error');
+        } finally {
+            setIsCreatingBackup(false);
+        }
+    };
+
+    // 打开恢复对话框并加载备份列表
+    const openRestoreDialog = async () => {
+        setRestoreDialogOpen(true);
+        setIsLoadingBackups(true);
+        setSelectedRestoreBackup(null);
+
+        try {
+            const response = await fetch('/backup/list');
+            const data = await response.json();
+            if (data.backups) {
+                setRestoreBackups(data.backups);
+            }
+        } catch (error) {
+            showToast('加载备份列表失败', 'error');
+        } finally {
+            setIsLoadingBackups(false);
+        }
+    };
+
+    // 执行恢复
+    const handleRestore = async () => {
+        if (!selectedRestoreBackup) return;
+
+        setIsRestoring(true);
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const response = await fetch(`/backup/${selectedRestoreBackup.id}/restore`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                    options: {
+                        rooms: true,
+                        rack_types: true,
+                        racks: true,
+                        device_types: true,
+                        device_library: true,
+                        devices: true,
+                    },
+                    mode: 'replace',
+                }),
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(t('backup.restoreSuccess') || '恢复成功', 'success');
+                setRestoreDialogOpen(false);
+                router.reload();
+            } else {
+                showToast(result.message || '恢复失败', 'error');
+            }
+        } catch (error) {
+            showToast(t('backup.restoreFailed') || '恢复失败', 'error');
+        } finally {
+            setIsRestoring(false);
         }
     };
 
@@ -1743,6 +1850,26 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                         >
                             <Activity className={`mr-2 h-4 w-4 ${isPinging ? 'animate-spin' : ''}`} />
                             {isPinging ? t('visualEdit.pinging') : t('visualEdit.batchPing')}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleQuickBackup}
+                            disabled={isCreatingBackup || previewMode}
+                            title="快速备份当前数据"
+                        >
+                            <Archive className={`mr-2 h-4 w-4 ${isCreatingBackup ? 'animate-spin' : ''}`} />
+                            {isCreatingBackup ? '备份中...' : '快速备份'}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={openRestoreDialog}
+                            disabled={previewMode}
+                            title="从备份恢复数据"
+                        >
+                            <RotateCcw className="mr-2 h-4 w-4" />
+                            快速恢复
                         </Button>
                         <Button
                             variant="outline"
@@ -3048,6 +3175,60 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                     <DialogFooter className="px-6 py-4 border-t shrink-0">
                         <Button variant="outline" onClick={() => setPingResults({ ...pingResults, open: false })}>
                             {t('common.close')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* 快速恢复对话框 */}
+            <Dialog open={restoreDialogOpen} onOpenChange={setRestoreDialogOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>快速恢复</DialogTitle>
+                        <DialogDescription>选择要恢复的备份文件，恢复后当前数据将被覆盖</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        {isLoadingBackups ? (
+                            <div className="flex items-center justify-center py-8">
+                                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                                <span>加载中...</span>
+                            </div>
+                        ) : restoreBackups.length === 0 ? (
+                            <div className="text-center py-8 text-muted-foreground">
+                                <Archive className="mx-auto h-12 w-12 opacity-20 mb-2" />
+                                <p>暂无备份文件</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                                {restoreBackups.map((backup) => (
+                                    <div
+                                        key={backup.id}
+                                        className={`p-3 border rounded-md cursor-pointer transition-colors ${
+                                            selectedRestoreBackup?.id === backup.id
+                                                ? 'border-primary bg-primary/10'
+                                                : 'hover:bg-muted'
+                                        }`}
+                                        onClick={() => setSelectedRestoreBackup(backup)}
+                                    >
+                                        <div className="font-medium">{backup.filename}</div>
+                                        <div className="text-sm text-muted-foreground">
+                                            {backup.size} • {backup.created_at}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setRestoreDialogOpen(false)}>
+                            {t('common.cancel')}
+                        </Button>
+                        <Button
+                            onClick={handleRestore}
+                            disabled={!selectedRestoreBackup || isRestoring}
+                        >
+                            {isRestoring && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {isRestoring ? '恢复中...' : '恢复'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
