@@ -155,13 +155,13 @@ export default function MonitorIndex({ initialStats, recentAlerts, breadcrumbs =
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'online':
-                return <Badge variant="default" className="bg-green-500"><CheckCircle2 className="mr-1 h-3 w-3" />在线</Badge>;
+                return <Badge variant="default" className="bg-green-500"><CheckCircle2 className="mr-1 h-3 w-3" />{t('monitor.online')}</Badge>;
             case 'offline':
-                return <Badge variant="destructive"><WifiOff className="mr-1 h-3 w-3" />离线</Badge>;
+                return <Badge variant="destructive"><WifiOff className="mr-1 h-3 w-3" />{t('monitor.offline')}</Badge>;
             case 'maintenance':
-                return <Badge variant="secondary" className="bg-yellow-500 text-yellow-950"><AlertCircle className="mr-1 h-3 w-3" />维护</Badge>;
+                return <Badge variant="secondary" className="bg-yellow-500 text-yellow-950"><AlertCircle className="mr-1 h-3 w-3" />{t('monitor.maintenance')}</Badge>;
             default:
-                return <Badge variant="outline">未知</Badge>;
+                return <Badge variant="outline">{t('monitor.unknown')}</Badge>;
         }
     };
 
@@ -237,31 +237,31 @@ export default function MonitorIndex({ initialStats, recentAlerts, breadcrumbs =
                     {/* 机房统计 */}
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">机房总数</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t('monitor.totalRooms')}</CardTitle>
                             <HardDrive className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{stats.rooms.total}</div>
-                            <p className="text-xs text-muted-foreground">数据中心机房</p>
+                            <p className="text-xs text-muted-foreground">{t('monitor.totalRoomsDesc')}</p>
                         </CardContent>
                     </Card>
 
                     {/* 机柜统计 */}
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">机柜总数</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t('monitor.totalRacks')}</CardTitle>
                             <Server className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{stats.racks.total}</div>
-                            <p className="text-xs text-muted-foreground">可用机柜</p>
+                            <p className="text-xs text-muted-foreground">{t('monitor.availableRacks')}</p>
                         </CardContent>
                     </Card>
 
                     {/* 设备统计 */}
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">设备状态</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t('monitor.deviceStatus')}</CardTitle>
                             <Zap className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -286,7 +286,7 @@ export default function MonitorIndex({ initialStats, recentAlerts, breadcrumbs =
                     {/* 告警统计 */}
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">活跃告警</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t('monitor.activeAlerts')}</CardTitle>
                             <Activity className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -294,11 +294,11 @@ export default function MonitorIndex({ initialStats, recentAlerts, breadcrumbs =
                             <div className="mt-1 flex items-center gap-2 text-xs">
                                 <span className="flex items-center text-red-600">
                                     <AlertCircle className="mr-1 h-3 w-3" />
-                                    严重 {stats.alerts.critical}
+                                    {t('monitor.critical')} {stats.alerts.critical}
                                 </span>
                                 <span className="flex items-center text-orange-600">
                                     <AlertCircle className="mr-1 h-3 w-3" />
-                                    警告 {stats.alerts.warning}
+                                    {t('monitor.warning')} {stats.alerts.warning}
                                 </span>
                             </div>
                         </CardContent>
@@ -310,18 +310,18 @@ export default function MonitorIndex({ initialStats, recentAlerts, breadcrumbs =
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <div>
-                                <CardTitle>设备实时监控</CardTitle>
-                                <CardDescription>查看所有设备的实时状态</CardDescription>
+                                <CardTitle>{t('monitor.deviceMonitoring')}</CardTitle>
+                                <CardDescription>{t('monitor.deviceMonitoringDesc')}</CardDescription>
                             </div>
                             <Select value={deviceFilter} onValueChange={setDeviceFilter}>
                                 <SelectTrigger className="w-[150px]">
-                                    <SelectValue placeholder="筛选状态" />
+                                    <SelectValue placeholder={t('monitor.statusFilter')} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">全部状态</SelectItem>
-                                    <SelectItem value="online">在线</SelectItem>
-                                    <SelectItem value="offline">离线</SelectItem>
-                                    <SelectItem value="maintenance">维护中</SelectItem>
+                                    <SelectItem value="all">{t('monitor.allStatus')}</SelectItem>
+                                    <SelectItem value="online">{t('monitor.online')}</SelectItem>
+                                    <SelectItem value="offline">{t('monitor.offline')}</SelectItem>
+                                    <SelectItem value="maintenance">{t('monitor.maintenance')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -330,20 +330,20 @@ export default function MonitorIndex({ initialStats, recentAlerts, breadcrumbs =
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/50">
-                                    <TableHead className="w-[50px]">状态</TableHead>
-                                    <TableHead>设备名称</TableHead>
-                                    <TableHead>IP地址</TableHead>
-                                    <TableHead>分类</TableHead>
-                                    <TableHead>所在机房</TableHead>
-                                    <TableHead>所在机柜</TableHead>
-                                    <TableHead className="text-right">最后更新</TableHead>
+                                    <TableHead className="w-[50px]">{t('monitor.status')}</TableHead>
+                                    <TableHead>{t('monitor.deviceName')}</TableHead>
+                                    <TableHead>{t('monitor.ipAddress')}</TableHead>
+                                    <TableHead>{t('monitor.category')}</TableHead>
+                                    <TableHead>{t('monitor.room')}</TableHead>
+                                    <TableHead>{t('monitor.rack')}</TableHead>
+                                    <TableHead className="text-right">{t('monitor.lastUpdated')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {devices.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
-                                            暂无设备数据
+                                            {t('monitor.noDeviceData')}
                                         </TableCell>
                                     </TableRow>
                                 ) : (
@@ -373,13 +373,13 @@ export default function MonitorIndex({ initialStats, recentAlerts, breadcrumbs =
                 {/* 最近告警 */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>最近告警</CardTitle>
-                        <CardDescription>最近触发的系统告警</CardDescription>
+                        <CardTitle>{t('monitor.recentAlerts')}</CardTitle>
+                        <CardDescription>{t('monitor.recentAlertsDesc')}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-3">
                             {recentAlerts.length === 0 ? (
-                                <div className="py-4 text-center text-muted-foreground">暂无告警</div>
+                                <div className="py-4 text-center text-muted-foreground">{t('monitor.noAlerts')}</div>
                             ) : (
                                 recentAlerts.map((alert) => (
                                     <div
@@ -399,7 +399,7 @@ export default function MonitorIndex({ initialStats, recentAlerts, breadcrumbs =
                                             </div>
                                         </div>
                                         <Badge variant="outline" className="bg-white/50">
-                                            {alert.severity === 'critical' ? '严重' : alert.severity === 'warning' ? '警告' : '信息'}
+                                            {alert.severity === 'critical' ? t('alert.critical') : alert.severity === 'warning' ? t('alert.warning') : t('alert.info')}
                                         </Badge>
                                     </div>
                                 ))

@@ -1,22 +1,4 @@
 import { Head, usePage } from '@inertiajs/react';
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { Terminal as XTerm } from 'xterm';
-import { FitAddon } from 'xterm-addon-fit';
-import { WebLinksAddon } from 'xterm-addon-web-links';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import AppLayout from '@/layouts/app-layout';
 import {
     Terminal,
     Server,
@@ -27,6 +9,25 @@ import {
     Power,
     Settings2,
 } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Terminal as XTerm } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
+import { WebLinksAddon } from 'xterm-addon-web-links';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import 'xterm/css/xterm.css';
 
@@ -97,6 +98,7 @@ interface PageProps {
 }
 
 export default function WebSocketSshTerminal() {
+    const { t } = useTranslation();
     const { devices, websocketUrl } = usePage<PageProps>().props;
     const wsUrl = websocketUrl || `ws://${window.location.hostname}:8081`;
 
@@ -179,8 +181,8 @@ export default function WebSocketSshTerminal() {
     }, []);
 
     const breadcrumbs = [
-        { title: '小工具', href: '#' },
-        { title: 'SSH WebSocket终端', href: '/tools/ssh-terminal-ws' },
+        { title: t('navigation.tools'), href: '#' },
+        { title: t('sshTerminal.title'), href: '/tools/ssh-terminal-ws' },
     ];
 
     const filteredConnections = sshConnections.filter(
@@ -217,8 +219,8 @@ export default function WebSocketSshTerminal() {
         term.open(terminalContainerRef.current);
         fitAddon.fit();
 
-        term.writeln('\x1b[32m欢迎使用 WebSocket SSH 终端\x1b[0m');
-        term.writeln('\x1b[33m请从右侧设备列表双击设备连接\x1b[0m');
+        term.writeln(`\x1b[32m${t('sshTerminal.welcomeMessage')}\x1b[0m`);
+        term.writeln(`\x1b[33m${t('sshTerminal.connectionHint')}\x1b[0m`);
         term.writeln('');
 
         termRef.current = term;
@@ -296,18 +298,9 @@ export default function WebSocketSshTerminal() {
             termRef.current.clear();
             termRef.current.write(savedBuffer);
         } else {
-            // 尝试从 localStorage 恢复
-            const storedBuffer = getBufferFromStorage(activeSessionId);
-            if (storedBuffer && storedBuffer.length > 0) {
-                sessionBufferMap.current.set(activeSessionId, storedBuffer);
-                termRef.current.clear();
-                termRef.current.write(storedBuffer);
-            } else {
-                // 显示欢迎信息
-                termRef.current.clear();
-                termRef.current.writeln('\x1b[32m欢迎使用 WebSocket SSH 终端\x1b[0m');
-                termRef.current.writeln('\x1b[33m请从右侧设备列表双击设备连接\x1b[0m');
-            }
+            termRef.current.clear();
+            termRef.current.writeln(`\x1b[32m${t('sshTerminal.welcomeMessage')}\x1b[0m`);
+            termRef.current.writeln(`\x1b[33m${t('sshTerminal.connectionHint')}\x1b[0m`);
         }
 
         // 聚焦终端
@@ -400,8 +393,8 @@ export default function WebSocketSshTerminal() {
 
             console.log('非主动关闭，显示连接错误');
             // 显示连接错误
-            if (activeSessionIdRef.current === sessionId) {
-                termRef.current?.writeln(`\r\n\x1b[31m连接错误\x1b[0m`);
+            if (termRef.current) {
+                termRef.current.writeln(`\r\n\x1b[31m${t('sshTerminal.connectionError')}\x1b[0m`);
             }
         };
 
@@ -418,7 +411,7 @@ export default function WebSocketSshTerminal() {
             case 'auth_success':
                 updateSessionStatus(sessionId, true);
                 termRef.current?.clear();
-                termRef.current?.writeln(`\x1b[32m已连接到 ${data.host} as ${data.username}\x1b[0m\r\n`);
+                termRef.current?.writeln(`\x1b[32m${t('sshTerminal.connectedTo', { host: data.host, username: data.username })}\x1b[0m\r\n`);
 
                 // 发送终端尺寸
                 const dims = fitAddonRef.current?.proposeDimensions();
@@ -434,7 +427,7 @@ export default function WebSocketSshTerminal() {
 
             case 'auth_failed':
                 updateSessionStatus(sessionId, false);
-                termRef.current?.writeln(`\r\n\x1b[31m认证失败: ${data.message}\x1b[0m`);
+                termRef.current?.writeln(`\r\n\x1b[31m${t('sshTerminal.authFailed', { message: data.message })}\x1b[0m`);
                 setConnectError(data.message);
                 break;
 
@@ -464,7 +457,7 @@ export default function WebSocketSshTerminal() {
                 break;
 
             case 'error':
-                termRef.current?.writeln(`\r\n\x1b[31m错误: ${data.message}\x1b[0m`);
+                termRef.current?.writeln(`\r\n\x1b[31m${t('sshTerminal.errorMessage', { message: data.message })}\x1b[0m`);
                 break;
 
             case 'pong':
@@ -578,8 +571,8 @@ export default function WebSocketSshTerminal() {
             if (termRef.current) {
                 termRef.current.clear();
                 termRef.current.reset();
-                termRef.current.writeln('\x1b[32m欢迎使用 WebSocket SSH 终端\x1b[0m');
-                termRef.current.writeln('\x1b[33m请从右侧设备列表双击设备连接\x1b[0m');
+                termRef.current.writeln(`\x1b[32m${t('sshTerminal.welcomeMessage')}\x1b[0m`);
+                termRef.current.writeln(`\x1b[33m${t('sshTerminal.connectionHint')}\x1b[0m`);
             }
         }
     }, [activeSessionId, sessions, saveBufferToStorage]);
@@ -630,7 +623,7 @@ export default function WebSocketSshTerminal() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="SSH WebSocket终端" />
+            <Head title={t('sshTerminal.title')} />
             <div className={cn('flex h-[calc(100vh-8rem)] gap-4', isFullscreen && 'fixed inset-0 z-50 bg-background p-4 h-screen')}>
                 {/* 左侧终端区域 */}
                 <div className="flex-1 flex flex-col min-w-0 min-h-0">
@@ -686,7 +679,7 @@ export default function WebSocketSshTerminal() {
                             <div className="flex items-center gap-1.5">
                                 <div className={cn('h-2 w-2 rounded-full', activeSession?.isConnected ? 'bg-green-500' : activeSession?.isConnecting ? 'bg-yellow-400' : 'bg-gray-500')} />
                                 <span className="text-gray-400">
-                                    {activeSession?.isConnected ? '已连接' : activeSession?.isConnecting ? '连接中...' : '未连接'}
+                                    {activeSession?.isConnected ? t('sshTerminal.connected') : activeSession?.isConnecting ? t('sshTerminal.connecting') : t('sshTerminal.disconnected')}
                                 </span>
                             </div>
                             {activeSession && (
@@ -709,16 +702,16 @@ export default function WebSocketSshTerminal() {
                     <CardHeader className="pb-3">
                         <CardTitle className="text-sm font-semibold flex items-center gap-2">
                             <Server className="h-4 w-4" />
-                            SSH 设备列表
+                            {t('sshTerminal.deviceList')}
                             <Badge variant="secondary" className="ml-auto text-xs">{filteredConnections.length}</Badge>
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="flex-1 flex flex-col gap-3 p-4 pt-0">
-                        <Input placeholder="搜索设备..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-9" />
+                        <Input placeholder={t('sshTerminal.searchPlaceholder')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-9" />
                         <div className="flex-1 overflow-y-auto space-y-2">
                             {filteredConnections.length === 0 ? (
                                 <div className="text-center py-8 text-muted-foreground text-sm">
-                                    {sshConnections.length === 0 ? <p>暂无配置 SSH 的设备</p> : <p>未找到匹配的设备</p>}
+                                    {sshConnections.length === 0 ? <p>{t('sshTerminal.noSshDevices')}</p> : <p>{t('sshTerminal.noMatchingDevices')}</p>}
                                 </div>
                             ) : (
                                 filteredConnections.map((conn) => (
@@ -741,7 +734,7 @@ export default function WebSocketSshTerminal() {
                                         <div className="mt-1.5 text-xs text-muted-foreground pl-6">
                                             <div>{conn.username}@{conn.host}</div>
                                             <div className="flex items-center gap-2 mt-1">
-                                                <span>端口: {conn.port}</span>
+                                                <span>{t('sshTerminal.port')}: {conn.port}</span>
                                                 {conn.tags?.map((tag) => <Badge key={tag} variant="secondary" className="text-[10px] h-4 px-1">{tag}</Badge>)}
                                             </div>
                                         </div>
@@ -752,7 +745,7 @@ export default function WebSocketSshTerminal() {
                             )}
                         </div>
                         <div className="text-xs text-muted-foreground text-center pt-2 border-t">
-                            设备配置请前往<a href="/devices" className="text-primary hover:underline ml-1">设备管理</a>
+                            {t('sshTerminal.deviceConfigHint')}<a href="/devices" className="text-primary hover:underline ml-1">{t('navigation.devices')}</a>
                         </div>
                     </CardContent>
                 </Card>
@@ -762,24 +755,24 @@ export default function WebSocketSshTerminal() {
             <Dialog open={connectDialogOpen} onOpenChange={setConnectDialogOpen}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>SSH 连接</DialogTitle>
-                        <DialogDescription>连接到 {selectedConnection?.name} ({selectedConnection?.host})</DialogDescription>
+                        <DialogTitle>{t('sshTerminal.sshConnection')}</DialogTitle>
+                        <DialogDescription>{t('sshTerminal.connectTo', { name: selectedConnection?.name, host: selectedConnection?.host })}</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="host" className="text-right">主机</Label>
+                            <Label htmlFor="host" className="text-right">{t('sshTerminal.host')}</Label>
                             <Input id="host" value={connectForm.host} onChange={(e) => setConnectForm({ ...connectForm, host: e.target.value })} className="col-span-3" disabled={isConnecting} />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="port" className="text-right">端口</Label>
-                            <Input id="port" type="number" value={connectForm.port} onChange={(e) => setConnectForm({ ...connectForm, port: parseInt(e.target.value) || 22 })} className="col-span-3" disabled={isConnecting} />
+                            <Label htmlFor="port" className="text-right">{t('sshTerminal.port')}</Label>
+                            <Input id="port" type="number" value={connectForm.port} onChange={(e) => setConnectForm({ ...connectForm, port: parseInt(e.target.value) })} className="col-span-3" disabled={isConnecting} />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="username" className="text-right">用户名</Label>
+                            <Label htmlFor="username" className="text-right">{t('sshTerminal.username')}</Label>
                             <Input id="username" value={connectForm.username} onChange={(e) => setConnectForm({ ...connectForm, username: e.target.value })} className="col-span-3" disabled={isConnecting} />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="password" className="text-right">密码</Label>
+                            <Label htmlFor="password" className="text-right">{t('sshTerminal.password')}</Label>
                             <Input id="password" type="password" value={connectForm.password} onChange={(e) => setConnectForm({ ...connectForm, password: e.target.value })} className="col-span-3" disabled={isConnecting} />
                         </div>
                         {connectError && (
@@ -790,9 +783,9 @@ export default function WebSocketSshTerminal() {
                         )}
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setConnectDialogOpen(false)} disabled={isConnecting}>取消</Button>
+                        <Button variant="outline" onClick={() => setConnectDialogOpen(false)} disabled={isConnecting}>{t('sshTerminal.cancel')}</Button>
                         <Button onClick={handleConnect} disabled={isConnecting || !connectForm.password}>
-                            {isConnecting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />连接中...</> : '连接'}
+                            {isConnecting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('sshTerminal.connecting')}</> : t('sshTerminal.connect')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

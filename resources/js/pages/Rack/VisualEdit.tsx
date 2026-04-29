@@ -325,14 +325,14 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
             const data = await response.json();
             if (data.success) {
                 setStatusColors(colors);
-                showToast('颜色设置已保存', 'success');
+                showToast(t('visualEdit.colorSettingsSaved'), 'success');
                 return true;
             } else {
-                throw new Error(data.message || '保存失败');
+                throw new Error(data.message || t('visualEdit.colorSettingsFailed'));
             }
         } catch (error) {
             console.error('保存颜色设置失败:', error);
-            showToast('保存失败: ' + (error instanceof Error ? error.message : '未知错误'), 'error');
+            showToast(t('visualEdit.colorSettingsFailed') + ': ' + (error instanceof Error ? error.message : t('errors.unknownError')), 'error');
             return false;
         }
     };
@@ -845,9 +845,9 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
-            showToast('Excel 导出成功', 'success');
+            showToast(t('visualEdit.toast.excelExportSuccess'), 'success');
         } catch (error) {
-            showToast('导出失败，请重试', 'error');
+            showToast(t('visualEdit.toast.excelExportFailed'), 'error');
         } finally {
             setIsExporting(false);
             setExportDialogOpen(false);
@@ -1856,29 +1856,29 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                             size="sm"
                             onClick={handleQuickBackup}
                             disabled={isCreatingBackup || previewMode}
-                            title="快速备份当前数据"
+                            title={t('backup.quickBackupTitle')}
                         >
                             <Archive className={`mr-2 h-4 w-4 ${isCreatingBackup ? 'animate-spin' : ''}`} />
-                            {isCreatingBackup ? '备份中...' : '快速备份'}
+                            {isCreatingBackup ? t('backup.creating') : t('backup.quickBackup')}
                         </Button>
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={openRestoreDialog}
                             disabled={previewMode}
-                            title="从备份恢复数据"
+                            title={t('backup.quickRestoreTitle')}
                         >
                             <RotateCcw className="mr-2 h-4 w-4" />
-                            快速恢复
+                            {t('backup.quickRestore')}
                         </Button>
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={() => setColorSettingsOpen(true)}
-                            title="设置状态颜色"
+                            title={t('visualEdit.colorSettingsDesc')}
                         >
                             <Palette className="mr-2 h-4 w-4" />
-                            颜色设置
+                            {t('visualEdit.colorSettings')}
                         </Button>
                     </div>
                 </div>
@@ -3184,19 +3184,19 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
             <Dialog open={restoreDialogOpen} onOpenChange={setRestoreDialogOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>快速恢复</DialogTitle>
-                        <DialogDescription>选择要恢复的备份文件，恢复后当前数据将被覆盖</DialogDescription>
+                        <DialogTitle>{t('backup.quickRestore')}</DialogTitle>
+                        <DialogDescription>{t('backup.quickRestoreDesc')}</DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
                         {isLoadingBackups ? (
                             <div className="flex items-center justify-center py-8">
                                 <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                                <span>加载中...</span>
+                                <span>{t('common.loading')}</span>
                             </div>
                         ) : restoreBackups.length === 0 ? (
                             <div className="text-center py-8 text-muted-foreground">
                                 <Archive className="mx-auto h-12 w-12 opacity-20 mb-2" />
-                                <p>暂无备份文件</p>
+                                <p>{t('backup.noBackups')}</p>
                             </div>
                         ) : (
                             <div className="space-y-2 max-h-[300px] overflow-y-auto">
@@ -3228,7 +3228,7 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                             disabled={!selectedRestoreBackup || isRestoring}
                         >
                             {isRestoring && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {isRestoring ? '恢复中...' : '恢复'}
+                            {isRestoring ? t('backup.restoring') : t('backup.restore')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -3238,9 +3238,9 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
             <Dialog open={colorSettingsOpen} onOpenChange={setColorSettingsOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>设备状态颜色设置</DialogTitle>
+                        <DialogTitle>{t('visualEdit.colorSettings')}</DialogTitle>
                         <DialogDescription>
-                            自定义批量检测结果的设备状态显示颜色
+                            {t('visualEdit.colorSettingsDialogDesc')}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-6 py-4">
@@ -3251,10 +3251,10 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                                     className="w-8 h-8 rounded border"
                                     style={{ backgroundColor: statusColors.online.bg }}
                                 />
-                                <span className="font-medium">在线</span>
+                                <span className="font-medium">{t('visualEdit.online')}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Label className="text-xs">背景</Label>
+                                <Label className="text-xs">{t('visualEdit.background')}</Label>
                                 <Input
                                     type="color"
                                     value={statusColors.online.bg}
@@ -3274,10 +3274,10 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                                     className="w-8 h-8 rounded border"
                                     style={{ backgroundColor: statusColors.offline.bg }}
                                 />
-                                <span className="font-medium">离线</span>
+                                <span className="font-medium">{t('visualEdit.offline')}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Label className="text-xs">背景</Label>
+                                <Label className="text-xs">{t('visualEdit.background')}</Label>
                                 <Input
                                     type="color"
                                     value={statusColors.offline.bg}
@@ -3297,10 +3297,10 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                                     className="w-8 h-8 rounded border"
                                     style={{ backgroundColor: statusColors.maintenance.bg }}
                                 />
-                                <span className="font-medium">维护中</span>
+                                <span className="font-medium">{t('visualEdit.maintenance')}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Label className="text-xs">背景</Label>
+                                <Label className="text-xs">{t('visualEdit.background')}</Label>
                                 <Input
                                     type="color"
                                     value={statusColors.maintenance.bg}
@@ -3315,25 +3315,25 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
 
                         {/* 预览 */}
                         <div className="border rounded-md p-4 space-y-2">
-                            <div className="text-sm text-muted-foreground mb-2">预览</div>
+                            <div className="text-sm text-muted-foreground mb-2">{t('visualEdit.preview')}</div>
                             <div className="flex gap-2">
                                 <span
                                     className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
                                     style={{ backgroundColor: statusColors.online.bg, color: statusColors.online.text }}
                                 >
-                                    在线
+                                    {t('visualEdit.online')}
                                 </span>
                                 <span
                                     className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
                                     style={{ backgroundColor: statusColors.offline.bg, color: statusColors.offline.text }}
                                 >
-                                    离线
+                                    {t('visualEdit.offline')}
                                 </span>
                                 <span
                                     className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
                                     style={{ backgroundColor: statusColors.maintenance.bg, color: statusColors.maintenance.text }}
                                 >
-                                    维护中
+                                    {t('visualEdit.maintenance')}
                                 </span>
                             </div>
                         </div>
@@ -3350,13 +3350,13 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                             saveStatusColors(defaultColors);
                             setColorSettingsOpen(false);
                         }}>
-                            重置默认
+                            {t('common.reset')}
                         </Button>
                         <Button onClick={() => {
                             saveStatusColors(statusColors);
                             setColorSettingsOpen(false);
                         }}>
-                            保存设置
+                            {t('common.save')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -118,7 +118,7 @@ export default function H3cPassword() {
         if (!file) return;
 
         setIsUploading(true);
-        setStatusText('正在解析文件...');
+        setStatusText(t('h3cPassword.parsingFile'));
 
         const formData = new FormData();
         formData.append('file', file);
@@ -136,10 +136,10 @@ export default function H3cPassword() {
 
             if (response.data.success) {
                 setSwitches(response.data.data);
-                setStatusText(`已加载 ${response.data.total} 台交换机`);
+                setStatusText(t('h3cPassword.loadedDevices', { count: response.data.total }));
             }
         } catch (error: any) {
-            setStatusText(error.response?.data?.message || '上传失败');
+            setStatusText(error.response?.data?.message || t('h3cPassword.uploadFailed'));
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) {
@@ -151,13 +151,13 @@ export default function H3cPassword() {
     // 执行批量修改
     const handleExecute = async () => {
         if (switches.length === 0) {
-            setStatusText('请先上传Excel文件');
+            setStatusText(t('h3cPassword.pleaseUploadFirst'));
             return;
         }
 
         setIsExecuting(true);
         setProgress(0);
-        setStatusText('正在执行批量修改...');
+        setStatusText(t('h3cPassword.executingBatch'));
 
         try {
             const response = await axios.post(
@@ -177,7 +177,7 @@ export default function H3cPassword() {
                 setExecutionResults(response.data);
                 setShowResultDialog(true);
                 setStatusText(
-                    `执行完成：成功 ${response.data.summary.success} 台，失败 ${response.data.summary.failed} 台`
+                    t('h3cPassword.executionComplete', { success: response.data.summary.success, failed: response.data.summary.failed })
                 );
 
                 // 更新交换机状态
@@ -193,7 +193,7 @@ export default function H3cPassword() {
                     if (result) {
                         return {
                             ...sw,
-                            status: result.success ? '已完成' : '失败',
+                            status: result.success ? t('h3cPassword.completed') : t('h3cPassword.failed'),
                             message: result.message,
                         };
                     }
@@ -202,7 +202,7 @@ export default function H3cPassword() {
                 setSwitches(updatedSwitches);
             }
         } catch (error: any) {
-            setStatusText(error.response?.data?.message || '执行失败');
+            setStatusText(error.response?.data?.message || t('h3cPassword.executionFailed'));
         } finally {
             setIsExecuting(false);
             setProgress(100);
@@ -285,18 +285,18 @@ export default function H3cPassword() {
 
     return (
         <AppLayout breadcrumbs={[
-            { title: '小工具', href: '#' },
-            { title: '批量修改H3C交换机密码', href: '/tools/h3c-password' },
+            { title: t('navigation.tools'), href: '#' },
+            { title: t('h3cPassword.title'), href: '/tools/h3c-password' },
         ]}>
-            <Head title="批量修改H3C交换机密码" />
+            <Head title={t('h3cPassword.title')} />
 
             <div className="container mx-auto py-6 px-4">
                 <div className="mb-6">
                     <h1 className="text-2xl font-bold">
-                        批量修改H3C交换机密码
+                        {t('h3cPassword.title')}
                     </h1>
                     <p className="text-muted-foreground mt-1">
-                        导入Excel文件批量修改H3C交换机管理密码
+                        {t('h3cPassword.description')}
                     </p>
                 </div>
 
@@ -310,7 +310,7 @@ export default function H3cPassword() {
                                 className="gap-2"
                             >
                                 <Download className="h-4 w-4" />
-                                下载Excel模板
+                                {t('h3cPassword.downloadTemplate')}
                             </Button>
 
                             <div className="relative">
@@ -334,8 +334,8 @@ export default function H3cPassword() {
                                 >
                                     <Upload className="h-4 w-4" />
                                     {isUploading
-                                        ? '上传中...'
-                                        : '上传Excel文件'}
+                                        ? t('h3cPassword.uploading')
+                                        : t('h3cPassword.uploadExcel')}
                                 </Button>
                             </div>
 
@@ -348,29 +348,32 @@ export default function H3cPassword() {
                                 className="gap-2"
                             >
                                 <Play className="h-4 w-4" />
-                                {isExecuting ? '执行中...' : '开始修改密码'}
+                                {isExecuting ? t('h3cPassword.executing') : t('h3cPassword.startChangePassword')}
                             </Button>
 
                             {switches.length > 0 && (
-                                <Button
-                                    variant="destructive"
-                                    onClick={handleClearSwitches}
-                                    disabled={isExecuting}
-                                    className="gap-2"
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                    清空列表
-                                </Button>
-                            )}
+                                <>
+                                    <Button
+                                        variant="destructive"
+                                        onClick={handleClearSwitches}
+                                        disabled={isExecuting}
+                                        className="gap-2"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                        {t('h3cPassword.clearAll')}
+                                    </Button>
 
-                            <Button
-                                variant="secondary"
-                                onClick={handleOpenLogs}
-                                className="gap-2 ml-auto"
-                            >
-                                <History className="h-4 w-4" />
-                                查看日志
-                            </Button>
+                                    <Button
+                                        variant="outline"
+                                        onClick={handleOpenLogs}
+                                        disabled={logs.length === 0}
+                                        className="gap-2"
+                                    >
+                                        <History className="h-4 w-4" />
+                                        {t('h3cPassword.executionLogs')}
+                                    </Button>
+                                </>
+                            )}
                         </div>
 
                         {/* 进度显示 */}
@@ -380,7 +383,7 @@ export default function H3cPassword() {
                                     <span>{statusText}</span>
                                     {switches.length > 0 && (
                                         <span className="text-muted-foreground">
-                                            共 {switches.length} 台交换机
+                                            {t('h3cPassword.totalDevices', { count: switches.length })}
                                         </span>
                                     )}
                                 </div>
@@ -396,7 +399,7 @@ export default function H3cPassword() {
                         <CardHeader>
                             <CardTitle className="text-lg flex items-center gap-2">
                                 <FileSpreadsheet className="h-5 w-5" />
-                                交换机列表
+                                {t('h3cPassword.deviceList')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -404,12 +407,12 @@ export default function H3cPassword() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>IP地址</TableHead>
-                                            <TableHead>端口</TableHead>
-                                            <TableHead>用户名</TableHead>
-                                            <TableHead>密码</TableHead>
-                                            <TableHead>新密码</TableHead>
-                                            <TableHead>状态</TableHead>
+                                            <TableHead>{t('h3cPassword.ipAddress')}</TableHead>
+                                            <TableHead>{t('h3cPassword.port')}</TableHead>
+                                            <TableHead>{t('h3cPassword.username')}</TableHead>
+                                            <TableHead>{t('h3cPassword.password')}</TableHead>
+                                            <TableHead>{t('h3cPassword.newPassword')}</TableHead>
+                                            <TableHead>{t('h3cPassword.status')}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -491,9 +494,9 @@ export default function H3cPassword() {
                 >
                     <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
                         <DialogHeader>
-                            <DialogTitle>执行结果</DialogTitle>
+                            <DialogTitle>{t('h3cPassword.executeResult')}</DialogTitle>
                             <DialogDescription>
-                                批量修改密码执行完成
+                                {t('h3cPassword.description')}
                             </DialogDescription>
                         </DialogHeader>
 
@@ -510,7 +513,7 @@ export default function H3cPassword() {
                                                 }
                                             </div>
                                             <div className="text-sm text-muted-foreground">
-                                                总计
+                                                {t('h3cPassword.total')}
                                             </div>
                                         </CardContent>
                                     </Card>
@@ -523,7 +526,7 @@ export default function H3cPassword() {
                                                 }
                                             </div>
                                             <div className="text-sm text-muted-foreground">
-                                                成功
+                                                {t('h3cPassword.success')}
                                             </div>
                                         </CardContent>
                                     </Card>
@@ -536,7 +539,7 @@ export default function H3cPassword() {
                                                 }
                                             </div>
                                             <div className="text-sm text-muted-foreground">
-                                                失败
+                                                {t('h3cPassword.failed')}
                                             </div>
                                         </CardContent>
                                     </Card>
@@ -547,9 +550,9 @@ export default function H3cPassword() {
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead>IP地址</TableHead>
-                                                <TableHead>状态</TableHead>
-                                                <TableHead>消息</TableHead>
+                                                <TableHead>{t('h3cPassword.ipAddress')}</TableHead>
+                                                <TableHead>{t('h3cPassword.status')}</TableHead>
+                                                <TableHead>{t('h3cPassword.message')}</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -569,8 +572,8 @@ export default function H3cPassword() {
                                                                 }
                                                             >
                                                                 {result.success
-                                                                    ? '成功'
-                                                                    : '失败'}
+                                                                    ? t('h3cPassword.success')
+                                                                    : t('h3cPassword.failed')}
                                                             </Badge>
                                                         </TableCell>
                                                         <TableCell className="text-sm">
@@ -589,7 +592,7 @@ export default function H3cPassword() {
                                             setShowResultDialog(false)
                                         }
                                     >
-                                        关闭
+                                        {t('common.close')}
                                     </Button>
                                 </div>
                             </div>
@@ -604,9 +607,9 @@ export default function H3cPassword() {
                 >
                     <DialogContent className="w-[95vw] h-[90vh] max-h-[900px] p-0 flex flex-col overflow-hidden" style={{ maxWidth: '1400px' }}>
                         <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
-                            <DialogTitle>修改日志</DialogTitle>
+                            <DialogTitle>{t('h3cPassword.executionLogs')}</DialogTitle>
                             <DialogDescription>
-                                查看历史密码修改记录
+                                {t('h3cPassword.description')}
                             </DialogDescription>
                         </DialogHeader>
 
@@ -625,7 +628,7 @@ export default function H3cPassword() {
                                             isLoadingLogs ? 'animate-spin' : ''
                                         }`}
                                     />
-                                    刷新
+                                    {t('common.refresh')}
                                 </Button>
                                 <Button
                                     variant="destructive"
@@ -633,7 +636,7 @@ export default function H3cPassword() {
                                     onClick={() => setShowClearLogsDialog(true)}
                                     disabled={logs.length === 0}
                                 >
-                                    清空日志
+                                    {t('h3cPassword.clearLogs')}
                                 </Button>
                             </div>
 
@@ -643,13 +646,13 @@ export default function H3cPassword() {
                                     <Table>
                                         <TableHeader className="sticky top-0 bg-background z-10">
                                             <TableRow>
-                                                <TableHead className="w-[160px]">时间</TableHead>
-                                                <TableHead className="w-[120px]">IP地址</TableHead>
-                                                <TableHead className="w-[80px]">端口</TableHead>
-                                                <TableHead className="w-[100px]">用户名</TableHead>
-                                                <TableHead className="w-[80px]">状态</TableHead>
-                                                <TableHead className="min-w-[200px]">消息</TableHead>
-                                                <TableHead className="w-[100px]">操作人</TableHead>
+                                                <TableHead className="w-[160px]">{t('h3cPassword.time')}</TableHead>
+                                                <TableHead className="w-[120px]">{t('h3cPassword.ipAddress')}</TableHead>
+                                                <TableHead className="w-[80px]">{t('h3cPassword.port')}</TableHead>
+                                                <TableHead className="w-[100px]">{t('h3cPassword.username')}</TableHead>
+                                                <TableHead className="w-[80px]">{t('h3cPassword.status')}</TableHead>
+                                                <TableHead className="min-w-[200px]">{t('h3cPassword.message')}</TableHead>
+                                                <TableHead className="w-[100px]">{t('h3cPassword.operator')}</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -659,7 +662,7 @@ export default function H3cPassword() {
                                                         colSpan={7}
                                                         className="text-center py-8 text-muted-foreground"
                                                     >
-                                                        暂无日志记录
+                                                        {t('h3cPassword.noLogs')}
                                                     </TableCell>
                                                 </TableRow>
                                             ) : (
@@ -688,7 +691,7 @@ export default function H3cPassword() {
                                                                 variant="secondary"
                                                                 className={
                                                                     log.status ===
-                                                                    '成功'
+                                                                    t('h3cPassword.success')
                                                                         ? 'bg-green-100 text-green-800'
                                                                         : 'bg-red-100 text-red-800'
                                                                 }
@@ -714,9 +717,9 @@ export default function H3cPassword() {
                             <div className="flex items-center justify-between shrink-0 pt-2 border-t">
                                 <div className="text-sm text-muted-foreground">
                                     {logsTotalPages > 1 ? (
-                                        <>第 {logsPage} / {logsTotalPages} 页</>
+                                        <>{t('h3cPassword.pageInfo', { current: logsPage, total: logsTotalPages })}</>
                                     ) : (
-                                        <>共 {logs.length} 条记录</>
+                                        <>{t('h3cPassword.totalRecords', { count: logs.length })}</>
                                     )}
                                 </div>
                                 <div className="flex items-center gap-4">
@@ -753,7 +756,7 @@ export default function H3cPassword() {
                                     <Button
                                         onClick={() => setShowLogsDialog(false)}
                                     >
-                                        关闭
+                                        {t('common.close')}
                                     </Button>
                                 </div>
                             </div>
@@ -768,18 +771,18 @@ export default function H3cPassword() {
                 >
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>确认清空日志</AlertDialogTitle>
+                            <AlertDialogTitle>{t('h3cPassword.confirmClearLogs')}</AlertDialogTitle>
                             <AlertDialogDescription>
-                                此操作将删除所有密码修改日志记录，无法恢复。是否继续？
+                                {t('h3cPassword.clearLogsDesc')}
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel>取消</AlertDialogCancel>
+                            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                             <AlertDialogAction
                                 onClick={handleClearLogs}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
-                                确认清空
+                                {t('h3cPassword.clear')}
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>

@@ -276,7 +276,7 @@ export default function UserIndex({ users, registrationEnabled, breadcrumbs = []
                         <div className="flex items-center gap-3 bg-muted/50 px-4 py-2 rounded-lg">
                             <UserCheck className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm text-muted-foreground">
-                                允许注册
+                                {t('userManagement.allowRegistration')}
                             </span>
                             <Switch
                                 checked={isRegistrationEnabled}

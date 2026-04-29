@@ -154,7 +154,7 @@ export default function SystemSettings() {
                 }
             } catch (error) {
                 console.error('加载系统设置失败:', error);
-                showToast('加载设置失败', 'error');
+                showToast(t('autoDetection.loadSettingsFailed'), 'error');
             } finally {
                 setIsLoading(false);
             }
@@ -171,14 +171,14 @@ export default function SystemSettings() {
     // 检测是否有修改
     useEffect(() => {
         if (!settings) return;
-        
+
         const originalEnabled = Boolean(settings?.auto_detection_enabled?.value ?? true);
         const originalInterval = Number(settings?.auto_detection_interval?.value ?? 5);
-        
-        const changed = 
+
+        const changed =
             editableSettings.auto_detection_enabled !== originalEnabled ||
             editableSettings.auto_detection_interval !== originalInterval;
-        
+
         setHasChanges(changed);
     }, [editableSettings, settings]);
 
@@ -192,7 +192,7 @@ export default function SystemSettings() {
 
         try {
             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-            
+
             // 并行保存所有设置
             const results = await Promise.all(
                 settingsToSave.map(async ({ key, value }) => {
@@ -223,21 +223,21 @@ export default function SystemSettings() {
                     auto_detection_enabled: {
                         value: editableSettings.auto_detection_enabled,
                         type: 'boolean',
-                        description: prev.auto_detection_enabled?.description || '自动检测功能开关',
+                        description: prev.auto_detection_enabled?.description || t('autoDetection.autoDetectionEnabledDescPlaceholder'),
                     },
                     auto_detection_interval: {
                         value: editableSettings.auto_detection_interval,
                         type: 'integer',
-                        description: prev.auto_detection_interval?.description || '自动检测时间间隔（分钟）',
+                        description: prev.auto_detection_interval?.description || t('autoDetection.autoDetectionIntervalDescPlaceholder'),
                     },
                 };
             });
-            
+
             setHasChanges(false);
-            showToast('设置已保存', 'success');
+            showToast(t('autoDetection.settingsSaved'), 'success');
         } catch (error) {
             console.error('保存设置失败:', error);
-            showToast('保存失败', 'error');
+            showToast(t('autoDetection.saveFailed'), 'error');
         } finally {
             setIsSaving(false);
         }
@@ -252,7 +252,7 @@ export default function SystemSettings() {
             auto_detection_interval: Number(settings?.auto_detection_interval?.value ?? 5),
         });
         setHasChanges(false);
-        showToast('已重置为当前保存的设置', 'info');
+        showToast(t('autoDetection.resetToCurrent'), 'info');
     };
 
     // 刷新页面
@@ -275,15 +275,15 @@ export default function SystemSettings() {
 
             const data = await response.json();
             if (data.success) {
-                showToast(data.message || '检测完成', 'success');
+                showToast(data.message || t('autoDetection.detectionCompleted'), 'success');
                 // 刷新日志
                 await loadDetectionData();
             } else {
-                showToast(data.message || '检测失败', 'error');
+                showToast(data.message || t('autoDetection.detectionFailed'), 'error');
             }
         } catch (error) {
             console.error('手动检测失败:', error);
-            showToast('检测执行失败', 'error');
+            showToast(t('autoDetection.detectionExecuteFailed'), 'error');
         } finally {
             setIsDetecting(false);
         }
@@ -303,15 +303,15 @@ export default function SystemSettings() {
 
     // 格式化相对时间
     const getRelativeTime = (dateStr: string | null) => {
-        if (!dateStr) return '从未';
+        if (!dateStr) return t('autoDetection.never');
         const date = new Date(dateStr);
         const now = new Date();
         const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-        if (diff < 60) return '刚刚';
-        if (diff < 3600) return `${Math.floor(diff / 60)} 分钟前`;
-        if (diff < 86400) return `${Math.floor(diff / 3600)} 小时前`;
-        return `${Math.floor(diff / 86400)} 天前`;
+        if (diff < 60) return t('autoDetection.justNow');
+        if (diff < 3600) return `${Math.floor(diff / 60)} ${t('autoDetection.minutesAgo')}`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)} ${t('autoDetection.hoursAgo')}`;
+        return `${Math.floor(diff / 86400)} ${t('autoDetection.daysAgo')}`;
     };
 
     // 获取状态图标
@@ -327,10 +327,10 @@ export default function SystemSettings() {
     // 获取状态文本
     const getStatusText = (status: string) => {
         switch (status) {
-            case 'success': return '成功';
-            case 'failed': return '失败';
-            case 'skipped': return '跳过';
-            case 'running': return '进行中';
+            case 'success': return t('autoDetection.success');
+            case 'failed': return t('autoDetection.failed');
+            case 'skipped': return t('autoDetection.skipped');
+            case 'running': return t('autoDetection.running');
             default: return status;
         }
     };
@@ -338,7 +338,7 @@ export default function SystemSettings() {
     if (isLoading) {
         return (
             <AppLayout>
-                <Head title="自动检测" />
+                <Head title={t('autoDetection.title')} />
                 <div className="container mx-auto py-6 px-4">
                     <div className="flex items-center justify-center h-64">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -373,9 +373,9 @@ export default function SystemSettings() {
                                     <Activity className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                 </div>
                                 <div>
-                                    <CardTitle>自动检测</CardTitle>
+                                    <CardTitle>{t('autoDetection.autoDetectionSettings')}</CardTitle>
                                     <CardDescription>
-                                        控制设备自动检测功能的开启和关闭
+                                        {t('autoDetection.autoDetectionDesc')}
                                     </CardDescription>
                                 </div>
                             </div>
@@ -384,16 +384,16 @@ export default function SystemSettings() {
                             <div className="flex items-center justify-between py-4 px-4 bg-muted/50 rounded-lg">
                                 <div className="space-y-0.5">
                                     <Label htmlFor="auto-detection" className="text-base font-medium">
-                                        启用自动检测
+                                        {t('autoDetection.enableAutoDetection')}
                                     </Label>
                                     <p className="text-sm text-muted-foreground">
-                                        {settings?.auto_detection_enabled?.description || '自动检测设备在线状态'}
+                                        {settings?.auto_detection_enabled?.description || t('autoDetection.autoDetectionEnabledDesc')}
                                     </p>
                                 </div>
                                 <Switch
                                     id="auto-detection"
                                     checked={editableSettings.auto_detection_enabled}
-                                    onCheckedChange={(checked) => 
+                                    onCheckedChange={(checked) =>
                                         setEditableSettings(prev => ({ ...prev, auto_detection_enabled: checked }))
                                     }
                                     disabled={isSaving}
@@ -407,19 +407,19 @@ export default function SystemSettings() {
                                         <Clock className="h-5 w-5 text-green-600 dark:text-green-400" />
                                     </div>
                                     <div>
-                                        <h3 className="font-medium">检测间隔</h3>
+                                        <h3 className="font-medium">{t('autoDetection.detectionInterval')}</h3>
                                         <p className="text-sm text-muted-foreground">
-                                            设置自动检测的刷新时间间隔
+                                            {t('autoDetection.detectionIntervalDesc')}
                                         </p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4 py-4 px-4 bg-muted/50 rounded-lg">
                                     <div className="flex-1">
                                         <Label htmlFor="auto-detection-interval" className="text-sm font-medium">
-                                            检测间隔时间（分钟）
+                                            {t('autoDetection.detectionIntervalMinutes')}
                                         </Label>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                            {settings?.auto_detection_interval?.description || '自动检测的刷新间隔'}
+                                            {settings?.auto_detection_interval?.description || t('autoDetection.autoDetectionIntervalDesc')}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -429,22 +429,22 @@ export default function SystemSettings() {
                                             min={1}
                                             max={60}
                                             value={String(editableSettings.auto_detection_interval)}
-                                            onChange={(e) => 
-                                                setEditableSettings(prev => ({ 
-                                                    ...prev, 
-                                                    auto_detection_interval: parseInt(e.target.value) || 5 
+                                            onChange={(e) =>
+                                                setEditableSettings(prev => ({
+                                                    ...prev,
+                                                    auto_detection_interval: parseInt(e.target.value) || 5
                                                 }))
                                             }
                                             disabled={isSaving || !editableSettings.auto_detection_enabled}
                                             className="w-20 text-center"
                                         />
-                                        <span className="text-sm text-muted-foreground">分钟</span>
+                                        <span className="text-sm text-muted-foreground">{t('autoDetection.detectionIntervalUnit')}</span>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="mt-4 text-sm text-muted-foreground">
-                                <p>提示：关闭自动检测后，系统将不再自动更新设备的在线状态，需要手动进行批量检测。</p>
+                                <p>{t('autoDetection.autoDetectionTip')}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -458,9 +458,9 @@ export default function SystemSettings() {
                                         <Server className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                                     </div>
                                     <div>
-                                        <CardTitle>检测状态</CardTitle>
+                                        <CardTitle>{t('autoDetection.detectionStatus')}</CardTitle>
                                         <CardDescription>
-                                            查看自动检测运行状态和统计
+                                            {t('autoDetection.detectionStatusDesc')}
                                         </CardDescription>
                                     </div>
                                 </div>
@@ -476,7 +476,7 @@ export default function SystemSettings() {
                                     ) : (
                                         <Play className="h-4 w-4" />
                                     )}
-                                    立即检测
+                                    {isDetecting ? t('autoDetection.detecting') : t('autoDetection.detectNow')}
                                 </Button>
                             </div>
                         </CardHeader>
@@ -493,49 +493,49 @@ export default function SystemSettings() {
                                             <div className="text-2xl font-bold text-primary">
                                                 {detectionStats.today.total}
                                             </div>
-                                            <div className="text-xs text-muted-foreground">今日检测次数</div>
+                                            <div className="text-xs text-muted-foreground">{t('autoDetection.todayDetectionCount')}</div>
                                         </div>
                                         <div className="bg-muted/50 rounded-lg p-3 text-center">
                                             <div className="text-2xl font-bold text-green-600">
                                                 {detectionStats.today.total_updated}
                                             </div>
-                                            <div className="text-xs text-muted-foreground">今日更新设备</div>
+                                            <div className="text-xs text-muted-foreground">{t('autoDetection.todayUpdatedDevices')}</div>
                                         </div>
                                         <div className="bg-muted/50 rounded-lg p-3 text-center">
                                             <div className="text-2xl font-bold text-blue-600">
                                                 {detectionStats.last_auto_detection?.total_devices || 0}
                                             </div>
-                                            <div className="text-xs text-muted-foreground">上次检测设备</div>
+                                            <div className="text-xs text-muted-foreground">{t('autoDetection.lastDetectionDevices')}</div>
                                         </div>
                                         <div className="bg-muted/50 rounded-lg p-3 text-center">
                                             <div className="text-2xl font-bold text-orange-600">
                                                 {detectionStats.last_auto_detection?.duration_ms || 0}ms
                                             </div>
-                                            <div className="text-xs text-muted-foreground">上次耗时</div>
+                                            <div className="text-xs text-muted-foreground">{t('autoDetection.lastDetectionDuration')}</div>
                                         </div>
                                     </div>
 
                                     {/* 最后检测时间 */}
                                     <div className="flex items-center gap-4 py-3 px-4 bg-muted/30 rounded-lg">
                                         <div className="flex-1">
-                                            <div className="text-sm font-medium">自动检测状态</div>
+                                            <div className="text-sm font-medium">{t('autoDetection.autoDetectionStatus')}</div>
                                             <div className="text-xs text-muted-foreground">
                                                 {editableSettings.auto_detection_enabled ? (
                                                     <span className="text-green-600 flex items-center gap-1">
                                                         <CheckCircle className="h-3 w-3" />
-                                                        已启用 (每 {editableSettings.auto_detection_interval} 分钟)
+                                                        {t('autoDetection.enabled')} ({t('autoDetection.everyMinutes', { minutes: editableSettings.auto_detection_interval })})
                                                     </span>
                                                 ) : (
                                                     <span className="text-yellow-600 flex items-center gap-1">
                                                         <AlertCircle className="h-3 w-3" />
-                                                        已暂停
+                                                        {t('autoDetection.paused')}
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
                                         <div className="text-right">
                                             <div className="text-sm font-medium">
-                                                上次自动检测
+                                                {t('autoDetection.lastAutoDetection')}
                                             </div>
                                             <div className="text-xs text-muted-foreground">
                                                 {getRelativeTime(detectionStats.last_auto_detection?.created_at || null)}
@@ -544,17 +544,17 @@ export default function SystemSettings() {
                                         {editableSettings.auto_detection_enabled && detectionStats?.next_scheduled_at && (
                                             <div className="text-right border-l pl-4">
                                                 <div className="text-sm font-medium">
-                                                    下次检测
+                                                    {t('autoDetection.nextDetection')}
                                                 </div>
                                                 <div className="text-xs text-muted-foreground">
                                                     {(() => {
                                                         const nextTime = new Date(detectionStats.next_scheduled_at!);
                                                         const now = new Date();
                                                         const diff = nextTime.getTime() - now.getTime();
-                                                        if (diff <= 0) return '即将执行';
+                                                        if (diff <= 0) return t('autoDetection.aboutToExecute');
                                                         const minutes = Math.floor(diff / 60000);
-                                                        if (minutes < 1) return '即将执行';
-                                                        if (minutes < 60) return `${minutes} 分钟后`;
+                                                        if (minutes < 1) return t('autoDetection.aboutToExecute');
+                                                        if (minutes < 60) return `${minutes} ${t('autoDetection.minutesLater')}`;
                                                         const hours = Math.floor(minutes / 60);
                                                         const remainingMinutes = minutes % 60;
                                                         return `${hours}小时${remainingMinutes}分钟后`;
@@ -580,9 +580,9 @@ export default function SystemSettings() {
                                     <History className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                                 </div>
                                 <div>
-                                    <CardTitle>检测日志</CardTitle>
+                                    <CardTitle>{t('autoDetection.detectionLogs')}</CardTitle>
                                     <CardDescription>
-                                        最近10次设备检测记录
+                                        {t('autoDetection.detectionStatusDesc')}
                                     </CardDescription>
                                 </div>
                             </div>
@@ -597,12 +597,12 @@ export default function SystemSettings() {
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead className="w-[100px]">时间</TableHead>
-                                                <TableHead>类型</TableHead>
-                                                <TableHead>状态</TableHead>
-                                                <TableHead className="text-right">设备</TableHead>
-                                                <TableHead className="text-right">更新</TableHead>
-                                                <TableHead className="text-right">耗时</TableHead>
+                                                <TableHead className="w-[100px]">{t('autoDetection.time')}</TableHead>
+                                                <TableHead>{t('autoDetection.type')}</TableHead>
+                                                <TableHead>{t('autoDetection.status')}</TableHead>
+                                                <TableHead className="text-right">{t('autoDetection.devices')}</TableHead>
+                                                <TableHead className="text-right">{t('autoDetection.updated')}</TableHead>
+                                                <TableHead className="text-right">{t('autoDetection.duration')}</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -613,7 +613,7 @@ export default function SystemSettings() {
                                                     </TableCell>
                                                     <TableCell>
                                                         <Badge variant={log.type === 'auto' ? 'secondary' : 'default'} className="text-xs">
-                                                            {log.type === 'auto' ? '自动' : '手动'}
+                                                            {log.type === 'auto' ? t('autoDetection.auto') : t('autoDetection.manual')}
                                                         </Badge>
                                                     </TableCell>
                                                     <TableCell>
@@ -648,7 +648,7 @@ export default function SystemSettings() {
                                 </div>
                             ) : (
                                 <div className="text-center py-8 text-muted-foreground">
-                                    暂无检测日志
+                                    {t('autoDetection.noLogs')}
                                 </div>
                             )}
                         </CardContent>
@@ -661,7 +661,7 @@ export default function SystemSettings() {
                         <div className="flex items-center gap-2">
                             {hasChanges && (
                                 <span className="text-sm text-amber-600 font-medium">
-                                    有未保存的更改
+                                    {t('autoDetection.unsavedChanges')}
                                 </span>
                             )}
                         </div>
@@ -673,7 +673,7 @@ export default function SystemSettings() {
                                 className="gap-2"
                             >
                                 <RotateCcw className="h-4 w-4" />
-                                刷新设置
+                                {t('autoDetection.refreshSettings')}
                             </Button>
                             {hasChanges && (
                                 <Button
@@ -692,12 +692,12 @@ export default function SystemSettings() {
                                 {isSaving ? (
                                     <>
                                         <Loader2 className="h-4 w-4 animate-spin" />
-                                        保存中...
+                                        {t('common.saving')}
                                     </>
                                 ) : (
                                     <>
                                         <Save className="h-4 w-4" />
-                                        保存
+                                        {t('common.save')}
                                     </>
                                 )}
                             </Button>

@@ -23,7 +23,6 @@ import {
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -58,6 +57,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
 
 interface PageProps {
@@ -605,7 +605,7 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                                     <TableHead className="h-10 px-4">
                                         <div className="flex items-center gap-2">
                                             <Layers className="h-4 w-4" />
-                                            设备类型
+                                            {t('deviceManagement.deviceType')}
                                         </div>
                                     </TableHead>
                                     <TableHead className="h-10 px-4">

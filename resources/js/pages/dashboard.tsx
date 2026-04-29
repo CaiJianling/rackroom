@@ -305,9 +305,9 @@ export default function Dashboard({
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <HardDrive className="h-5 w-5 text-muted-foreground" />
-                                设备状态分布
+                                {t('dashboard.deviceStatus')}
                             </CardTitle>
-                            <CardDescription>各状态设备数量统计</CardDescription>
+                            <CardDescription>{t('dashboard.deviceStatusDesc')}</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
@@ -323,7 +323,7 @@ export default function Dashboard({
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-4">
-                                            <div className="w-24 text-right text-sm font-medium">{item.value} 台</div>
+                                            <div className="w-24 text-right text-sm font-medium">{item.value} {t('dashboard.units.devices')}</div>
                                             <div className="w-16 text-right text-xs text-muted-foreground">
                                                 {calculatePercent(item.value, stats.devices.total)}%
                                             </div>
@@ -353,9 +353,9 @@ export default function Dashboard({
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Building2 className="h-5 w-5 text-muted-foreground" />
-                                机房分布
+                                {t('dashboard.roomDistribution')}
                             </CardTitle>
-                            <CardDescription>各机房设备与机柜数量</CardDescription>
+                            <CardDescription>{t('dashboard.roomDistributionDesc')}</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="flex gap-4">
@@ -375,12 +375,12 @@ export default function Dashboard({
                                                     <div className="flex items-center gap-3">
                                                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                                             <Server className="h-3 w-3" />
-                                                            <span>机柜</span>
+                                                            <span>{t('dashboard.units.racks')}</span>
                                                             <span className="font-medium text-foreground">{room.racks}</span>
                                                         </div>
                                                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                                             <Cpu className="h-3 w-3" />
-                                                            <span>设备</span>
+                                                            <span>{t('dashboard.units.devices')}</span>
                                                             <span className="font-medium text-foreground">{room.devices}</span>
                                                         </div>
                                                     </div>
@@ -446,12 +446,12 @@ export default function Dashboard({
                             <div>
                                 <CardTitle className="flex items-center gap-2">
                                     <AlertTriangle className="h-5 w-5 text-muted-foreground" />
-                                    最近告警
+                                    {t('dashboard.recentAlerts')}
                                 </CardTitle>
-                                <CardDescription>需要关注的系统告警</CardDescription>
+                                <CardDescription>{t('dashboard.alertsAttention')}</CardDescription>
                             </div>
                             <Button variant="ghost" size="sm" asChild>
-                                <Link href="/alerts">查看全部</Link>
+                                <Link href="/alerts">{t('dashboard.viewAll')}</Link>
                             </Button>
                         </CardHeader>
                         <CardContent>
@@ -459,8 +459,8 @@ export default function Dashboard({
                                 {recentAlerts.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
                                         <Shield className="h-10 w-10 text-green-500" />
-                                        <p className="text-sm text-muted-foreground">暂无活跃告警</p>
-                                        <p className="text-xs text-muted-foreground">系统运行正常</p>
+                                        <p className="text-sm text-muted-foreground">{t('dashboard.noActiveAlerts')}</p>
+                                        <p className="text-xs text-muted-foreground">{t('dashboard.systemNormal')}</p>
                                     </div>
                                 ) : (
                                     recentAlerts.map((alert) => (
@@ -492,19 +492,19 @@ export default function Dashboard({
                             <div>
                                 <CardTitle className="flex items-center gap-2">
                                     <TrendingUp className="h-5 w-5 text-muted-foreground" />
-                                    最近添加的设备
+                                    {t('dashboard.recentDevices')}
                                 </CardTitle>
-                                <CardDescription>最新入库的设备列表</CardDescription>
+                                <CardDescription>{t('dashboard.recentDevicesDesc')}</CardDescription>
                             </div>
                             <Button variant="ghost" size="sm" asChild>
-                                <Link href="/devices">查看全部</Link>
+                                <Link href="/devices">{t('dashboard.viewAll')}</Link>
                             </Button>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-3">
                                 {recentDevices.length === 0 ? (
                                     <div className="py-8 text-center text-muted-foreground">
-                                        暂无设备数据
+                                        {t('dashboard.noDeviceData')}
                                     </div>
                                 ) : (
                                     recentDevices.map((device) => (
@@ -517,7 +517,7 @@ export default function Dashboard({
                                                 <div>
                                                     <p className="font-medium">{device.name}</p>
                                                     <p className="text-xs text-muted-foreground">
-                                                        {getDeviceTypeName(device.device_type_id)} · {device.room_name || '未分配机房'}
+                                                        {getDeviceTypeName(device.device_type_id)} · {device.room_name || t('dashboard.unassignedRoom')}
                                                     </p>
                                                 </div>
                                             </div>
@@ -537,34 +537,34 @@ export default function Dashboard({
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Plus className="h-5 w-5 text-muted-foreground" />
-                                快捷操作
+                                {t('dashboard.quickActions')}
                             </CardTitle>
-                            <CardDescription>快速访问常用功能</CardDescription>
+                            <CardDescription>{t('dashboard.quickAccessCommon')}</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-2 gap-3">
                                 <Button variant="outline" className="h-auto flex-col gap-2 py-4" asChild>
                                     <Link href="/rooms">
                                         <Building2 className="h-6 w-6" />
-                                        <span className="text-xs">添加机房</span>
+                                        <span className="text-xs">{t('dashboard.addRoom')}</span>
                                     </Link>
                                 </Button>
                                 <Button variant="outline" className="h-auto flex-col gap-2 py-4" asChild>
                                     <Link href="/racks">
                                         <Server className="h-6 w-6" />
-                                        <span className="text-xs">添加机柜</span>
+                                        <span className="text-xs">{t('dashboard.addRack')}</span>
                                     </Link>
                                 </Button>
                                 <Button variant="outline" className="h-auto flex-col gap-2 py-4" asChild>
                                     <Link href="/devices">
                                         <Cpu className="h-6 w-6" />
-                                        <span className="text-xs">添加设备</span>
+                                        <span className="text-xs">{t('dashboard.addDevice')}</span>
                                     </Link>
                                 </Button>
                                 <Button variant="outline" className="h-auto flex-col gap-2 py-4" asChild>
                                     <Link href="/reports">
                                         <TrendingUp className="h-6 w-6" />
-                                        <span className="text-xs">生成报表</span>
+                                        <span className="text-xs">{t('dashboard.generateReport')}</span>
                                     </Link>
                                 </Button>
                             </div>

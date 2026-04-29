@@ -8,7 +8,7 @@ import { initializeTheme } from './hooks/use-appearance';
 import { initializeLocale } from './hooks/use-locale';
 import './i18n';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'RackRoom';
 
 // 忽略请求被取消的错误
 window.addEventListener('unhandledrejection', (event) => {

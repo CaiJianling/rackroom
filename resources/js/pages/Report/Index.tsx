@@ -327,18 +327,18 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="报表生成" />
+            <Head title="{t('report.title')}" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 {/* 页面标题 */}
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold">报表生成</h1>
+                    <h1 className="text-2xl font-bold">{t('report.title')}</h1>
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
                     <TabsList className="grid w-full max-w-md grid-cols-3">
-                        <TabsTrigger value="generate">生成报表</TabsTrigger>
-                        <TabsTrigger value="templates">报表模板</TabsTrigger>
-                        <TabsTrigger value="history">生成历史</TabsTrigger>
+                        <TabsTrigger value="generate">{t('report.generate')}</TabsTrigger>
+                        <TabsTrigger value="templates">{t('report.templates')}</TabsTrigger>
+                        <TabsTrigger value="history">{t('report.history')}</TabsTrigger>
                     </TabsList>
 
                     {/* 生成报表 */}
@@ -347,22 +347,22 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
                             {/* 报表配置 */}
                             <Card className="lg:col-span-2">
                                 <CardHeader>
-                                    <CardTitle>报表配置</CardTitle>
-                                    <CardDescription>配置报表参数和筛选条件</CardDescription>
+                                    <CardTitle>{t('report.config')}</CardTitle>
+                                    <CardDescription>{t('report.configDesc')}</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     {/* 基本设置 */}
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         <div className="space-y-2">
-                                            <Label>报表名称 *</Label>
+                                            <Label>{t('report.reportName')} *</Label>
                                             <Input
-                                                placeholder="输入报表名称"
+                                                placeholder={t('report.enterTemplateName')}
                                                 value={reportConfig.name}
                                                 onChange={(e) => setReportConfig({ ...reportConfig, name: e.target.value })}
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>报表类型 *</Label>
+                                            <Label>{t('report.reportType')} *</Label>
                                             <Select
                                                 value={reportConfig.report_type}
                                                 onValueChange={(v) => setReportConfig({ ...reportConfig, report_type: v })}
@@ -371,9 +371,9 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="inventory">资产清单</SelectItem>
-                                                    <SelectItem value="status">状态报表</SelectItem>
-                                                    <SelectItem value="usage">使用率报表</SelectItem>
+                                                    <SelectItem value="inventory">{t('report.inventory')}</SelectItem>
+                                                    <SelectItem value="status">{t('report.statusReport')}</SelectItem>
+                                                    <SelectItem value="usage">{t('report.usageReport')}</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -383,7 +383,7 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
                                     <div className="space-y-2">
                                         <Label className="flex items-center gap-2">
                                             <Filter className="h-4 w-4" />
-                                            筛选条件
+                                            {t('report.filters')}
                                         </Label>
                                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                                             <Select
@@ -394,10 +394,10 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
                                                 })}
                                             >
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="选择机房" />
+                                                    <SelectValue placeholder={t('report.selectRoom')} />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="all">全部机房</SelectItem>
+                                                    <SelectItem value="all">{t('report.allRooms')}</SelectItem>
                                                     {filterOptions.rooms.map((room) => (
                                                         <SelectItem key={room.id} value={room.id.toString()}>{room.name}</SelectItem>
                                                     ))}
@@ -412,10 +412,10 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
                                                 })}
                                             >
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="选择分类" />
+                                                    <SelectValue placeholder={t('report.selectCategory')} />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="all">全部分类</SelectItem>
+                                                    <SelectItem value="all">{t('report.allCategories')}</SelectItem>
                                                     {filterOptions.categories.map((cat) => (
                                                         <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                                                     ))}
@@ -430,10 +430,10 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
                                                 })}
                                             >
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="选择状态" />
+                                                    <SelectValue placeholder={t('report.selectStatus')} />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="all">全部状态</SelectItem>
+                                                    <SelectItem value="all">{t('report.allStatus')}</SelectItem>
                                                     {filterOptions.deviceStatuses.map((status) => (
                                                         <SelectItem key={status} value={status}>
                                                             {t(`deviceManagement.statuses.${status}`, status)}
@@ -447,7 +447,7 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
                                                 onValueChange={(v) => setReportConfig({ ...reportConfig, format: v })}
                                             >
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="导出格式" />
+                                                    <SelectValue placeholder={t('report.format')} />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="csv">CSV</SelectItem>
@@ -462,20 +462,20 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
                                     <div className="flex flex-wrap gap-2">
                                         <Button variant="outline" onClick={previewReport}>
                                             <BarChart3 className="mr-2 h-4 w-4" />
-                                            预览数据
+                                            {t('report.previewData')}
                                         </Button>
                                         <Button variant="outline" onClick={() => setShowSaveTemplate(true)}>
                                             <Save className="mr-2 h-4 w-4" />
-                                            保存为模板
+                                            {t('report.saveTemplate')}
                                         </Button>
                                         <Button
                                             onClick={generateReport}
                                             disabled={!reportConfig.name || generating}
                                         >
                                             {generating ? (
-                                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />生成中...</>
+                                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('report.generating')}</>
                                             ) : (
-                                                <><Play className="mr-2 h-4 w-4" />生成报表</>
+                                                <><Play className="mr-2 h-4 w-4" />{t('report.generateReport')}</>
                                             )}
                                         </Button>
                                     </div>
@@ -485,34 +485,34 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
                             {/* 统计概览 */}
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>数据概览</CardTitle>
-                                    <CardDescription>当前筛选条件下的数据统计</CardDescription>
+                                    <CardTitle>{t('report.dataOverview')}</CardTitle>
+                                    <CardDescription>{t('report.dataOverviewDesc')}</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm text-muted-foreground">报表类型</span>
+                                        <span className="text-sm text-muted-foreground">{t('report.reportType')}</span>
                                         <Badge variant="outline">{getReportTypeLabel(reportConfig.report_type)}</Badge>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm text-muted-foreground">导出格式</span>
+                                        <span className="text-sm text-muted-foreground">{t('report.format')}</span>
                                         <div className="flex items-center gap-1">
                                             {getFormatIcon(reportConfig.format)}
                                             <span className="text-sm uppercase">{reportConfig.format}</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm text-muted-foreground">包含图表</span>
+                                        <span className="text-sm text-muted-foreground">{t('report.includeCharts')}</span>
                                         <Checkbox
                                             checked={reportConfig.include_charts}
                                             onCheckedChange={(c) => setReportConfig({ ...reportConfig, include_charts: c as boolean })}
                                         />
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm text-muted-foreground">机房筛选</span>
+                                        <span className="text-sm text-muted-foreground">{t('report.room')}</span>
                                         <span className="text-sm">
                                             {reportConfig.filters.room_id
                                                 ? filterOptions.rooms.find(r => r.id.toString() === reportConfig.filters.room_id)?.name
-                                                : '全部机房'}
+                                                : t('report.allRooms')}
                                         </span>
                                     </div>
                                 </CardContent>
@@ -525,8 +525,8 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
                                 <CardHeader>
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <CardTitle>数据预览</CardTitle>
-                                            <CardDescription>共 {previewData.length} 条数据</CardDescription>
+                                            <CardTitle>{t('report.previewData')}</CardTitle>
+                                            <CardDescription>{t('report.previewDataDesc', { count: previewData.length })}</CardDescription>
                                         </div>
                                         <Button variant="ghost" size="sm" onClick={() => setShowPreview(false)}>
                                             <X className="h-4 w-4" />
@@ -556,7 +556,7 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
                                     </div>
                                     {previewData.length > 10 && (
                                         <p className="mt-2 text-center text-sm text-muted-foreground">
-                                            还有 {previewData.length - 10} 条数据...
+                                            {t('report.moreData', { count: previewData.length - 10 })}
                                         </p>
                                     )}
                                 </CardContent>
@@ -568,22 +568,22 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
                     <TabsContent value="templates">
                         <Card>
                             <CardHeader>
-                                <CardTitle>报表模板</CardTitle>
-                                <CardDescription>保存的报表配置模板</CardDescription>
+                                <CardTitle>{t('report.templateList')}</CardTitle>
+                                <CardDescription>{t('report.templateListDesc')}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 {templates.length === 0 ? (
                                     <div className="py-8 text-center text-muted-foreground">
-                                        暂无保存的模板
+                                        {t('report.noTemplates')}
                                     </div>
                                 ) : (
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead>模板名称</TableHead>
-                                                <TableHead>报表类型</TableHead>
-                                                <TableHead>共享状态</TableHead>
-                                                <TableHead className="text-right">操作</TableHead>
+                                                <TableHead>{t('report.templateName')}</TableHead>
+                                                <TableHead>{t('report.reportTypeCol')}</TableHead>
+                                                <TableHead>{t('report.sharedStatus')}</TableHead>
+                                                <TableHead className="text-right">{t('report.actions')}</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -593,9 +593,9 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
                                                     <TableCell>{getReportTypeLabel(template.report_type)}</TableCell>
                                                     <TableCell>
                                                         {template.is_shared ? (
-                                                            <Badge variant="secondary">共享</Badge>
+                                                            <Badge variant="secondary">{t('report.shared')}</Badge>
                                                         ) : (
-                                                            <Badge variant="outline">私有</Badge>
+                                                            <Badge variant="outline">{t('report.private')}</Badge>
                                                         )}
                                                     </TableCell>
                                                     <TableCell className="text-right">
@@ -610,7 +610,7 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
                                                                 setActiveTab('generate');
                                                             }}
                                                         >
-                                                            使用
+                                                            {t('report.use')}
                                                         </Button>
                                                     </TableCell>
                                                 </TableRow>
@@ -626,25 +626,25 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
                     <TabsContent value="history">
                         <Card>
                             <CardHeader>
-                                <CardTitle>生成历史</CardTitle>
-                                <CardDescription>最近生成的报表记录</CardDescription>
+                                <CardTitle>{t('report.historyList')}</CardTitle>
+                                <CardDescription>{t('report.historyListDesc')}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 {generatedReports.length === 0 ? (
                                     <div className="py-8 text-center text-muted-foreground">
-                                        暂无生成记录
+                                        {t('report.noHistory')}
                                     </div>
                                 ) : (
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead>报表名称</TableHead>
-                                                <TableHead>类型</TableHead>
-                                                <TableHead>格式</TableHead>
-                                                <TableHead>状态</TableHead>
-                                                <TableHead>大小</TableHead>
-                                                <TableHead>生成时间</TableHead>
-                                                <TableHead className="text-right">操作</TableHead>
+                                                <TableHead>{t('report.reportFileName')}</TableHead>
+                                                <TableHead>{t('report.type')}</TableHead>
+                                                <TableHead>{t('report.formatCol')}</TableHead>
+                                                <TableHead>{t('report.statusCol')}</TableHead>
+                                                <TableHead>{t('report.size')}</TableHead>
+                                                <TableHead>{t('report.generatedTime')}</TableHead>
+                                                <TableHead className="text-right">{t('report.actions')}</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -696,32 +696,32 @@ export default function ReportIndex({ templates, generatedReports, filterOptions
             <Dialog open={showSaveTemplate} onOpenChange={setShowSaveTemplate}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
-                        <DialogTitle>保存报表模板</DialogTitle>
-                        <DialogDescription>将当前配置保存为模板以便重复使用</DialogDescription>
+                        <DialogTitle>{t('report.saveTemplateTitle')}</DialogTitle>
+                        <DialogDescription>{t('report.saveTemplateDesc')}</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label>模板名称 *</Label>
+                            <Label>{t('report.templateNameLabel')}</Label>
                             <Input
                                 value={templateName}
                                 onChange={(e) => setTemplateName(e.target.value)}
-                                placeholder="输入模板名称"
+                                placeholder={t('report.enterTemplateName')}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>描述</Label>
+                            <Label>{t('report.templateDescLabel')}</Label>
                             <Input
                                 value={templateDesc}
                                 onChange={(e) => setTemplateDesc(e.target.value)}
-                                placeholder="输入模板描述（可选）"
+                                placeholder={t('report.enterTemplateDesc')}
                             />
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowSaveTemplate(false)}>取消</Button>
+                        <Button variant="outline" onClick={() => setShowSaveTemplate(false)}>{t('common.cancel')}</Button>
                         <Button onClick={saveTemplate} disabled={!templateName}>
                             <Save className="mr-2 h-4 w-4" />
-                            保存
+                            {t('common.save')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

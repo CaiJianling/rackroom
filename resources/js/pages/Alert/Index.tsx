@@ -327,11 +327,11 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                     <CardContent className="pt-6">
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
                             <div className="flex-1">
-                                <Label className="text-xs">搜索</Label>
+                                <Label className="text-xs">{t('common.search')}</Label>
                                 <div className="relative">
                                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                     <Input
-                                        placeholder="搜索告警标题或描述..."
+                                        placeholder={t('alert.searchPlaceholder')}
                                         value={localFilters.search}
                                         onChange={(e) => setLocalFilters({ ...localFilters, search: e.target.value })}
                                         className="pl-9"
@@ -339,7 +339,7 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                                 </div>
                             </div>
                             <div>
-                                <Label className="text-xs">状态</Label>
+                                <Label className="text-xs">{t('alert.status')}</Label>
                                 <Select
                                     value={localFilters.status}
                                     onValueChange={(v) => setLocalFilters({ ...localFilters, status: v })}
@@ -348,15 +348,15 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">全部状态</SelectItem>
-                                        <SelectItem value="active">活跃</SelectItem>
-                                        <SelectItem value="acknowledged">已确认</SelectItem>
-                                        <SelectItem value="resolved">已解决</SelectItem>
+                                        <SelectItem value="all">{t('alert.allStatus')}</SelectItem>
+                                        <SelectItem value="active">{t('common.active')}</SelectItem>
+                                        <SelectItem value="acknowledged">{t('alert.acknowledged')}</SelectItem>
+                                        <SelectItem value="resolved">{t('alert.resolved')}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div>
-                                <Label className="text-xs">严重级别</Label>
+                                <Label className="text-xs">{t('alert.severity')}</Label>
                                 <Select
                                     value={localFilters.severity}
                                     onValueChange={(v) => setLocalFilters({ ...localFilters, severity: v })}
@@ -365,15 +365,15 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">全部级别</SelectItem>
-                                        <SelectItem value="critical">严重</SelectItem>
-                                        <SelectItem value="warning">警告</SelectItem>
-                                        <SelectItem value="info">信息</SelectItem>
+                                        <SelectItem value="all">{t('alert.allSeverity')}</SelectItem>
+                                        <SelectItem value="critical">{t('alert.critical')}</SelectItem>
+                                        <SelectItem value="warning">{t('alert.warning')}</SelectItem>
+                                        <SelectItem value="info">{t('alert.info')}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div>
-                                <Label className="text-xs">告警类型</Label>
+                                <Label className="text-xs">{t('alert.type')}</Label>
                                 <Select
                                     value={localFilters.type}
                                     onValueChange={(v) => setLocalFilters({ ...localFilters, type: v })}
@@ -382,7 +382,7 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">全部类型</SelectItem>
+                                        <SelectItem value="all">{t('alert.allTypes')}</SelectItem>
                                         {alertTypes.map((type) => (
                                             <SelectItem key={type} value={type}>{type}</SelectItem>
                                         ))}
@@ -392,11 +392,11 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                             <div className="flex gap-2">
                                 <Button onClick={applyFilters}>
                                     <Filter className="mr-2 h-4 w-4" />
-                                    筛选
+                                    {t('common.filter')}
                                 </Button>
                                 <Button variant="outline" onClick={clearFilters}>
                                     <X className="mr-2 h-4 w-4" />
-                                    清除
+                                    {t('common.reset')}
                                 </Button>
                             </div>
                         </div>
@@ -406,11 +406,11 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                 {/* 批量操作 */}
                 {selectedAlerts.length > 0 && (
                     <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3">
-                        <span className="text-sm font-medium">已选择 {selectedAlerts.length} 条告警</span>
+                        <span className="text-sm font-medium">{t('alert.selectedCount', { count: selectedAlerts.length })}</span>
                         <div className="ml-auto flex gap-2">
                             <Button variant="outline" size="sm" onClick={batchAcknowledge}>
                                 <ShieldCheck className="mr-2 h-4 w-4" />
-                                批量确认
+                                {t('alert.batchAcknowledge')}
                             </Button>
                         </div>
                     </div>
@@ -428,13 +428,13 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                                             onCheckedChange={toggleAllSelection}
                                         />
                                     </TableHead>
-                                    <TableHead className="w-[80px]">级别</TableHead>
-                                    <TableHead className="w-[100px]">状态</TableHead>
-                                    <TableHead>告警标题</TableHead>
-                                    <TableHead>类型</TableHead>
-                                    <TableHead>触发时间</TableHead>
-                                    <TableHead>处理人</TableHead>
-                                    <TableHead className="text-right">操作</TableHead>
+                                    <TableHead className="w-[80px]">{t('alert.severity')}</TableHead>
+                                    <TableHead className="w-[100px]">{t('alert.status')}</TableHead>
+                                    <TableHead>{t('alert.title')}</TableHead>
+                                    <TableHead>{t('alert.type')}</TableHead>
+                                    <TableHead>{t('alert.triggeredAt')}</TableHead>
+                                    <TableHead>{t('alert.resolvedBy')}</TableHead>
+                                    <TableHead className="text-right">{t('common.actions')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -443,7 +443,7 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                                         <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
                                             <div className="flex flex-col items-center gap-2">
                                                 <CheckCircle2 className="h-8 w-8 text-green-500" />
-                                                <p>暂无符合条件的告警</p>
+                                                <p>{t('alert.noAlerts')}</p>
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -492,18 +492,18 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuItem onClick={() => setViewingAlert(alert)}>
                                                             <Eye className="mr-2 h-4 w-4" />
-                                                            查看详情
+                                                            {t('alert.viewDetails')}
                                                         </DropdownMenuItem>
                                                         {alert.status === 'active' && (
                                                             <DropdownMenuItem onClick={() => acknowledgeAlert(alert.id)}>
                                                                 <ShieldCheck className="mr-2 h-4 w-4" />
-                                                                确认告警
+                                                                {t('alert.acknowledge')}
                                                             </DropdownMenuItem>
                                                         )}
                                                         {alert.status !== 'resolved' && (
                                                             <DropdownMenuItem onClick={() => setResolvingAlert(alert)}>
                                                                 <CheckCircle2 className="mr-2 h-4 w-4" />
-                                                                解决告警
+                                                                {t('alert.resolve')}
                                                             </DropdownMenuItem>
                                                         )}
                                                     </DropdownMenuContent>
@@ -519,7 +519,7 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                         {alerts.last_page > 1 && (
                             <div className="flex items-center justify-between border-t px-4 py-3">
                                 <div className="text-sm text-muted-foreground">
-                                    显示 {alerts.from} - {alerts.to} 条，共 {alerts.total} 条
+                                    {t('alert.paginationInfo', { from: alerts.from, to: alerts.to, total: alerts.total })}
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Button
@@ -528,7 +528,7 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                                         disabled={!alerts.prev_page_url}
                                         onClick={() => alerts.prev_page_url && router.get(alerts.prev_page_url)}
                                     >
-                                        上一页
+                                        {t('alert.prevPage')}
                                     </Button>
                                     <span className="text-sm">
                                         {alerts.current_page} / {alerts.last_page}
@@ -539,7 +539,7 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                                         disabled={!alerts.next_page_url}
                                         onClick={() => alerts.next_page_url && router.get(alerts.next_page_url)}
                                     >
-                                        下一页
+                                        {t('alert.nextPage')}
                                     </Button>
                                 </div>
                             </div>
@@ -554,7 +554,7 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             {viewingAlert && getSeverityIcon(viewingAlert.severity)}
-                            告警详情
+                            {t('alert.alertDetails')}
                         </DialogTitle>
                         <DialogDescription>
                             {viewingAlert?.title}
@@ -564,51 +564,51 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <Label className="text-sm font-medium">告警级别</Label>
+                                    <Label className="text-sm font-medium">{t('alert.severity')}</Label>
                                     <div className="mt-1">{getSeverityBadge(viewingAlert.severity)}</div>
                                 </div>
                                 <div>
-                                    <Label className="text-sm font-medium">当前状态</Label>
+                                    <Label className="text-sm font-medium">{t('alert.status')}</Label>
                                     <div className="mt-1">{getStatusBadge(viewingAlert.status)}</div>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <Label className="text-sm font-medium">告警类型</Label>
+                                    <Label className="text-sm font-medium">{t('alert.type')}</Label>
                                     <div className="mt-1 text-sm">{viewingAlert.alert_type}</div>
                                 </div>
                                 <div>
-                                    <Label className="text-sm font-medium">资源类型</Label>
+                                    <Label className="text-sm font-medium">{t('alert.resourceType')}</Label>
                                     <div className="mt-1 text-sm">{viewingAlert.resource_type}</div>
                                 </div>
                             </div>
                             <div>
-                                <Label className="text-sm font-medium">触发时间</Label>
+                                <Label className="text-sm font-medium">{t('alert.triggeredAt')}</Label>
                                 <div className="mt-1 text-sm">{formatDate(viewingAlert.triggered_at)}</div>
                             </div>
                             {viewingAlert.description && (
                                 <div>
-                                    <Label className="text-sm font-medium">描述</Label>
+                                    <Label className="text-sm font-medium">{t('alert.alertDescription')}</Label>
                                     <div className="mt-1 rounded bg-muted p-2 text-sm">{viewingAlert.description}</div>
                                 </div>
                             )}
                             {viewingAlert.acknowledged_by_user && (
                                 <div>
-                                    <Label className="text-sm font-medium">确认信息</Label>
+                                    <Label className="text-sm font-medium">{t('alert.acknowledgedInfo')}</Label>
                                     <div className="mt-1 text-sm">
-                                        由 {viewingAlert.acknowledged_by_user.name} 于 {formatDate(viewingAlert.acknowledged_at)} 确认
+                                        {t('alert.acknowledgedBy', { name: viewingAlert.acknowledged_by_user.name, date: formatDate(viewingAlert.acknowledged_at) })}
                                     </div>
                                 </div>
                             )}
                             {viewingAlert.resolved_by_user && (
                                 <div>
-                                    <Label className="text-sm font-medium">解决信息</Label>
+                                    <Label className="text-sm font-medium">{t('alert.resolvedInfo')}</Label>
                                     <div className="mt-1 text-sm">
-                                        由 {viewingAlert.resolved_by_user.name} 于 {formatDate(viewingAlert.resolved_at)} 解决
+                                        {t('alert.resolvedByUser', { name: viewingAlert.resolved_by_user.name, date: formatDate(viewingAlert.resolved_at) })}
                                     </div>
                                     {viewingAlert.resolution_note && (
                                         <div className="mt-1 rounded bg-green-50 p-2 text-sm text-green-800">
-                                            备注: {viewingAlert.resolution_note}
+                                            {t('alert.resolutionNote')}: {viewingAlert.resolution_note}
                                         </div>
                                     )}
                                 </div>
@@ -616,7 +616,7 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                         </div>
                     )}
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setViewingAlert(null)}>关闭</Button>
+                        <Button variant="outline" onClick={() => setViewingAlert(null)}>{t('common.close')}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -625,27 +625,26 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
             <Dialog open={!!resolvingAlert} onOpenChange={() => setResolvingAlert(null)}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
-                        <DialogTitle>解决告警</DialogTitle>
+                        <DialogTitle>{t('alert.resolveAlert')}</DialogTitle>
                         <DialogDescription>
-                            请输入解决方案备注信息
+                            {t('alert.resolveAlertDesc')}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
-                        <Label htmlFor="note">解决备注（可选）</Label>
+                        <Label htmlFor="note">{t('alert.resolutionNoteText')}</Label>
                         <Textarea
                             id="note"
                             value={resolutionNote}
                             onChange={(e) => setResolutionNote(e.target.value)}
-                            placeholder="描述问题的解决方式..."
+                            placeholder={t('alert.enterResolutionNote')}
                             className="mt-2"
                             rows={4}
                         />
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setResolvingAlert(null)}>取消</Button>
+                        <Button variant="outline" onClick={() => setResolvingAlert(null)}>{t('common.cancel')}</Button>
                         <Button onClick={resolveAlert}>
-                            <CheckCircle2 className="mr-2 h-4 w-4" />
-                            确认解决
+                            {t('alert.confirmResolve')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
