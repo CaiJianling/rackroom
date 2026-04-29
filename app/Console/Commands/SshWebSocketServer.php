@@ -11,8 +11,8 @@ use Illuminate\Console\Command;
 class SshWebSocketServer extends Command
 {
     protected $signature = 'ssh:websocket-server
-                            {--host=0.0.0.0 : 服务器绑定地址}
-                            {--port=8081 : WebSocket 服务器端口}';
+                            {--host= : 服务器绑定地址 (默认从 WEBSOCKET_HOST 环境变量读取)}
+                            {--port= : WebSocket 服务器端口 (默认从 WEBSOCKET_PORT 环境变量读取, 默认8081)}';
 
     protected $description = '启动 SSH WebSocket 服务器';
 
@@ -26,8 +26,8 @@ class SshWebSocketServer extends Command
 
     public function handle(): int
     {
-        $host = $this->option('host');
-        $port = (int) $this->option('port');
+        $host = $this->option('host') ?: env('WEBSOCKET_HOST', '0.0.0.0');
+        $port = (int) ($this->option('port') ?: env('WEBSOCKET_PORT', 8081));
 
         $this->info('启动 SSH WebSocket 服务器...');
         $this->info("地址: ws://{$host}:{$port}");

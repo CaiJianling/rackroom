@@ -100,7 +100,7 @@ interface PageProps {
 export default function WebSocketSshTerminal() {
     const { t } = useTranslation();
     const { devices, websocketUrl } = usePage<PageProps>().props;
-    const wsUrl = websocketUrl || `ws://${window.location.hostname}:8081`;
+    const wsUrl = websocketUrl || `ws://${window.location.hostname}:8901`;
 
     const sshConnections: SshConnection[] = devices
         .filter((device) => device.connection_type === 'ssh' && device.ip_address)
