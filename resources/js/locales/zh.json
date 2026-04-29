@@ -767,6 +767,10 @@
         "addRoom": "添加机房",
         "addRack": "添加机柜",
         "addDevice": "添加设备",
+        "units": {
+            "racks": "机柜",
+            "devices": "设备"
+        },
         "generateReport": "生成报表"
     },
     "alert": {
