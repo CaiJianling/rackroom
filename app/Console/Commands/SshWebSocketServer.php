@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Lang;
 
 /**
  * SSH WebSocket 服务器
@@ -14,6 +15,7 @@ class SshWebSocketServer extends Command
                             {--host= : 服务器绑定地址 (默认从 WEBSOCKET_HOST 环境变量读取)}
                             {--port= : WebSocket 服务器端口 (默认从 WEBSOCKET_PORT 环境变量读取, 默认8081)}';
 
+                            
     protected $description = '启动 SSH WebSocket 服务器';
 
     private array $clients = [];
@@ -160,7 +162,7 @@ class SshWebSocketServer extends Command
 
             $this->send($socketId, json_encode([
                 'type' => 'connected',
-                'message' => 'WebSocket 连接已建立，请发送认证信息',
+                'message' => Lang::get('ssh.websocket_connected'),
             ]));
 
             $this->info("WebSocket 握手成功: {$this->clients[$socketId]['id']}");
@@ -172,7 +174,7 @@ class SshWebSocketServer extends Command
         if (!isset($data['host'], $data['port'], $data['username'], $data['password'])) {
             $this->send($socketId, json_encode([
                 'type' => 'auth_failed',
-                'message' => '缺少连接参数',
+                'message' => Lang::get('ssh.missing_params'),
             ]));
             return;
         }
@@ -183,7 +185,7 @@ class SshWebSocketServer extends Command
             if (!$ssh->login($data['username'], $data['password'])) {
                 $this->send($socketId, json_encode([
                     'type' => 'auth_failed',
-                    'message' => '认证失败：用户名或密码错误',
+                    'message' => Lang::get('ssh.invalid_credentials'),
                 ]));
                 return;
             }
@@ -197,7 +199,7 @@ class SshWebSocketServer extends Command
             // 先发送连接成功消息
             $this->send($socketId, json_encode([
                 'type' => 'auth_success',
-                'message' => '连接成功',
+                'message' => Lang::get('ssh.auth_success', ['host' => $data['host'], 'username' => $data['username']]),
                 'host' => $data['host'],
                 'username' => $data['username'],
             ]));
@@ -220,7 +222,7 @@ class SshWebSocketServer extends Command
             $this->error("SSH 连接失败: " . $e->getMessage());
             $this->send($socketId, json_encode([
                 'type' => 'auth_failed',
-                'message' => '连接失败: ' . $e->getMessage(),
+                'message' => Lang::get('ssh.connection_failed', ['message' => $e->getMessage()]),
             ]));
         }
     }
@@ -346,12 +348,12 @@ class SshWebSocketServer extends Command
     private function handleDisconnect(int $socketId, array $data): void
     {
         $sessionId = $data['sessionId'] ?? '';
-        
+
         // 先发送断开消息，再断开 SSH 连接（避免 SSH 断开产生的输出干扰）
         $this->send($socketId, json_encode([
             'type' => 'disconnect',
             'sessionId' => $sessionId,
-            'message' => '连接已关闭',
+            'message' => Lang::get('ssh.disconnected'),
         ]));
 
         if (isset($this->sshConnections[$socketId])) {
@@ -364,7 +366,7 @@ class SshWebSocketServer extends Command
         }
 
         $this->disconnectClient($socketId);
-        
+
         $this->info("客户端主动断开连接: {$sessionId}");
     }
 

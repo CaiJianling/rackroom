@@ -28,7 +28,6 @@ class SshWebSocketController extends Controller
 
         return Inertia::render('Tools/WebSocketSshTerminal', [
             'devices' => $devices,
-            'websocketUrl' => env('WEBSOCKET_URL', 'ws://' . request()->getHost() . ':8081'),
         ]);
     }
 

@@ -93,14 +93,13 @@ interface ConnectFormData {
 
 interface PageProps {
     devices: Device[];
-    websocketUrl: string;
     [key: string]: unknown;
 }
 
 export default function WebSocketSshTerminal() {
     const { t } = useTranslation();
-    const { devices, websocketUrl } = usePage<PageProps>().props;
-    const wsUrl = websocketUrl || `ws://${window.location.hostname}:8901`;
+    const { devices } = usePage<PageProps>().props;
+    const wsUrl = `ws://${window.location.hostname}:${import.meta.env.VITE_WEBSOCKET_PORT || 8901}`;
 
     const sshConnections: SshConnection[] = devices
         .filter((device) => device.connection_type === 'ssh' && device.ip_address)
@@ -411,7 +410,7 @@ export default function WebSocketSshTerminal() {
             case 'auth_success':
                 updateSessionStatus(sessionId, true);
                 termRef.current?.clear();
-                termRef.current?.writeln(`\x1b[32m${t('sshTerminal.connectedTo', { host: data.host, username: data.username })}\x1b[0m\r\n`);
+                termRef.current?.writeln(`\x1b[32m${data.message}\x1b[0m\r\n`);
 
                 // 发送终端尺寸
                 const dims = fitAddonRef.current?.proposeDimensions();
@@ -427,7 +426,7 @@ export default function WebSocketSshTerminal() {
 
             case 'auth_failed':
                 updateSessionStatus(sessionId, false);
-                termRef.current?.writeln(`\r\n\x1b[31m${t('sshTerminal.authFailed', { message: data.message })}\x1b[0m`);
+                termRef.current?.writeln(`\r\n\x1b[31m${data.message}\x1b[0m`);
                 setConnectError(data.message);
                 break;
 

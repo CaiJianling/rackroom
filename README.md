@@ -238,7 +238,17 @@ php artisan serve
 npm run build
 ```
 
-7. **配置定时任务（重要）**
+### SSH WebSocket 服务（可选）
+
+如需使用 SSH 终端功能，需要启动 WebSocket 服务：
+
+```bash
+php artisan ssh:websocket-server
+```
+
+> **注意**：WebSocket 服务默认监听端口 8901，请确保防火墙已开放该端口。
+
+## 配置定时任务（重要）
 
 系统依赖 Laravel 调度器执行自动检测等定时任务。
 
