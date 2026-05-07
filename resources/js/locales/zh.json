@@ -959,9 +959,10 @@
         "detectionExecuteFailed": "检测执行失败",
         "autoDetectionEnabledDescPlaceholder": "自动检测功能开关",
         "autoDetectionIntervalDescPlaceholder": "自动检测时间间隔（分钟）",
-        "autoDetectionNoLogs": "暂无检测日志",
-        "autoDetectionRefreshSettings": "刷新设置",
-        "autoDetectionUnsavedChanges": "有未保存的更改"
+        "NoLogs": "暂无检测日志",
+        "RefreshSettings": "刷新设置",
+        "ResetSettings": "重置",
+        "UnsavedChanges": "有未保存的更改"
     },
     "sshTerminal": {
         "title": "SSH终端",

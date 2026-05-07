@@ -648,7 +648,7 @@ export default function SystemSettings() {
                                 </div>
                             ) : (
                                 <div className="text-center py-8 text-muted-foreground">
-                                    {t('autoDetection.noLogs')}
+                                    {t('autoDetection.NoLogs')}
                                 </div>
                             )}
                         </CardContent>
@@ -673,7 +673,7 @@ export default function SystemSettings() {
                                 className="gap-2"
                             >
                                 <RotateCcw className="h-4 w-4" />
-                                {t('autoDetection.refreshSettings')}
+                                {t('autoDetection.RefreshSettings')}
                             </Button>
                             {hasChanges && (
                                 <Button
@@ -681,7 +681,7 @@ export default function SystemSettings() {
                                     onClick={handleReset}
                                     disabled={isSaving}
                                 >
-                                    重置
+                                    {t('autoDetection.ResetSettings')}
                                 </Button>
                             )}
                             <Button

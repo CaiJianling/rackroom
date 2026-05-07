@@ -544,7 +544,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                             </div>
                             <div className="text-sm text-muted-foreground">
                                 {t('rackManagement.racksCount', {
-                                    filtered: filteredRacks.length,
+                                    filtered: paginatedRacks.length,
                                     total: racks.length,
                                 })}
                             </div>
@@ -732,7 +732,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                             <div className="flex items-center justify-between border-t px-4 py-3">
                                 <div className="text-sm text-muted-foreground">
                                     {t('rackManagement.racksCount', {
-                                        filtered: filteredRacks.length,
+                                        filtered: paginatedRacks.length,
                                         total: racks.length,
                                     })}
                                 </div>

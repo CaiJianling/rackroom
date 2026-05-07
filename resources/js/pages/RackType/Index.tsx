@@ -274,7 +274,7 @@ export default function RackTypeIndex({ rackTypes, breadcrumbs = [] }: Props) {
                             </div>
                             <div className="text-sm text-muted-foreground">
                                 {t('rackTypeManagement.rackTypesCount', {
-                                    filtered: filteredRackTypes.length,
+                                    filtered: paginatedRackTypes.length,
                                     total: rackTypes.length,
                                 })}
                             </div>
@@ -436,7 +436,7 @@ export default function RackTypeIndex({ rackTypes, breadcrumbs = [] }: Props) {
                             <div className="flex items-center justify-between border-t px-4 py-3">
                                 <div className="text-sm text-muted-foreground">
                                     {t('rackTypeManagement.rackTypesCount', {
-                                        filtered: filteredRackTypes.length,
+                                        filtered: paginatedRackTypes.length,
                                         total: rackTypes.length,
                                     })}
                                 </div>

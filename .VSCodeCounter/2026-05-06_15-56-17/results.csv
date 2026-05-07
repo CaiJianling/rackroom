@@ -1,0 +1,321 @@
+"filename", "language", "JSON", "Markdown", "PHP", "YAML", "Skill", "JSON with Comments", "Shell Script", "XML", "JavaScript", "TypeScript", "PostCSS", "TypeScript JSX", "Ini", "HTML", "comment", "blank", "total"
+"/www/wwwroot/rackroom.local.host/rackroom/.agents/skills/developing-with-fortify/SKILL.md", "Skill", 0, 0, 0, 0, 84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 116
+"/www/wwwroot/rackroom.local.host/rackroom/.agents/skills/inertia-react-development/SKILL.md", "Skill", 0, 0, 0, 0, 270, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 369
+"/www/wwwroot/rackroom.local.host/rackroom/.agents/skills/pest-testing/SKILL.md", "Skill", 0, 0, 0, 0, 81, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 41, 122
+"/www/wwwroot/rackroom.local.host/rackroom/.agents/skills/tailwindcss-development/SKILL.md", "Skill", 0, 0, 0, 0, 92, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 124
+"/www/wwwroot/rackroom.local.host/rackroom/.agents/skills/wayfinder-development/SKILL.md", "Skill", 0, 0, 0, 0, 57, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 89
+"/www/wwwroot/rackroom.local.host/rackroom/.claude/skills/developing-with-fortify/SKILL.md", "Skill", 0, 0, 0, 0, 84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 116
+"/www/wwwroot/rackroom.local.host/rackroom/.claude/skills/inertia-react-development/SKILL.md", "Skill", 0, 0, 0, 0, 270, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 369
+"/www/wwwroot/rackroom.local.host/rackroom/.claude/skills/pest-testing/SKILL.md", "Skill", 0, 0, 0, 0, 81, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 41, 122
+"/www/wwwroot/rackroom.local.host/rackroom/.claude/skills/tailwindcss-development/SKILL.md", "Skill", 0, 0, 0, 0, 92, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 124
+"/www/wwwroot/rackroom.local.host/rackroom/.claude/skills/wayfinder-development/SKILL.md", "Skill", 0, 0, 0, 0, 57, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 89
+"/www/wwwroot/rackroom.local.host/rackroom/.cursor/mcp.json", "JSON with Comments", 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11
+"/www/wwwroot/rackroom.local.host/rackroom/.cursor/skills/developing-with-fortify/SKILL.md", "Skill", 0, 0, 0, 0, 84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 116
+"/www/wwwroot/rackroom.local.host/rackroom/.cursor/skills/inertia-react-development/SKILL.md", "Skill", 0, 0, 0, 0, 270, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 369
+"/www/wwwroot/rackroom.local.host/rackroom/.cursor/skills/pest-testing/SKILL.md", "Skill", 0, 0, 0, 0, 81, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 41, 122
+"/www/wwwroot/rackroom.local.host/rackroom/.cursor/skills/tailwindcss-development/SKILL.md", "Skill", 0, 0, 0, 0, 92, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 124
+"/www/wwwroot/rackroom.local.host/rackroom/.cursor/skills/wayfinder-development/SKILL.md", "Skill", 0, 0, 0, 0, 57, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 89
+"/www/wwwroot/rackroom.local.host/rackroom/.gemini/settings.json", "JSON with Comments", 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11
+"/www/wwwroot/rackroom.local.host/rackroom/.github/skills/developing-with-fortify/SKILL.md", "Skill", 0, 0, 0, 0, 84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 116
+"/www/wwwroot/rackroom.local.host/rackroom/.github/skills/inertia-react-development/SKILL.md", "Skill", 0, 0, 0, 0, 270, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 369
+"/www/wwwroot/rackroom.local.host/rackroom/.github/skills/pest-testing/SKILL.md", "Skill", 0, 0, 0, 0, 81, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 41, 122
+"/www/wwwroot/rackroom.local.host/rackroom/.github/skills/tailwindcss-development/SKILL.md", "Skill", 0, 0, 0, 0, 92, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 124
+"/www/wwwroot/rackroom.local.host/rackroom/.github/skills/wayfinder-development/SKILL.md", "Skill", 0, 0, 0, 0, 57, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 89
+"/www/wwwroot/rackroom.local.host/rackroom/.github/workflows/lint.yml", "YAML", 0, 0, 0, 35, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 10, 50
+"/www/wwwroot/rackroom.local.host/rackroom/.github/workflows/tests.yml", "YAML", 0, 0, 0, 45, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 57
+"/www/wwwroot/rackroom.local.host/rackroom/.junie/guidelines.md", "Markdown", 0, 184, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 107, 291
+"/www/wwwroot/rackroom.local.host/rackroom/.junie/mcp/mcp.json", "JSON with Comments", 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11
+"/www/wwwroot/rackroom.local.host/rackroom/.junie/skills/developing-with-fortify/SKILL.md", "Skill", 0, 0, 0, 0, 84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 116
+"/www/wwwroot/rackroom.local.host/rackroom/.junie/skills/inertia-react-development/SKILL.md", "Skill", 0, 0, 0, 0, 270, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 369
+"/www/wwwroot/rackroom.local.host/rackroom/.junie/skills/pest-testing/SKILL.md", "Skill", 0, 0, 0, 0, 81, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 41, 122
+"/www/wwwroot/rackroom.local.host/rackroom/.junie/skills/tailwindcss-development/SKILL.md", "Skill", 0, 0, 0, 0, 92, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 124
+"/www/wwwroot/rackroom.local.host/rackroom/.junie/skills/wayfinder-development/SKILL.md", "Skill", 0, 0, 0, 0, 57, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 89
+"/www/wwwroot/rackroom.local.host/rackroom/.mcp.json", "JSON", 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11
+"/www/wwwroot/rackroom.local.host/rackroom/AGENTS.md", "Markdown", 0, 184, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 107, 291
+"/www/wwwroot/rackroom.local.host/rackroom/CLAUDE.md", "Markdown", 0, 184, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 107, 291
+"/www/wwwroot/rackroom.local.host/rackroom/GEMINI.md", "Markdown", 0, 184, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 107, 291
+"/www/wwwroot/rackroom.local.host/rackroom/README.md", "Markdown", 0, 433, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 124, 557
+"/www/wwwroot/rackroom.local.host/rackroom/SSH_WEBSOCKET_README.md", "Markdown", 0, 198, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 262
+"/www/wwwroot/rackroom.local.host/rackroom/app/Actions/Fortify/CreateNewUser.php", "PHP", 0, 0, 33, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 8, 47
+"/www/wwwroot/rackroom.local.host/rackroom/app/Actions/Fortify/ResetUserPassword.php", "PHP", 0, 0, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 6, 30
+"/www/wwwroot/rackroom.local.host/rackroom/app/Concerns/PasswordValidationRules.php", "PHP", 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 5, 29
+"/www/wwwroot/rackroom.local.host/rackroom/app/Concerns/ProfileValidationRules.php", "PHP", 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 6, 51
+"/www/wwwroot/rackroom.local.host/rackroom/app/Console/Commands/AutoDetectDevices.php", "PHP", 0, 0, 153, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 40, 225
+"/www/wwwroot/rackroom.local.host/rackroom/app/Console/Commands/CheckSchedulerStatus.php", "PHP", 0, 0, 49, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 14, 66
+"/www/wwwroot/rackroom.local.host/rackroom/app/Console/Commands/SshWebSocketServer.php", "PHP", 0, 0, 347, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23, 89, 459
+"/www/wwwroot/rackroom.local.host/rackroom/app/Events/SshOutputEvent.php", "PHP", 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 40
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/AlertController.php", "PHP", 0, 0, 171, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 34, 231
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/BackupController.php", "PHP", 0, 0, 451, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 66, 90, 607
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/Controller.php", "PHP", 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 9
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/DashboardController.php", "PHP", 0, 0, 164, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 16, 204
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/DataExportController.php", "PHP", 0, 0, 206, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 38, 42, 286
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/DetectionLogController.php", "PHP", 0, 0, 133, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18, 20, 171
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/DeviceController.php", "PHP", 0, 0, 271, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25, 54, 350
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/DeviceLibraryController.php", "PHP", 0, 0, 85, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 22, 122
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/DeviceTypeController.php", "PHP", 0, 0, 53, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 15, 69
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/H3cPasswordController.php", "PHP", 0, 0, 241, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 56, 339
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/MonitorController.php", "PHP", 0, 0, 145, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 24, 193
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/PingController.php", "PHP", 0, 0, 115, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 28, 160
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/RackController.php", "PHP", 0, 0, 418, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 91, 559
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/RackExcelController.php", "PHP", 0, 0, 426, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 38, 70, 534
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/RackTypeController.php", "PHP", 0, 0, 77, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 21, 102
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/ReportController.php", "PHP", 0, 0, 330, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 66, 454
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/RoomController.php", "PHP", 0, 0, 67, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 19, 87
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/Settings/PasswordController.php", "PHP", 0, 0, 21, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 33
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/Settings/ProfileController.php", "PHP", 0, 0, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 13, 61
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/Settings/TwoFactorAuthenticationController.php", "PHP", 0, 0, 26, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 38
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/SshWebSocketController.php", "PHP", 0, 0, 124, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 28, 178
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/SystemSettingController.php", "PHP", 0, 0, 78, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 18, 113
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/UserController.php", "PHP", 0, 0, 72, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 21, 101
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Controllers/UserPreferenceController.php", "PHP", 0, 0, 61, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 14, 87
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Middleware/AdminMiddleware.php", "PHP", 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 6, 31
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Middleware/CheckRegistrationEnabled.php", "PHP", 0, 0, 25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 7, 41
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Middleware/CheckUserActive.php", "PHP", 0, 0, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 7, 31
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Middleware/HandleAppearance.php", "PHP", 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 24
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Middleware/HandleInertiaRequests.php", "PHP", 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19, 6, 54
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Middleware/SetLocaleFromRequest.php", "PHP", 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 6, 27
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Requests/Settings/PasswordUpdateRequest.php", "PHP", 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 26
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Requests/Settings/ProfileDeleteRequest.php", "PHP", 0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 25
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Requests/Settings/ProfileUpdateRequest.php", "PHP", 0, 0, 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 23
+"/www/wwwroot/rackroom.local.host/rackroom/app/Http/Requests/Settings/TwoFactorAuthenticationRequest.php", "PHP", 0, 0, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 6, 31
+"/www/wwwroot/rackroom.local.host/rackroom/app/Models/Alert.php", "PHP", 0, 0, 90, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 17, 137
+"/www/wwwroot/rackroom.local.host/rackroom/app/Models/DetectionLog.php", "PHP", 0, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 11, 79
+"/www/wwwroot/rackroom.local.host/rackroom/app/Models/Device.php", "PHP", 0, 0, 31, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 6, 53
+"/www/wwwroot/rackroom.local.host/rackroom/app/Models/DeviceLibrary.php", "PHP", 0, 0, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 7, 42
+"/www/wwwroot/rackroom.local.host/rackroom/app/Models/DeviceType.php", "PHP", 0, 0, 23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 39
+"/www/wwwroot/rackroom.local.host/rackroom/app/Models/GeneratedReport.php", "PHP", 0, 0, 78, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 16, 115
+"/www/wwwroot/rackroom.local.host/rackroom/app/Models/H3cPasswordChangeLog.php", "PHP", 0, 0, 26, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 33
+"/www/wwwroot/rackroom.local.host/rackroom/app/Models/MonitorMetric.php", "PHP", 0, 0, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 11, 70
+"/www/wwwroot/rackroom.local.host/rackroom/app/Models/Rack.php", "PHP", 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 6, 43
+"/www/wwwroot/rackroom.local.host/rackroom/app/Models/RackType.php", "PHP", 0, 0, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 4, 29
+"/www/wwwroot/rackroom.local.host/rackroom/app/Models/ReportTemplate.php", "PHP", 0, 0, 49, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 11, 75
+"/www/wwwroot/rackroom.local.host/rackroom/app/Models/Room.php", "PHP", 0, 0, 22, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 7, 37
+"/www/wwwroot/rackroom.local.host/rackroom/app/Models/SystemSetting.php", "PHP", 0, 0, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 14, 64
+"/www/wwwroot/rackroom.local.host/rackroom/app/Models/User.php", "PHP", 0, 0, 36, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 8, 66
+"/www/wwwroot/rackroom.local.host/rackroom/app/Models/UserPreference.php", "PHP", 0, 0, 35, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 10, 51
+"/www/wwwroot/rackroom.local.host/rackroom/app/Notifications/ResetPasswordNotification.php", "PHP", 0, 0, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 29
+"/www/wwwroot/rackroom.local.host/rackroom/app/Providers/AppServiceProvider.php", "PHP", 0, 0, 33, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 8, 51
+"/www/wwwroot/rackroom.local.host/rackroom/app/Providers/FortifyServiceProvider.php", "PHP", 0, 0, 91, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 24, 137
+"/www/wwwroot/rackroom.local.host/rackroom/app/Services/SshSessionService.php", "PHP", 0, 0, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 43, 23, 149
+"/www/wwwroot/rackroom.local.host/rackroom/app/Services/SshWebSocketService.php", "PHP", 0, 0, 169, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 42, 264
+"/www/wwwroot/rackroom.local.host/rackroom/boost.json", "JSON", 25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 26
+"/www/wwwroot/rackroom.local.host/rackroom/bootstrap/app.php", "PHP", 0, 0, 36, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 5, 42
+"/www/wwwroot/rackroom.local.host/rackroom/bootstrap/providers.php", "PHP", 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 7
+"/www/wwwroot/rackroom.local.host/rackroom/components.json", "JSON", 21, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 22
+"/www/wwwroot/rackroom.local.host/rackroom/composer.json", "JSON", 111, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 112
+"/www/wwwroot/rackroom.local.host/rackroom/composer.lock", "JSON", 11773, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 11774
+"/www/wwwroot/rackroom.local.host/rackroom/config/app.php", "PHP", 0, 0, 22, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 82, 23, 127
+"/www/wwwroot/rackroom.local.host/rackroom/config/auth.php", "PHP", 0, 0, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 74, 14, 116
+"/www/wwwroot/rackroom.local.host/rackroom/config/broadcasting.php", "PHP", 0, 0, 46, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 13, 83
+"/www/wwwroot/rackroom.local.host/rackroom/config/cache.php", "PHP", 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 35, 19, 118
+"/www/wwwroot/rackroom.local.host/rackroom/config/database.php", "PHP", 0, 0, 118, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 43, 23, 184
+"/www/wwwroot/rackroom.local.host/rackroom/config/filesystems.php", "PHP", 0, 0, 41, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 14, 87
+"/www/wwwroot/rackroom.local.host/rackroom/config/fortify.php", "PHP", 0, 0, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 105, 26, 158
+"/www/wwwroot/rackroom.local.host/rackroom/config/inertia.php", "PHP", 0, 0, 21, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23, 12, 56
+"/www/wwwroot/rackroom.local.host/rackroom/config/logging.php", "PHP", 0, 0, 79, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 33, 21, 133
+"/www/wwwroot/rackroom.local.host/rackroom/config/mail.php", "PHP", 0, 0, 57, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 43, 19, 119
+"/www/wwwroot/rackroom.local.host/rackroom/config/queue.php", "PHP", 0, 0, 65, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 45, 20, 130
+"/www/wwwroot/rackroom.local.host/rackroom/config/reverb.php", "PHP", 0, 0, 49, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25, 14, 88
+"/www/wwwroot/rackroom.local.host/rackroom/config/services.php", "PHP", 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 8, 39
+"/www/wwwroot/rackroom.local.host/rackroom/config/session.php", "PHP", 0, 0, 23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 160, 35, 218
+"/www/wwwroot/rackroom.local.host/rackroom/database/factories/AlertFactory.php", "PHP", 0, 0, 22, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 27
+"/www/wwwroot/rackroom.local.host/rackroom/database/factories/H3cPasswordChangeLogFactory.php", "PHP", 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 4, 32
+"/www/wwwroot/rackroom.local.host/rackroom/database/factories/UserFactory.php", "PHP", 0, 0, 36, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 7, 60
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/0001_01_01_000000_create_users_table.php", "PHP", 0, 0, 38, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 50
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/0001_01_01_000001_create_cache_table.php", "PHP", 0, 0, 25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 5, 36
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/0001_01_01_000002_create_jobs_table.php", "PHP", 0, 0, 46, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 58
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2025_02_25_000001_add_is_active_to_users_table.php", "PHP", 0, 0, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 3, 28
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2025_02_25_000002_add_is_admin_to_users_table.php", "PHP", 0, 0, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 3, 28
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2025_08_14_170933_add_two_factor_columns_to_users_table.php", "PHP", 0, 0, 25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 4, 35
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_03_26_054426_create_rooms_table.php", "PHP", 0, 0, 23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 3, 32
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_03_26_071245_create_racks_table.php", "PHP", 0, 0, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 4, 34
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_03_26_072438_create_devices_table.php", "PHP", 0, 0, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 4, 38
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_03_27_022320_remove_rack_count_from_rooms_table.php", "PHP", 0, 0, 18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 4, 37
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_03_27_100000_create_rack_types_table.php", "PHP", 0, 0, 22, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 25
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_03_27_120000_create_device_types_and_device_library_tables.php", "PHP", 0, 0, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 47
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_03_27_143546_add_serial_number_to_device_library_table.php", "PHP", 0, 0, 18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 4, 29
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_04_09_094106_make_u_position_nullable_in_devices_table.php", "PHP", 0, 0, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 4, 29
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_04_10_000001_create_monitor_metrics_table.php", "PHP", 0, 0, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 5, 38
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_04_10_000002_create_alerts_table.php", "PHP", 0, 0, 35, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 5, 46
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_04_10_000003_create_report_templates_table.php", "PHP", 0, 0, 26, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 4, 36
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_04_10_000004_create_generated_reports_table.php", "PHP", 0, 0, 31, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 4, 41
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_04_10_014338_add_connection_port_to_devices_table.php", "PHP", 0, 0, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 4, 29
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_04_10_025526_add_color_to_device_types_table.php", "PHP", 0, 0, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 4, 29
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_04_15_013559_create_h3c_password_change_logs_table.php", "PHP", 0, 0, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 5, 39
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_04_15_054144_create_user_preferences_table.php", "PHP", 0, 0, 23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 5, 34
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_04_15_060725_create_system_settings_table.php", "PHP", 0, 0, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 6, 63
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_04_15_070000_create_detection_logs_table.php", "PHP", 0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 5, 43
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_04_16_000000_add_registration_setting.php", "PHP", 0, 0, 23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 4, 34
+"/www/wwwroot/rackroom.local.host/rackroom/database/migrations/2026_04_22_173223_add_rack_type_id_to_racks_table.php", "PHP", 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 4, 30
+"/www/wwwroot/rackroom.local.host/rackroom/database/seeders/DatabaseSeeder.php", "PHP", 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 24
+"/www/wwwroot/rackroom.local.host/rackroom/deepseek_html_20260324_4f67b1.html", "HTML", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 694, 6, 21, 721
+"/www/wwwroot/rackroom.local.host/rackroom/eslint.config.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 0, 69, 0, 0, 0, 0, 0, 1, 2, 72
+"/www/wwwroot/rackroom.local.host/rackroom/lang/en.json", "JSON", 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 21
+"/www/wwwroot/rackroom.local.host/rackroom/lang/en/auth.php", "PHP", 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 7
+"/www/wwwroot/rackroom.local.host/rackroom/lang/en/navigation.php", "PHP", 0, 0, 21, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 23
+"/www/wwwroot/rackroom.local.host/rackroom/lang/en/ssh.php", "PHP", 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 2, 20
+"/www/wwwroot/rackroom.local.host/rackroom/lang/en/userManagement.php", "PHP", 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 6
+"/www/wwwroot/rackroom.local.host/rackroom/lang/en/validation.php", "PHP", 0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 17
+"/www/wwwroot/rackroom.local.host/rackroom/lang/zh.json", "JSON", 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 21
+"/www/wwwroot/rackroom.local.host/rackroom/lang/zh/auth.php", "PHP", 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 7
+"/www/wwwroot/rackroom.local.host/rackroom/lang/zh/navigation.php", "PHP", 0, 0, 21, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 23
+"/www/wwwroot/rackroom.local.host/rackroom/lang/zh/ssh.php", "PHP", 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 1, 19
+"/www/wwwroot/rackroom.local.host/rackroom/lang/zh/userManagement.php", "PHP", 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 2, 14
+"/www/wwwroot/rackroom.local.host/rackroom/lang/zh/validation.php", "PHP", 0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 17
+"/www/wwwroot/rackroom.local.host/rackroom/opencode.json", "JSON", 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14
+"/www/wwwroot/rackroom.local.host/rackroom/package-lock.json", "JSON", 9872, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 9873
+"/www/wwwroot/rackroom.local.host/rackroom/package.json", "JSON", 87, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 88
+"/www/wwwroot/rackroom.local.host/rackroom/phpunit.xml", "XML", 0, 0, 0, 0, 0, 0, 0, 35, 0, 0, 0, 0, 0, 0, 0, 1, 36
+"/www/wwwroot/rackroom.local.host/rackroom/pint.json", "JSON", 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 4
+"/www/wwwroot/rackroom.local.host/rackroom/public/.user.ini", "Ini", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1
+"/www/wwwroot/rackroom.local.host/rackroom/public/favicon.svg", "XML", 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 4
+"/www/wwwroot/rackroom.local.host/rackroom/public/index.php", "PHP", 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 7, 21
+"/www/wwwroot/rackroom.local.host/rackroom/resources/css/app.css", "PostCSS", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 123, 0, 0, 0, 0, 21, 144
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/app.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 38, 0, 0, 3, 6, 47
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/alert-error.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 2, 25
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/app-content.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18, 0, 0, 0, 4, 22
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/app-header.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 231, 0, 0, 2, 10, 243
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/app-logo-icon.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 2, 14
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/app-logo.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 0, 0, 0, 2, 17
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/app-shell.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 0, 0, 0, 5, 22
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/app-sidebar-header.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 31, 0, 0, 0, 3, 34
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/app-sidebar.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 160, 0, 0, 0, 6, 166
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/appearance-tabs.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 0, 0, 0, 4, 54
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/breadcrumbs.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 2, 50
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/delete-user.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 116, 0, 0, 0, 9, 125
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/heading.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 0, 0, 0, 1, 27
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/input-error.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 2, 18
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/language-toggle.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 39, 0, 0, 0, 4, 43
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/nav-footer.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 1, 49
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/nav-main.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 0, 0, 0, 7, 106
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/nav-user.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 0, 0, 0, 3, 56
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/text-link.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 0, 0, 0, 3, 24
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/two-factor-recovery-codes.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 154, 0, 0, 0, 11, 165
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/two-factor-setup-modal.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 325, 0, 0, 0, 24, 349
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/alert-dialog.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 126, 0, 0, 0, 14, 140
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/alert.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 60, 0, 0, 0, 7, 67
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/avatar.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 46, 0, 0, 0, 6, 52
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/badge.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 41, 0, 0, 0, 6, 47
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/breadcrumb.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 0, 0, 0, 11, 110
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/button.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 0, 0, 0, 6, 59
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/card.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 60, 0, 0, 0, 9, 69
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/checkbox.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 0, 0, 0, 4, 31
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/collapsible.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 0, 0, 0, 5, 32
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/dialog.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 121, 0, 0, 0, 13, 134
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/dropdown-menu.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 238, 0, 0, 0, 18, 256
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/icon.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 4, 15
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/input-otp.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 62, 0, 0, 0, 8, 70
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/input.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18, 0, 0, 0, 4, 22
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/label.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19, 0, 0, 0, 4, 23
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/navigation-menu.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 157, 0, 0, 0, 12, 169
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/placeholder-pattern.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 0, 0, 0, 4, 21
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/progress.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 4, 27
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/radio-group.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 38, 0, 0, 0, 5, 43
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/scroll-area.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 52, 0, 0, 0, 5, 57
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/select.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 167, 0, 0, 0, 13, 180
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/separator.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 4, 27
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/sheet.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 125, 0, 0, 0, 13, 138
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/sidebar.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 655, 0, 0, 13, 55, 723
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/skeleton.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 3, 14
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/spinner.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 0, 0, 0, 4, 17
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/switch.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 0, 0, 0, 4, 28
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/table.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 107, 0, 0, 0, 10, 117
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/tabs.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 0, 0, 0, 7, 65
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/textarea.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19, 0, 0, 0, 3, 22
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/toast.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 96, 0, 0, 0, 17, 113
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/toggle-group.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 65, 0, 0, 0, 7, 72
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/toggle.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 41, 0, 0, 0, 5, 46
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/ui/tooltip.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 0, 0, 0, 7, 60
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/user-info.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 0, 0, 0, 3, 33
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/components/user-menu-content.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 61, 0, 0, 0, 5, 66
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/hooks/use-appearance.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 74, 0, 0, 3, 30, 107
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/hooks/use-clipboard.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 23, 0, 0, 0, 0, 1, 9, 33
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/hooks/use-current-url.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 49, 0, 0, 0, 0, 0, 10, 59
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/hooks/use-initials.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 6, 18
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/hooks/use-locale.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 0, 0, 1, 21, 80
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/hooks/use-mobile-navigation.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 1, 3, 11
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/hooks/use-mobile.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28, 0, 0, 0, 9, 37
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/hooks/use-toast.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 3
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/hooks/use-two-factor-auth.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 96, 0, 0, 0, 0, 0, 15, 111
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/i18n.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 34, 0, 0, 0, 0, 8, 7, 49
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/layouts/app-layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 2, 9
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/layouts/app/app-header-layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 0, 0, 0, 2, 17
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/layouts/app/app-sidebar-layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19, 0, 0, 0, 2, 21
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/layouts/auth-layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 0, 0, 0, 2, 19
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/layouts/auth/auth-card-layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 46, 0, 0, 0, 3, 49
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/layouts/auth/auth-simple-layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 0, 0, 0, 3, 39
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/layouts/auth/auth-split-layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 0, 0, 0, 3, 45
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/layouts/settings/layout.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84, 0, 0, 1, 7, 92
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/lib/deviceTypeIcons.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28, 0, 0, 15, 4, 47
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/lib/utils.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 3, 12
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/locales/en.json", "JSON", 1015, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1017
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/locales/zh.json", "JSON", 1071, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1072
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/Alert/Index.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 620, 0, 0, 8, 27, 655
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/Backup/Index.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 700, 0, 0, 28, 63, 791
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/Device/Index.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1298, 0, 0, 14, 80, 1392
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/DeviceLibrary/Index.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 937, 0, 0, 5, 42, 984
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/DeviceType/Index.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 691, 0, 0, 1, 34, 726
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/Monitor/Index.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 383, 0, 0, 8, 23, 414
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/Rack/Index.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1313, 0, 0, 9, 59, 1381
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/Rack/VisualEdit.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3586, 0, 0, 141, 228, 3955
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/RackType/Index.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 805, 0, 0, 1, 33, 839
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/Report/Index.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 676, 0, 0, 15, 41, 732
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/Room/Index.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 892, 0, 0, 1, 37, 930
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/Settings/System.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 634, 0, 0, 30, 47, 711
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/Tools/H3cPassword.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 731, 0, 0, 21, 42, 794
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/Tools/WebSocketSshTerminal.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 667, 0, 0, 44, 84, 795
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/User/Create.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 135, 0, 0, 0, 5, 140
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/User/Edit.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 145, 0, 0, 0, 7, 152
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/User/Index.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 753, 0, 0, 13, 35, 801
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/auth/confirm-password.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 0, 0, 0, 6, 56
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/auth/forgot-password.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 69, 0, 0, 1, 7, 77
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/auth/login.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 133, 0, 0, 0, 10, 143
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/auth/register.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 124, 0, 0, 0, 7, 131
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/auth/reset-password.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 97, 0, 0, 0, 7, 104
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/auth/two-factor-challenge.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 123, 0, 0, 0, 9, 132
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/auth/verify-email.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 39, 0, 0, 1, 5, 45
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/dashboard.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 525, 0, 0, 20, 33, 578
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/settings/appearance.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 47, 0, 0, 0, 6, 53
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/settings/password.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 139, 0, 0, 0, 18, 157
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/settings/profile.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 146, 0, 0, 0, 17, 163
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/settings/two-factor.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 136, 0, 0, 0, 11, 147
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/pages/welcome.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 755, 0, 0, 0, 3, 758
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/ssr.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 3, 23
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/types/auth.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 0, 0, 0, 0, 0, 4, 25
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/types/index.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 3, 13
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/types/navigation.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 0, 0, 0, 0, 0, 3, 16
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/types/ui.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 3, 15
+"/www/wwwroot/rackroom.local.host/rackroom/resources/js/types/vite-env.d.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2
+"/www/wwwroot/rackroom.local.host/rackroom/resources/views/app.blade.php", "PHP", 0, 0, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 53
+"/www/wwwroot/rackroom.local.host/rackroom/routes/api.php", "PHP", 0, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14, 7, 51
+"/www/wwwroot/rackroom.local.host/rackroom/routes/channels.php", "PHP", 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 8
+"/www/wwwroot/rackroom.local.host/rackroom/routes/console.php", "PHP", 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 18
+"/www/wwwroot/rackroom.local.host/rackroom/routes/settings.php", "PHP", 0, 0, 26, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 36
+"/www/wwwroot/rackroom.local.host/rackroom/routes/web.php", "PHP", 0, 0, 123, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 24, 179
+"/www/wwwroot/rackroom.local.host/rackroom/scripts/setup-scheduler.sh", "Shell Script", 0, 0, 0, 0, 0, 0, 277, 0, 0, 0, 0, 0, 0, 0, 27, 44, 348
+"/www/wwwroot/rackroom.local.host/rackroom/scripts/start-ssh-websocket.sh", "Shell Script", 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 4, 7, 31
+"/www/wwwroot/rackroom.local.host/rackroom/scripts/stop-ssh-websocket.sh", "Shell Script", 0, 0, 0, 0, 0, 0, 18, 0, 0, 0, 0, 0, 0, 0, 3, 8, 29
+"/www/wwwroot/rackroom.local.host/rackroom/tests/Feature/AlertTest.php", "PHP", 0, 0, 74, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19, 93
+"/www/wwwroot/rackroom.local.host/rackroom/tests/Feature/Auth/AuthenticationTest.php", "PHP", 0, 0, 62, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23, 85
+"/www/wwwroot/rackroom.local.host/rackroom/tests/Feature/Auth/EmailVerificationTest.php", "PHP", 0, 0, 67, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 96
+"/www/wwwroot/rackroom.local.host/rackroom/tests/Feature/Auth/PasswordConfirmationTest.php", "PHP", 0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 23
+"/www/wwwroot/rackroom.local.host/rackroom/tests/Feature/Auth/PasswordResetTest.php", "PHP", 0, 0, 51, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23, 74
+"/www/wwwroot/rackroom.local.host/rackroom/tests/Feature/Auth/RegistrationTest.php", "PHP", 0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 20
+"/www/wwwroot/rackroom.local.host/rackroom/tests/Feature/Auth/TwoFactorChallengeTest.php", "PHP", 0, 0, 35, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 46
+"/www/wwwroot/rackroom.local.host/rackroom/tests/Feature/Auth/VerificationNotificationTest.php", "PHP", 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 30
+"/www/wwwroot/rackroom.local.host/rackroom/tests/Feature/DashboardTest.php", "PHP", 0, 0, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 33
+"/www/wwwroot/rackroom.local.host/rackroom/tests/Feature/ExampleTest.php", "PHP", 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 8
+"/www/wwwroot/rackroom.local.host/rackroom/tests/Feature/H3cPasswordControllerTest.php", "PHP", 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 81
+"/www/wwwroot/rackroom.local.host/rackroom/tests/Feature/MonitorTest.php", "PHP", 0, 0, 37, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 45
+"/www/wwwroot/rackroom.local.host/rackroom/tests/Feature/ReportTest.php", "PHP", 0, 0, 45, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 57
+"/www/wwwroot/rackroom.local.host/rackroom/tests/Feature/Settings/PasswordUpdateTest.php", "PHP", 0, 0, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 51
+"/www/wwwroot/rackroom.local.host/rackroom/tests/Feature/Settings/ProfileUpdateTest.php", "PHP", 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 86
+"/www/wwwroot/rackroom.local.host/rackroom/tests/Feature/Settings/TwoFactorAuthenticationTest.php", "PHP", 0, 0, 61, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19, 80
+"/www/wwwroot/rackroom.local.host/rackroom/tests/Pest.php", "PHP", 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 31, 7, 48
+"/www/wwwroot/rackroom.local.host/rackroom/tests/TestCase.php", "PHP", 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 4, 11
+"/www/wwwroot/rackroom.local.host/rackroom/tests/Unit/ExampleTest.php", "PHP", 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 6
+"/www/wwwroot/rackroom.local.host/rackroom/tsconfig.json", "JSON with Comments", 0, 0, 0, 0, 0, 21, 0, 0, 0, 0, 0, 0, 0, 0, 88, 9, 118
+"/www/wwwroot/rackroom.local.host/rackroom/use.md", "Markdown", 0, 38, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 1, 47
+"/www/wwwroot/rackroom.local.host/rackroom/vite.config.ts", "TypeScript", 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 2, 34
+"/www/wwwroot/rackroom.local.host/rackroom/架构.md", "Markdown", 0, 687, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 102, 789
+"Total", "-", 24043, 2092, 8181, 80, 2920, 54, 315, 38, 69, 308, 123, 22218, 1, 694, 2605, 5639, 69380

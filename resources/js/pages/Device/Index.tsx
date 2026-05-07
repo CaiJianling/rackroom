@@ -586,7 +586,7 @@ export default function DeviceIndex({ devices, racks, deviceLibrary, deviceTypes
                             </div>
                             <div className="text-sm text-muted-foreground">
                                 {t('deviceManagement.devicesCount', {
-                                    filtered: filteredDevices.length,
+                                    filtered: paginatedDevices.length,
                                     total: devices.length,
                                 })}
                             </div>

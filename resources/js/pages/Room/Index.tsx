@@ -353,7 +353,7 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
                             </div>
                             <div className="text-sm text-muted-foreground">
                                 {t('roomManagement.roomsCount', {
-                                    filtered: filteredRooms.length,
+                                    filtered: paginatedRooms.length,
                                     total: rooms.length,
                                 })}
                             </div>
@@ -524,7 +524,7 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
                             <div className="flex items-center justify-between border-t px-4 py-3">
                                 <div className="text-sm text-muted-foreground">
                                     {t('roomManagement.roomsCount', {
-                                        filtered: filteredRooms.length,
+                                        filtered: paginatedRooms.length,
                                         total: rooms.length,
                                     })}
                                 </div>

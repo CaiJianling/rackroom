@@ -874,9 +874,10 @@
         "detectionExecuteFailed": "Detection execution failed",
         "autoDetectionEnabledDescPlaceholder": "Auto detection feature switch",
         "autoDetectionIntervalDescPlaceholder": "Auto detection interval (minutes)",
-        "autoDetectionNoLogs": "No detection logs",
-        "autoDetectionRefreshSettings": "Refresh settings",
-        "autoDetectionUnsavedChanges": "Unsaved changes"
+        "NoLogs": "No detection logs",
+        "RefreshSettings": "Refresh settings",
+        "ResetSettings": "Reset to current settings",
+        "UnsavedChanges": "Unsaved changes"
     },
     "sshTerminal": {
         "title": "SSH Terminal",
