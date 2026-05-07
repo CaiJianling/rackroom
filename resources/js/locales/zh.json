@@ -205,6 +205,7 @@
         "error403": "权限不足"
     },
     "visualEdit": {
+        "connect": "连接",
         "editMode": "编辑模式",
         "previewMode": "预览模式",
         "addRack": "添加机柜",

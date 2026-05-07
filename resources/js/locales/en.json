@@ -206,6 +206,7 @@
         "uheight": "U Height"
     },
     "visualEdit": {
+        "connect": "Connect",
         "editMode": "Edit Mode",
         "previewMode": "Preview Mode",
         "addRack": "Add Rack",
