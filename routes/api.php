@@ -1,13 +1,5 @@
 <?php
 
-/*
- * @Author: CaiJianling caijianling@outlook.com
- * @Date: 2026-04-10 00:00:00
- * @LastEditors: CaiJianling caijianling@outlook.com
- * @LastEditTime: 2026-04-10 00:00:00
- * @FilePath: /rackroom/routes/api.php
- * @Description: API Routes
- */
 
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\DetectionLogController;

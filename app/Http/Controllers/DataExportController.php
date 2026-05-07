@@ -1,14 +1,5 @@
 <?php
 
-/*
- * @Author: CaiJianling caijianling@outlook.com
- * @Date: 2026-04-09 10:00:00
- * @LastEditors: CaiJianling caijianling@outlook.com
- * @LastEditTime: 2026-04-09 10:00:00
- * @FilePath: /rackroom/app/Http/Controllers/DataExportController.php
- * @Description: 数据导出导入控制器
- */
-
 namespace App\Http\Controllers;
 
 use App\Models\Device;

@@ -1,11 +1,4 @@
-/*
- * @Author: CaiJianling caijianling@outlook.com
- * @Date: 2026-03-25 03:55:13
- * @LastEditors: CaiJianling caijianling@outlook.com
- * @LastEditTime: 2026-04-27 17:35:45
- * @FilePath: /rackroom/resources/js/i18n.ts
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
+
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
