@@ -91,12 +91,20 @@ export function AppSidebar() {
                     href: '/monitor',
                 },
                 {
+                    title: t('navigation.rackAnalysis'),
+                    href: '/rack-analysis',
+                },
+                {
                     title: t('navigation.reports'),
                     href: '/reports',
                 },
                 {
                     title: t('navigation.alerts'),
                     href: '/alerts',
+                },
+                {
+                    title: t('navigation.deviceChangeLogs'),
+                    href: '/device-change-logs',
                 },
             ],
         },

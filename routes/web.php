@@ -1,15 +1,25 @@
 <?php
+/*
+ * @Author: CaiJianling caijianling@outlook.com
+ * @Date: 2026-03-25 03:55:13
+ * @LastEditors: CaiJianling caijianling@outlook.com
+ * @LastEditTime: 2026-07-03 15:23:53
+ * @FilePath: /rackroom/routes/web.php
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataExportController;
 use App\Http\Controllers\DeviceController;
+use App\Http\Controllers\DeviceChangeLogController;
 use App\Http\Controllers\DeviceLibraryController;
 use App\Http\Controllers\DeviceTypeController;
 use App\Http\Controllers\H3cPasswordController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\PingController;
+use App\Http\Controllers\RackAnalysisController;
 use App\Http\Controllers\RackController;
 use App\Http\Controllers\RackExcelController;
 use App\Http\Controllers\RackTypeController;
@@ -63,6 +73,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('devices', DeviceController::class);
     Route::get('devices/export', [DeviceController::class, 'export'])->name('devices.export');
     Route::post('devices/import', [DeviceController::class, 'import'])->name('devices.import');
+    Route::get('device-change-logs', function () {
+        return inertia('Device/DeviceChangeLogs');
+    })->name('device-change-logs.index');
 
     // 数据导出导入路由 (JSON 备份)
     Route::get('data/export', [DataExportController::class, 'export'])->name('data.export');
@@ -99,6 +112,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('monitor', [MonitorController::class, 'index'])->name('monitor.index');
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('alerts', [AlertController::class, 'index'])->name('alerts.index');
+
+    // 机柜智能分析
+    Route::get('rack-analysis', [DashboardController::class, 'rackAnalysis'])->name('rack-analysis.index');
 
     // 小工具 - H3C交换机批量修改密码
     Route::prefix('tools')->name('tools.')->group(function () {
@@ -144,6 +160,37 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('reports/templates', [ReportController::class, 'saveTemplate']);
         Route::get('reports/{report}/download', [ReportController::class, 'download']);
         Route::delete('reports/{report}', [ReportController::class, 'destroy']);
+
+        // 设备变更追踪API
+        Route::prefix('device-change-logs')->group(function () {
+            Route::get('/', [DeviceChangeLogController::class, 'index']);
+            Route::get('/device/{deviceId}', [DeviceChangeLogController::class, 'deviceHistory']);
+            Route::get('/migrations', [DeviceChangeLogController::class, 'migrations']);
+            Route::get('/statistics', [DeviceChangeLogController::class, 'statistics']);
+            Route::get('/change-types', [DeviceChangeLogController::class, 'changeTypes']);
+        });
+
+        // 机柜智能分析API
+        Route::prefix('rack-analysis')->group(function () {
+            Route::post('recommend-position', [RackAnalysisController::class, 'recommendPosition']);
+            Route::post('smart-recommend', [RackAnalysisController::class, 'smartRecommend']);
+            Route::post('analyze-space', [RackAnalysisController::class, 'analyzeSpace']);
+            Route::post('compare-racks', [RackAnalysisController::class, 'compareRacks']);
+            Route::post('power-analysis', [RackAnalysisController::class, 'powerAnalysis']);
+            Route::post('room-power-analysis', [RackAnalysisController::class, 'roomPowerAnalysis']);
+            Route::get('system-power-overview', [RackAnalysisController::class, 'systemPowerOverview']);
+            Route::post('power-balance', [RackAnalysisController::class, 'powerBalance']);
+            Route::post('device-health', [RackAnalysisController::class, 'deviceHealth']);
+            Route::post('rack-health', [RackAnalysisController::class, 'rackHealth']);
+            Route::get('system-health-overview', [RackAnalysisController::class, 'systemHealthOverview']);
+
+            // 容量规划与预测API
+            Route::get('capacity-overview', [RackAnalysisController::class, 'capacityOverview']);
+            Route::post('rack-capacity-trend', [RackAnalysisController::class, 'rackCapacityTrend']);
+            Route::post('room-capacity-trend', [RackAnalysisController::class, 'roomCapacityTrend']);
+            Route::get('capacity-warnings', [RackAnalysisController::class, 'capacityWarnings']);
+            Route::post('capacity-forecast', [RackAnalysisController::class, 'capacityForecast']);
+        });
 
         // 用户偏好设置API - 特定路由必须在通用路由之前
         Route::get('preferences/device-status-colors', [UserPreferenceController::class, 'getDeviceStatusColors']);

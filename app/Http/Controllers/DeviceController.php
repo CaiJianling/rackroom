@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Device;
+use App\Models\DeviceChangeLog;
 use App\Models\DeviceLibrary;
 use App\Models\DeviceType;
 use App\Models\Rack;
@@ -107,7 +108,9 @@ class DeviceController extends Controller
             $validated['category'] = $validated['category'] ?? 'other';
         }
 
-        Device::create($validated);
+        $device = Device::create($validated);
+
+        DeviceChangeLog::logCreate($device);
 
         // 检查请求来源，如果是可视化编辑页面则保持在该页面
         $referer = $request->headers->get('referer');
@@ -185,7 +188,26 @@ class DeviceController extends Controller
             $validated['category'] = $validated['category'] ?? 'other';
         }
 
+        $oldValues = $device->toArray();
+        $oldRackId = $device->rack_id;
+        $oldUPosition = $device->u_position;
+        $oldRackName = $device->rack?->name;
+
         $device->update($validated);
+
+        $newRackName = $device->fresh()->rack?->name;
+
+        if ($oldRackId != $device->rack_id || $oldUPosition != $device->u_position) {
+            DeviceChangeLog::logMigration(
+                $device,
+                $oldRackName ?? '未知',
+                $oldUPosition ?? 0,
+                $newRackName ?? '未知',
+                $device->u_position ?? 0
+            );
+        } else {
+            DeviceChangeLog::logUpdate($device, $oldValues, $device->toArray());
+        }
 
         // 检查请求来源，如果是可视化编辑页面则保持在该页面
         $referer = $request->headers->get('referer');
@@ -203,7 +225,16 @@ class DeviceController extends Controller
 
     public function destroy(Device $device, Request $request)
     {
+        $deviceName = $device->name;
+        $deviceId = $device->id;
+
+        \Illuminate\Support\Facades\Log::info('Device delete requested', ['device_id' => $deviceId, 'device_name' => $deviceName]);
+
+        $changeLog = DeviceChangeLog::logDelete($device);
+        \Illuminate\Support\Facades\Log::info('DeviceChangeLog created for delete', ['device_id' => $deviceId, 'log_id' => $changeLog->id]);
+
         $device->delete();
+        \Illuminate\Support\Facades\Log::info('Device deleted', ['device_id' => $deviceId]);
 
         // 检查请求来源，如果是可视化编辑页面则保持在该页面
         $referer = $request->headers->get('referer');

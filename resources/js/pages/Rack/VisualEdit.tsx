@@ -156,6 +156,7 @@ interface RackDisplay {
     id: number;
     name: string;
     room_id: number;
+    room_name: string;
     rack_type_id: number | null;
     description: string | null;
     totalU: number;
@@ -562,6 +563,7 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                 id: rack.id,
                 name: rack.name,
                 room_id: rack.room_id,
+                room_name: rooms.find(r => r.id === rack.room_id)?.name || '',
                 rack_type_id: rack.rack_type_id,
                 description: rack.description,
                 totalU: rack.u_count,
@@ -571,7 +573,7 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                 devices: rack.devices || [],
             };
         });
-    }, [racks]);
+    }, [racks, rooms]);
 
     const libraryDevices = useMemo(() => {
         return deviceLibrary;
@@ -1341,43 +1343,56 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
         e.stopPropagation();
 
         const deviceType = draggingDevice?.type;
+        const deviceIdFromState = draggingDevice?.type === 'existing' && 'id' in draggingDevice.device ? draggingDevice.device.id : null;
 
         console.log('Library drop - deviceType:', deviceType);
+        console.log('Library drop - draggingDevice:', draggingDevice);
+        console.log('Library drop - deviceIdFromState:', deviceIdFromState);
+        console.log('Library drop - dataTransfer deviceId:', e.dataTransfer.getData('deviceId'));
 
         if (deviceType === 'existing') {
-            const deviceId = parseInt(e.dataTransfer.getData('deviceId'));
+            const deviceIdStr = e.dataTransfer.getData('deviceId');
+            const deviceId = parseInt(deviceIdStr);
+
             if (isNaN(deviceId)) {
-                console.error('Invalid device ID');
-                setDraggingDevice(null);
-                setDragPreviewPosition(null);
-                setIsDraggingOverLibrary(false);
+                console.error('Invalid device ID, trying to use deviceId from state');
+                // 尝试使用 state 中的 device id
+                if (deviceIdFromState) {
+                    console.log('Using deviceId from state:', deviceIdFromState);
+                    performDelete(deviceIdFromState);
+                } else {
+                    console.error('No valid device ID found');
+                    setDraggingDevice(null);
+                    setDragPreviewPosition(null);
+                    setIsDraggingOverLibrary(false);
+                }
                 return;
             }
 
-            const deviceName = e.dataTransfer.getData('deviceName');
-
-            console.log('Deleting device via library drop:', { deviceId, deviceName });
-
-            // 直接删除设备记录
-            router.delete(`/devices/${deviceId}`, {
-                preserveState: true,
-                preserveScroll: true,
-                onSuccess: () => {
-                    console.log('Device deleted successfully');
-                    showToast(t('visualEdit.toast.deviceDeleted'), 'success');
-                    router.reload({ only: ['racks', 'devices'] });
-                },
-                onError: (errors) => {
-                    console.error('Failed to delete device:', errors);
-                    showToast('Failed to delete device: ' + JSON.stringify(errors), 'error');
-                }
-            });
+            console.log('Deleting device via library drop:', { deviceId, deviceName: e.dataTransfer.getData('deviceName') });
+            performDelete(deviceId);
         }
 
         // 清除拖拽状态
         setDraggingDevice(null);
         setDragPreviewPosition(null);
         setIsDraggingOverLibrary(false);
+    };
+
+    const performDelete = (deviceId: number) => {
+        router.delete(`/devices/${deviceId}`, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                console.log('Device deleted successfully');
+                showToast(t('visualEdit.toast.deviceDeleted'), 'success');
+                router.reload({ only: ['racks', 'devices'] });
+            },
+            onError: (errors) => {
+                console.error('Failed to delete device:', errors);
+                showToast('Failed to delete device: ' + JSON.stringify(errors), 'error');
+            }
+        });
     };
 
     const handleLibraryDragOver = (e: React.DragEvent) => {
@@ -2034,13 +2049,15 @@ export default function RackVisualEdit({ racks, rooms, rackTypes, deviceLibrary,
                                             >
                                                 <div className="flex items-center justify-between rounded-t-lg bg-muted px-3 py-2">
                                                     <span
-                                                        className="font-semibold cursor-pointer"
+                                                        className="font-semibold cursor-pointer flex items-center gap-1"
                                                         onContextMenu={!previewMode ? (e) => handleRackContextMenu(e, rack) : undefined}
                                                         onMouseEnter={(e) => handleRackMouseEnter(e, rack)}
                                                         onMouseMove={handleRackMouseMove}
                                                         onMouseLeave={handleRackMouseLeave}
                                                     >
-                                                        {rack.name}
+                                                        <span className="text-xs text-muted-foreground">{rack.room_name}</span>
+                                                        <span>/</span>
+                                                        <span>{rack.name}</span>
                                                     </span>
                                                     <Button
                                                         variant="ghost"
@@ -2282,9 +2299,9 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                                         <SelectItem value="none">
                                             {t('deviceManagement.noRack')}
                                         </SelectItem>
-                                        {racks.map((rack) => (
+                                        {racksData.map((rack) => (
                                             <SelectItem key={rack.id} value={rack.id.toString()}>
-                                                {rack.name}
+                                                {rack.room_name} / {rack.name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -3680,7 +3697,7 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                         style={{ left: rackContextMenu.x, top: rackContextMenu.y }}
                     >
                         <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                            {rackContextMenu.rack.name}
+                            {rackContextMenu.rack.room_name} / {rackContextMenu.rack.name}
                         </div>
                         <button
                             className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
@@ -3734,7 +3751,7 @@ ${t('visualEdit.serialNumber')}: ${parentDevice.serial_number || parentDevice.de
                     className="fixed z-50 px-3 py-2 text-sm bg-white dark:bg-gray-900 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 pointer-events-none"
                     style={{ left: rackTooltip.x, top: rackTooltip.y }}
                 >
-                    <div className="font-medium mb-1">{rackTooltip.rack.name}</div>
+                    <div className="font-medium mb-1">{rackTooltip.rack.room_name} / {rackTooltip.rack.name}</div>
                     <div className="text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
                         <div>{t('rackManagement.uCount')}: {rackTooltip.rack.totalU}U</div>
                         <div>{t('rackManagement.power')}: {rackTooltip.rack.maxPower}W</div>

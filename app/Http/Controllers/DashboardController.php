@@ -200,4 +200,31 @@ class DashboardController extends Controller
             ])
             ->toArray();
     }
+
+    /**
+     * 显示机柜智能分析页面
+     */
+    public function rackAnalysis(): Response
+    {
+        $rooms = Room::select('id', 'name')->get();
+        $racks = Rack::with('room')
+            ->orderBy('room_id')
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($rack) => [
+                'id' => $rack->id,
+                'name' => $rack->name,
+                'room_id' => $rack->room_id,
+                'u_count' => $rack->u_count,
+            ]);
+
+        return inertia('Rack/RackAnalysis', [
+            'rooms' => $rooms,
+            'racks' => $racks,
+            'breadcrumbs' => [
+                ['title' => __('navigation.monitorReports'), 'href' => '#'],
+                ['title' => '机柜智能分析', 'href' => '/rack-analysis'],
+            ],
+        ]);
+    }
 }
