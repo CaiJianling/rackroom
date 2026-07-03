@@ -260,6 +260,13 @@ class DeviceChangeLogService
         ];
     }
 
+    public function clearLogsByDateRange(string $dateFrom, string $dateTo): int
+    {
+        return DeviceChangeLog::whereDate('created_at', '>=', $dateFrom)
+            ->whereDate('created_at', '<=', $dateTo)
+            ->delete();
+    }
+
     public function getChangeTypeOptions(): array
     {
         return array_map(function ($type, $label) {

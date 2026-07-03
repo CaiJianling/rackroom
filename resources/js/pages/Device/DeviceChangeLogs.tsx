@@ -3,11 +3,13 @@ import { useState, useEffect } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import {
     Activity,
+    AlertTriangle,
     ArrowRight,
     History,
     Loader2,
     Search,
     Server,
+    Trash2,
     TrendingUp,
     User,
 } from 'lucide-react';
@@ -17,6 +19,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const BREADCRUMBS = [
     { title: '监控/报表', href: '#' },
@@ -41,6 +54,11 @@ export default function DeviceChangeLogs({ breadcrumbs = BREADCRUMBS }: Props) {
         date_from: '',
         date_to: '',
     });
+
+    const [clearDialogOpen, setClearDialogOpen] = useState(false);
+    const [clearDateFrom, setClearDateFrom] = useState('');
+    const [clearDateTo, setClearDateTo] = useState('');
+    const [clearing, setClearing] = useState(false);
 
     const [migrationFilters, setMigrationFilters] = useState({
         device_name: '',
@@ -140,6 +158,48 @@ export default function DeviceChangeLogs({ breadcrumbs = BREADCRUMBS }: Props) {
         }
     };
 
+    const clearLogs = async () => {
+        if (!clearDateFrom || !clearDateTo) {
+            alert('请选择开始日期和结束日期');
+            return;
+        }
+
+        setClearing(true);
+        try {
+            const response = await fetch('/api/device-change-logs', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    date_from: clearDateFrom,
+                    date_to: clearDateTo,
+                }),
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                alert(data.message);
+                setClearDialogOpen(false);
+                setClearDateFrom('');
+                setClearDateTo('');
+                loadLogs();
+                if (statistics) {
+                    loadStatistics();
+                }
+            } else {
+                alert(data.message || '清除失败');
+            }
+        } catch (error) {
+            console.error('Failed to clear logs:', error);
+            alert('清除失败');
+        } finally {
+            setClearing(false);
+        }
+    };
+
     const handleTabChange = (value: string) => {
         if (value === 'logs') {
             loadLogs();
@@ -167,6 +227,66 @@ export default function DeviceChangeLogs({ breadcrumbs = BREADCRUMBS }: Props) {
                             记录设备所有变更操作，形成完整的操作日志链
                         </p>
                     </div>
+                    <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                清除历史
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle className="flex items-center gap-2">
+                                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                                    确认清除历史日志
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="space-y-3">
+                                    <p>确定要清除指定日期范围内的所有变更日志吗？此操作不可恢复，请谨慎操作。</p>
+                                    <div className="flex gap-4 items-center">
+                                        <div className="flex-1">
+                                            <label className="text-sm font-medium mb-1 block">开始日期</label>
+                                            <Input
+                                                type="date"
+                                                value={clearDateFrom}
+                                                onChange={(e) => setClearDateFrom(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="text-sm font-medium mb-1 block">结束日期</label>
+                                            <Input
+                                                type="date"
+                                                value={clearDateTo}
+                                                onChange={(e) => setClearDateTo(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>取消</AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        clearLogs();
+                                    }}
+                                    disabled={clearing}
+                                    className="bg-red-600 text-white hover:bg-red-700"
+                                >
+                                    {clearing ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            清除中...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            确认清除
+                                        </>
+                                    )}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </div>
 
                 <Tabs defaultValue="logs" onValueChange={handleTabChange}>

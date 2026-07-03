@@ -3,13 +3,14 @@
  * @Author: CaiJianling caijianling@outlook.com
  * @Date: 2026-03-25 03:55:13
  * @LastEditors: CaiJianling caijianling@outlook.com
- * @LastEditTime: 2026-07-03 15:23:53
+ * @LastEditTime: 2026-07-03 18:53:07
  * @FilePath: /rackroom/routes/web.php
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\BatchOperationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataExportController;
 use App\Http\Controllers\DeviceController;
@@ -70,9 +71,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('device-types', DeviceTypeController::class);
     Route::resource('device-library', DeviceLibraryController::class);
+
+    // 设备批量操作路由（必须放在 resource devices 之前）
+    Route::get('devices/batch-operations', [BatchOperationController::class, 'index'])->name('devices.batch-operations');
+
     Route::resource('devices', DeviceController::class);
     Route::get('devices/export', [DeviceController::class, 'export'])->name('devices.export');
     Route::post('devices/import', [DeviceController::class, 'import'])->name('devices.import');
+
     Route::get('device-change-logs', function () {
         return inertia('Device/DeviceChangeLogs');
     })->name('device-change-logs.index');
@@ -168,6 +174,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/migrations', [DeviceChangeLogController::class, 'migrations']);
             Route::get('/statistics', [DeviceChangeLogController::class, 'statistics']);
             Route::get('/change-types', [DeviceChangeLogController::class, 'changeTypes']);
+            Route::delete('/', [DeviceChangeLogController::class, 'destroy']);
+        });
+
+        // 设备批量操作API
+        Route::prefix('batch-operations/devices')->group(function () {
+            Route::post('/preview-import', [BatchOperationController::class, 'previewImport']);
+            Route::post('/import', [BatchOperationController::class, 'import']);
+            Route::get('/download-template', [BatchOperationController::class, 'downloadTemplate']);
+            Route::post('/preview-migration', [BatchOperationController::class, 'previewMigration']);
+            Route::post('/migrate', [BatchOperationController::class, 'migrate']);
+            Route::post('/preview-power-schedule', [BatchOperationController::class, 'previewPowerSchedule']);
+            Route::post('/execute-power-schedule', [BatchOperationController::class, 'executePowerSchedule']);
+            Route::get('/by-rack/{rackId}', [BatchOperationController::class, 'getDevicesByRack']);
+            Route::get('/search', [BatchOperationController::class, 'searchDevices']);
         });
 
         // 机柜智能分析API

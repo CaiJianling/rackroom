@@ -83,4 +83,25 @@ class DeviceChangeLogController extends Controller
             'data' => $types,
         ]);
     }
+
+    public function destroy(Request $request): JsonResponse
+    {
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+
+        if (!$dateFrom || !$dateTo) {
+            return response()->json([
+                'success' => false,
+                'message' => '请提供开始日期和结束日期',
+            ], 400);
+        }
+
+        $deletedCount = $this->changeLogService->clearLogsByDateRange($dateFrom, $dateTo);
+
+        return response()->json([
+            'success' => true,
+            'message' => "已删除 {$deletedCount} 条日志记录",
+            'deleted_count' => $deletedCount,
+        ]);
+    }
 }

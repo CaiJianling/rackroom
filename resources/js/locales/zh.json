@@ -190,6 +190,7 @@
         "deviceDetails": "设备详情",
         "deviceDetailsDesc": "查看设备的详细信息",
         "deviceImport": "设备导入",
+        "deviceBatchOperations": "批量操作",
         "monitorReports": "监控/报表",
         "monitor": "实时监控",
         "rackAnalysis": "机柜智能分析",
