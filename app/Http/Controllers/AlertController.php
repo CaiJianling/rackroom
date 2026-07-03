@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Alert;
+use App\Models\AlertRule;
 use App\Models\Device;
+use App\Services\SmartAlertService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -59,6 +61,39 @@ class AlertController extends Controller
         // 获取告警类型列表
         $alertTypes = Alert::distinct()->pluck('alert_type');
 
+        // 获取智能告警规则
+        $alertRules = AlertRule::orderBy('created_at', 'desc')->get();
+
+        // 获取初始评估结果（如果启用了自动评估）
+        $smartAlertService = new SmartAlertService();
+        $smartAlertResults = [];
+        $enabledRules = $alertRules->filter(fn($r) => $r->is_enabled);
+        if ($enabledRules->isNotEmpty()) {
+            $evaluation = $smartAlertService->evaluateAllRules();
+            $smartAlertResults = array_map(function ($result) {
+                return [
+                    'triggered' => $result['triggered'],
+                    'rule' => [
+                        'id' => $result['rule']->id,
+                        'name' => $result['rule']->name,
+                        'description' => $result['rule']->description,
+                        'rule_type' => $result['rule']->rule_type,
+                        'condition' => $result['rule']->condition,
+                        'condition_value' => $result['rule']->condition_value,
+                        'severity' => $result['rule']->severity,
+                        'is_enabled' => $result['rule']->is_enabled,
+                        'suggestion' => $result['rule']->suggestion,
+                    ],
+                    'device' => [
+                        'id' => $result['device']->id ?? 0,
+                        'name' => $result['device']->name ?? 'N/A',
+                    ],
+                    'value' => $result['value'],
+                    'suggestion' => $result['suggestion'] ?? null,
+                ];
+            }, $evaluation['triggered']);
+        }
+
         return inertia('Alert/Index', [
             'alerts' => $alerts,
             'stats' => $stats,
@@ -69,6 +104,8 @@ class AlertController extends Controller
                 'search' => $search,
             ],
             'alertTypes' => $alertTypes,
+            'alertRules' => $alertRules,
+            'smartAlertResults' => $smartAlertResults,
             'breadcrumbs' => [
                 ['title' => __('navigation.monitorReports'), 'href' => '#'],
                 ['title' => __('navigation.alerts'), 'href' => '/alerts'],

@@ -1,19 +1,19 @@
 import { Head, router } from '@inertiajs/react';
 import {
-    AlertCircle,
     AlertTriangle,
     CheckCircle2,
     Clock,
     Eye,
     Filter,
     Info,
+    Lightbulb,
     MoreHorizontal,
     RefreshCw,
     Search,
     ShieldCheck,
-    Trash2,
     X,
     XCircle,
+    Zap,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -58,9 +58,9 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { cn } from '@/lib/utils';
 
 interface Alert {
     id: number;
@@ -117,21 +117,56 @@ interface Filters {
     search: string;
 }
 
+interface AlertRule {
+    id: number;
+    name: string;
+    description: string | null;
+    rule_type: string;
+    condition: string;
+    condition_value: string;
+    severity: string;
+    is_enabled: boolean;
+    suggestion: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+interface SmartAlertResult {
+    triggered: boolean;
+    rule: AlertRule;
+    device: { id: number; name: string };
+    value: number;
+    suggestion: {
+        title: string;
+        description: string;
+        action: string;
+        action_type: string;
+        target_rack_id?: number;
+        device_id?: number;
+    };
+}
+
 interface Props {
     alerts: Pagination;
     stats: AlertStats;
     filters: Filters;
     alertTypes: string[];
+    alertRules?: AlertRule[];
+    smartAlertResults?: SmartAlertResult[];
     breadcrumbs?: Array<{ title: string; href: string }>;
 }
 
-export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcrumbs = [] }: Props) {
+export default function AlertIndex({ alerts, stats, filters, alertTypes, alertRules = [], smartAlertResults = [], breadcrumbs = [] }: Props) {
     const { t } = useTranslation();
     const [selectedAlerts, setSelectedAlerts] = useState<number[]>([]);
     const [viewingAlert, setViewingAlert] = useState<Alert | null>(null);
     const [resolvingAlert, setResolvingAlert] = useState<Alert | null>(null);
     const [resolutionNote, setResolutionNote] = useState('');
     const [localFilters, setLocalFilters] = useState(filters);
+    const [activeTab, setActiveTab] = useState('alerts');
+    const [rules, setRules] = useState<AlertRule[]>(alertRules);
+    const [evaluating, setEvaluating] = useState(false);
+    const [evaluationResults, setEvaluationResults] = useState<SmartAlertResult[]>(smartAlertResults);
 
     const toggleAlertSelection = (alertId: number) => {
         setSelectedAlerts((prev) =>
@@ -257,6 +292,62 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
         return new Date(date).toLocaleString();
     };
 
+    const toggleRule = async (ruleId: number) => {
+        try {
+            const response = await fetch(`/api/smart-alerts/${ruleId}/toggle`, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '' },
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setRules(rules.map(r => r.id === ruleId ? { ...r, is_enabled: data.data.is_enabled } : r));
+            }
+        } catch (error) {
+            console.error('Failed to toggle rule:', error);
+        }
+    };
+
+    const evaluateRules = async () => {
+        setEvaluating(true);
+        try {
+            const response = await fetch('/api/smart-alerts/evaluate', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '' },
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setEvaluationResults(data.data.triggered || []);
+            }
+        } catch (error) {
+            console.error('Failed to evaluate rules:', error);
+        } finally {
+            setEvaluating(false);
+        }
+    };
+
+    const getRuleTypeLabel = (type: string) => {
+        const labels: Record<string, string> = {
+            power_overload: '电源负载预警',
+            health_decline: '健康度下降',
+            temperature_high: '温度过高',
+            rack_capacity: '机柜容量预警',
+            device_offline: '设备离线',
+        };
+        return labels[type] || type;
+    };
+
+    const getConditionLabel = (condition: string) => {
+        const labels: Record<string, string> = {
+            gt: '大于',
+            gte: '大于等于',
+            lt: '小于',
+            lte: '小于等于',
+            eq: '等于',
+            not_eq: '不等于',
+        };
+        return labels[condition] || condition;
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('alert.title')} />
@@ -270,6 +361,16 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                     </Button>
                 </div>
 
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <TabsList>
+                        <TabsTrigger value="alerts">{t('alert.alerts')}</TabsTrigger>
+                        <TabsTrigger value="smart-alerts">
+                            <Zap className="mr-2 h-4 w-4" />
+                            {t('alert.smartAlerts')}
+                        </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="alerts" className="space-y-4">
                 {/* 统计卡片 */}
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
                     <Card>
@@ -349,7 +450,7 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">{t('alert.allStatus')}</SelectItem>
-                                        <SelectItem value="active">{t('common.active')}</SelectItem>
+                                        <SelectItem value="active">{t('alert.activeAlerts')}</SelectItem>
                                         <SelectItem value="acknowledged">{t('alert.acknowledged')}</SelectItem>
                                         <SelectItem value="resolved">{t('alert.resolved')}</SelectItem>
                                     </SelectContent>
@@ -546,6 +647,138 @@ export default function AlertIndex({ alerts, stats, filters, alertTypes, breadcr
                         )}
                     </CardContent>
                 </Card>
+                    </TabsContent>
+
+                    <TabsContent value="smart-alerts" className="space-y-4">
+                        {/* 智能告警工具栏 */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Button variant="outline" size="sm" onClick={evaluateRules} disabled={evaluating}>
+                                    <Zap className="mr-2 h-4 w-4" />
+                                    {evaluating ? t('alert.evaluating') : t('alert.evaluateNow')}
+                                </Button>
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                                {t('alert.enabledRules', { count: rules.filter(r => r.is_enabled).length })}
+                            </div>
+                        </div>
+
+                        {/* 触发规则结果 */}
+                        {evaluationResults.length > 0 && (
+                            <Card className="border-orange-200 bg-orange-50/50">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="flex items-center gap-2 text-orange-600">
+                                        <AlertTriangle className="h-5 w-5" />
+                                        {t('alert.triggeredAlerts')}
+                                    </CardTitle>
+                                    <CardDescription>
+                                        {t('alert.triggeredAlertsDesc', { count: evaluationResults.length })}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {evaluationResults.map((result, index) => (
+                                        <div key={index} className="rounded-lg border bg-white p-4">
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    {result.rule.severity === 'critical' ? (
+                                                        <XCircle className="h-5 w-5 text-red-500" />
+                                                    ) : (
+                                                        <AlertTriangle className="h-5 w-5 text-orange-500" />
+                                                    )}
+                                                    <div>
+                                                        <p className="font-medium">{result.rule.name} - {result.device.name}</p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {t('alert.currentValue')}: {result.value.toFixed(1)} {result.rule.condition} {result.rule.condition_value}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {result.suggestion && (
+                                                <div className="mt-3 rounded bg-blue-50 p-3">
+                                                    <div className="flex items-start gap-2">
+                                                        <Lightbulb className="h-4 w-4 text-blue-500 mt-0.5" />
+                                                        <div>
+                                                            <p className="font-medium text-blue-800">{result.suggestion.title}</p>
+                                                            <p className="text-sm text-blue-700 mt-1">{result.suggestion.description}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {/* 告警规则列表 */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>{t('alert.ruleList')}</CardTitle>
+                                <CardDescription>{t('alert.ruleListDesc')}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="bg-muted/50">
+                                            <TableHead className="w-[40px]">{t('alert.enabled')}</TableHead>
+                                            <TableHead>{t('alert.ruleName')}</TableHead>
+                                            <TableHead>{t('alert.ruleType')}</TableHead>
+                                            <TableHead>{t('alert.condition')}</TableHead>
+                                            <TableHead>{t('alert.severity')}</TableHead>
+                                            <TableHead>{t('common.actions')}</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {rules.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                                                    {t('alert.noRules')}
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            rules.map((rule) => (
+                                                <TableRow key={rule.id}>
+                                                    <TableCell>
+                                                        <Checkbox
+                                                            checked={rule.is_enabled}
+                                                            onCheckedChange={() => toggleRule(rule.id)}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="font-medium">{rule.name}</div>
+                                                        {rule.description && (
+                                                            <div className="text-xs text-muted-foreground">{rule.description}</div>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge variant="outline">{getRuleTypeLabel(rule.rule_type)}</Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-sm">
+                                                        {getConditionLabel(rule.condition)} {rule.condition_value}
+                                                        {rule.rule_type === 'power_overload' || rule.rule_type === 'rack_capacity' || rule.rule_type === 'health_decline' ? '%' : ''}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {rule.severity === 'critical' ? (
+                                                            <Badge variant="destructive">{t('alert.critical')}</Badge>
+                                                        ) : (
+                                                            <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200">{t('alert.warning')}</Badge>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Button variant="ghost" size="sm" onClick={() => router.get(`/alerts?device_id=${rule.id}`)}>
+                                                            <Eye className="mr-2 h-4 w-4" />
+                                                            {t('common.view')}
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
             </div>
 
             {/* 查看详情对话框 */}

@@ -770,6 +770,8 @@
     "alert": {
         "title": "Alerts",
         "description": "Manage system alerts and notifications",
+        "alerts": "Alert List",
+        "smartAlerts": "Smart Alerts",
         "totalAlerts": "Total Alerts",
         "activeAlerts": "Active Alerts",
         "criticalAlerts": "Critical Alerts",
@@ -813,7 +815,21 @@
         "resolvedByUser": "Resolved by {{name}} at {{date}}",
         "resolutionNoteText": "Note",
         "resolveAlert": "Resolve Alert",
-        "resolveAlertDesc": "Please enter resolution note information"
+        "resolveAlertDesc": "Please enter resolution note information",
+        "smartAlertsTab": "Smart Alerts",
+        "evaluateNow": "Evaluate Now",
+        "evaluating": "Evaluating...",
+        "enabledRules": "{{count}} rules enabled",
+        "triggeredAlerts": "Triggered Alerts",
+        "triggeredAlertsDesc": "{{count}} rules have been triggered",
+        "currentValue": "Current Value",
+        "ruleList": "Alert Rules",
+        "ruleListDesc": "Manage smart alert rules and thresholds",
+        "noRules": "No alert rules configured",
+        "enabled": "Enabled",
+        "ruleName": "Rule Name",
+        "ruleType": "Rule Type",
+        "condition": "Condition"
     },
     "validation": {
         "created": "Created successfully",

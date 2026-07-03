@@ -5,6 +5,7 @@ use App\Http\Controllers\AlertController;
 use App\Http\Controllers\DetectionLogController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SmartAlertController;
 use Illuminate\Support\Facades\Route;
 
 // API routes that use session-based authentication
@@ -38,5 +39,14 @@ Route::middleware(['web', 'auth', 'verified'])->group(function () {
     Route::get('detection-logs', [DetectionLogController::class, 'index']);
     Route::get('detection-logs/stats', [DetectionLogController::class, 'stats']);
     Route::get('detection-logs/{log}', [DetectionLogController::class, 'show']);
+
+    // 智能告警API
+    Route::get('smart-alerts', [SmartAlertController::class, 'index']);
+    Route::post('smart-alerts/evaluate', [SmartAlertController::class, 'evaluate']);
+    Route::get('smart-alerts/suggestions', [SmartAlertController::class, 'suggestions']);
+    Route::post('smart-alerts', [SmartAlertController::class, 'store']);
+    Route::put('smart-alerts/{id}', [SmartAlertController::class, 'update']);
+    Route::delete('smart-alerts/{id}', [SmartAlertController::class, 'destroy']);
+    Route::post('smart-alerts/{id}/toggle', [SmartAlertController::class, 'toggle']);
     Route::post('detection-logs/detect', [DetectionLogController::class, 'detect']);
 });

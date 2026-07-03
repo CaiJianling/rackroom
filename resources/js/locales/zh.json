@@ -781,6 +781,8 @@
     "alert": {
         "title": "告警列表",
         "description": "管理系统告警和通知",
+        "alerts": "告警列表",
+        "smartAlerts": "智能告警",
         "totalAlerts": "总告警数",
         "activeAlerts": "活跃告警",
         "criticalAlerts": "严重告警",
@@ -824,7 +826,21 @@
         "resolvedByUser": "由 {{name}} 于 {{date}} 解决",
         "resolutionNoteText": "备注",
         "resolveAlert": "解决告警",
-        "resolveAlertDesc": "请输入解决方案备注信息"
+        "resolveAlertDesc": "请输入解决方案备注信息",
+        "smartAlertsTab": "智能告警",
+        "evaluateNow": "立即评估",
+        "evaluating": "评估中...",
+        "enabledRules": "已启用 {count} 条规则",
+        "triggeredAlerts": "触发的告警",
+        "triggeredAlertsDesc": "以下 {count} 条规则被触发",
+        "currentValue": "当前值",
+        "ruleList": "告警规则列表",
+        "ruleListDesc": "管理智能告警规则和阈值",
+        "noRules": "暂无告警规则",
+        "enabled": "启用",
+        "ruleName": "规则名称",
+        "ruleType": "规则类型",
+        "condition": "条件"
     },
     "report": {
         "title": "报表生成",
