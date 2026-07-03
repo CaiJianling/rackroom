@@ -191,6 +191,7 @@
         "deviceDetailsDesc": "View detailed information of the device",
         "deviceImport": "Device Import",
         "deviceBatchOperations": "Batch Operations",
+        "deviceDependencies": "Device Dependencies",
         "monitorReports": "Monitor/Reports",
         "monitor": "Real-time Monitor",
         "rackAnalysis": "Rack Intelligence Analysis",

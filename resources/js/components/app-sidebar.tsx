@@ -84,6 +84,10 @@ export function AppSidebar() {
                     title: t('navigation.deviceBatchOperations'),
                     href: '/devices/batch-operations',
                 },
+                {
+                    title: t('navigation.deviceDependencies'),
+                    href: '/device-dependencies',
+                },
             ],
         },
         {

@@ -33,9 +33,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAppearance } from '@/hooks/use-appearance';
-import { cn } from '@/lib/utils';
-import AppLayout from '@/layouts/app-layout';
 import type { Appearance } from '@/hooks/use-appearance';
+import AppLayout from '@/layouts/app-layout';
+import { cn } from '@/lib/utils';
 
 interface Props {
     breadcrumbs?: Array<{ title: string; href: string }>;

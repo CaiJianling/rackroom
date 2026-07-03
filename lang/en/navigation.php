@@ -11,6 +11,8 @@ return [
     'deviceList' => 'Device List',
     'deviceTypeManagement' => 'Device Type Management',
     'deviceLibrary' => 'Device Library',
+    'deviceBatchOperations' => 'Device Batch Operations',
+    'deviceDependencies' => 'Device Dependencies',
     'monitorReports' => 'Monitor & Reports',
     'monitor' => 'Real-time Monitor',
     'reports' => 'Reports',
