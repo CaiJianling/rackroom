@@ -313,26 +313,26 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="机柜智能分析" />
+            <Head title={t('rackAnalysis.title')} />
 
             <div className="flex flex-col gap-6 p-6">
                 <div className="mb-6 flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold">机柜智能分析</h1>
+                        <h1 className="text-2xl font-bold">{t('rackAnalysis.title')}</h1>
                         <p className="text-muted-foreground mt-1">
-                            基于设备特征的智能空间推荐与健康度分析
+                            {t('rackAnalysis.subtitle')}
                         </p>
                     </div>
                     <Button onClick={loadSystemOverview} disabled={loading}>
                         <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                        刷新数据
+                        {t('common.refresh')}
                     </Button>
                 </div>
 
                 <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium">系统健康度</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t('rackAnalysis.systemHealth')}</CardTitle>
                             <Activity className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -340,7 +340,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                 {systemHealth?.overall_health_score || '--'}
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                {systemHealth?.total_devices || 0} 台设备
+                                {systemHealth?.total_devices || 0} {t('rackAnalysis.totalDevices')}
                             </p>
                             <Progress
                                 value={systemHealth?.overall_health_score || 0}
@@ -351,7 +351,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
 
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium">电源总负载</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t('rackAnalysis.powerTotalLoad')}</CardTitle>
                             <Zap className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -359,7 +359,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                 {systemPower?.total_power || 0} W
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                可用 {systemPower?.available_power || 0} W
+                                {t('rackAnalysis.availablePower')} {systemPower?.available_power || 0} W
                             </p>
                             <Progress
                                 value={systemPower?.system_utilization || 0}
@@ -370,7 +370,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
 
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium">告警设备</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t('rackAnalysis.alertDevices')}</CardTitle>
                             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -378,14 +378,14 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                 {systemHealth?.critical_devices || 0}
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                {systemHealth?.warning_devices || 0} 台需要关注
+                                {systemHealth?.warning_devices || 0} {t('rackAnalysis.devicesNeedAttention')}
                             </p>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium">电源告警</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t('rackAnalysis.powerAlert')}</CardTitle>
                             <Power className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -421,7 +421,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                     }}>
                         <SelectTrigger className="w-[200px]">
                             <Server className="mr-2 h-4 w-4" />
-                            <SelectValue placeholder="选择机柜" />
+                            <SelectValue placeholder={t('rackAnalysis.selectRackToView')} />
                         </SelectTrigger>
                         <SelectContent>
                             {racks
@@ -473,11 +473,11 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                         }
                     }}>
                     <TabsList>
-                        <TabsTrigger value="space">空间分析</TabsTrigger>
-                        <TabsTrigger value="power">电源分析</TabsTrigger>
-                        <TabsTrigger value="health">健康度分析</TabsTrigger>
-                        <TabsTrigger value="smart">智能上架</TabsTrigger>
-                        <TabsTrigger value="capacity">容量规划</TabsTrigger>
+                        <TabsTrigger value="space">{t('rackAnalysis.spaceAnalysis')}</TabsTrigger>
+                        <TabsTrigger value="power">{t('rackAnalysis.powerAnalysis')}</TabsTrigger>
+                        <TabsTrigger value="health">{t('rackAnalysis.healthAnalysis')}</TabsTrigger>
+                        <TabsTrigger value="smart">{t('rackAnalysis.smartPlacement')}</TabsTrigger>
+                        <TabsTrigger value="capacity">{t('rackAnalysis.capacityPlanning')}</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="space" className="mt-4">
@@ -485,7 +485,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle>空间利用率</CardTitle>
+                                        <CardTitle>{t('rackAnalysis.spaceUtilization')}</CardTitle>
                                         <CardDescription>
                                             {rackSpace.rack_name} - U位使用情况
                                         </CardDescription>
@@ -493,7 +493,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                     <CardContent>
                                         <div className="mb-4">
                                             <div className="flex justify-between text-sm mb-1">
-                                                <span>已用空间</span>
+                                                <span>{t('rackAnalysis.usedSpace')}</span>
                                                 <span>{rackSpace.occupied_u} / {rackSpace.total_u} U</span>
                                             </div>
                                             <Progress value={rackSpace.utilization_rate} className="h-3" />
@@ -517,8 +517,8 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
 
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle>空间区域分析</CardTitle>
-                                        <CardDescription>按区域统计空间使用情况</CardDescription>
+                                        <CardTitle>{t('rackAnalysis.spaceAreaAnalysis')}</CardTitle>
+                                        <CardDescription>{t('rackAnalysis.spaceAreaDesc')}</CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="space-y-3">
@@ -536,8 +536,8 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                 {rackSpace.gaps?.length > 0 && (
                                     <Card className="lg:col-span-2">
                                         <CardHeader>
-                                            <CardTitle>空闲区间</CardTitle>
-                                            <CardDescription>可用的连续空闲空间</CardDescription>
+                                            <CardTitle>{t('rackAnalysis.continuousSpace')}</CardTitle>
+                                            <CardDescription>{t('rackAnalysis.availableContinuousSpace')}</CardDescription>
                                         </CardHeader>
                                         <CardContent>
                                             <div className="flex flex-wrap gap-2">
@@ -554,7 +554,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                         ) : (
                             <Card>
                                 <CardContent className="py-12 text-center text-muted-foreground">
-                                    请选择机柜以查看空间分析
+                                    {t('rackAnalysis.selectRackToView')}
                                 </CardContent>
                             </Card>
                         )}
@@ -565,7 +565,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle>电源负载分析</CardTitle>
+                                        <CardTitle>{t('rackAnalysis.powerLoadAnalysis')}</CardTitle>
                                         <CardDescription>
                                             {rackPower.rack_name} - 功率使用情况
                                         </CardDescription>
@@ -573,7 +573,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                     <CardContent>
                                         <div className="mb-4">
                                             <div className="flex justify-between text-sm mb-1">
-                                                <span>当前负载</span>
+                                                <span>{t('rackAnalysis.currentLoad')}</span>
                                                 <span>{rackPower.current_power} / {rackPower.power_limit || '无限制'} W</span>
                                             </div>
                                             <Progress
@@ -599,7 +599,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                                 ) : (
                                                     <CheckCircle className="h-4 w-4" />
                                                 )}
-                                                <span className="text-sm font-medium">{rackPower.warning || '电源状态正常'}</span>
+                                                <span className="text-sm font-medium">{rackPower.warning || t('rackAnalysis.normalPowerStatus')}</span>
                                             </div>
                                         </div>
 
@@ -644,7 +644,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                 {rackPower.redundancy && (
                                     <Card className="lg:col-span-2">
                                         <CardHeader>
-                                            <CardTitle>电源冗余分析</CardTitle>
+                                            <CardTitle>{t('rackAnalysis.powerRedundancyAnalysis')}</CardTitle>
                                         </CardHeader>
                                         <CardContent>
                                             <div className="flex items-center gap-4">
@@ -659,7 +659,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                                 </div>
                                                 <div>
                                                     <p className="font-medium">
-                                                        {rackPower.redundancy.has_redundant_power ? '具备电源冗余' : '无冗余电源'}
+                                                        {rackPower.redundancy.has_redundant_power ? t('rackAnalysis.hasRedundantPower') : t('rackAnalysis.noRedundantPower')}
                                                     </p>
                                                     <p className="text-sm text-muted-foreground">
                                                         {rackPower.redundancy.recommendation}
@@ -673,7 +673,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                         ) : (
                             <Card>
                                 <CardContent className="py-12 text-center text-muted-foreground">
-                                    请选择机柜以查看电源分析
+                                    {t('rackAnalysis.selectRackToViewPower')}
                                 </CardContent>
                             </Card>
                         )}
@@ -684,7 +684,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                             <div className="grid grid-cols-1 gap-6">
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle>机柜健康度总览</CardTitle>
+                                        <CardTitle>{t('rackAnalysis.rackHealthOverview')}</CardTitle>
                                         <CardDescription>
                                             {rackHealth.rack_name} - {rackHealth.device_count} 台设备
                                         </CardDescription>
@@ -783,7 +783,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                         ) : (
                             <Card>
                                 <CardContent className="py-12 text-center text-muted-foreground">
-                                    请选择机柜以查看健康度分析
+                                    {t('rackAnalysis.selectRackToViewHealth')}
                                 </CardContent>
                             </Card>
                         )}
@@ -793,15 +793,15 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                         <div className="space-y-6">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>智能设备上架推荐</CardTitle>
+                                    <CardTitle>{t('rackAnalysis.smartDevicePlacement')}</CardTitle>
                                     <CardDescription>
-                                        根据机房热力图、散热路径、电源均衡和设备兼容性智能推荐最佳放置位置
+                                        {t('rackAnalysis.smartPlacementDesc')}
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                                         <div>
-                                            <label className="text-sm font-medium mb-2 block">设备高度 (U)</label>
+                                            <label className="text-sm font-medium mb-2 block">{t('rackAnalysis.deviceHeight')} (U)</label>
                                             <Select
                                                 value={smartRecommendParams.device_height.toString()}
                                                 onValueChange={(val) => setSmartRecommendParams(prev => ({ ...prev, device_height: parseInt(val) }))}
@@ -817,7 +817,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                             </Select>
                                         </div>
                                         <div>
-                                            <label className="text-sm font-medium mb-2 block">设备功率 (W)</label>
+                                            <label className="text-sm font-medium mb-2 block">{t('rackAnalysis.devicePower')} (W)</label>
                                             <Select
                                                 value={smartRecommendParams.device_power.toString()}
                                                 onValueChange={(val) => setSmartRecommendParams(prev => ({ ...prev, device_power: parseInt(val) }))}
@@ -835,7 +835,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                             </Select>
                                         </div>
                                         <div>
-                                            <label className="text-sm font-medium mb-2 block">设备类型</label>
+                                            <label className="text-sm font-medium mb-2 block">{t('rackAnalysis.deviceType')}</label>
                                             <Select
                                                 value={smartRecommendParams.device_type}
                                                 onValueChange={(val) => setSmartRecommendParams(prev => ({ ...prev, device_type: val }))}
@@ -875,7 +875,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                     <div className="mt-4 flex justify-end">
                                         <Button onClick={loadSmartRecommend} disabled={smartRecommendLoading}>
                                             <Cpu className={`mr-2 h-4 w-4 ${smartRecommendLoading ? 'animate-spin' : ''}`} />
-                                            {smartRecommendLoading ? '分析中...' : '开始分析'}
+                                            {smartRecommendLoading ? t('rackAnalysis.analyzing') : t('rackAnalysis.startAnalysis')}
                                         </Button>
                                     </div>
                                 </CardContent>
@@ -910,7 +910,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                                         </Badge>
                                                     </div>
                                                     <CardDescription>
-                                                        推荐位置：U{rec.recommended_u_position} - U{rec.recommended_u_end}
+                                                        {t('rackAnalysis.recommendedPosition')}：U{rec.recommended_u_position} - U{rec.recommended_u_end}
                                                     </CardDescription>
                                                 </CardHeader>
                                                 <CardContent>
@@ -922,15 +922,15 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                                             </div>
                                                             <div className="flex items-center gap-1">
                                                                 <Server className="h-4 w-4 text-muted-foreground" />
-                                                                <span>兼容性：{rec.score_breakdown?.type_compatibility}</span>
+                                                                <span>{t('rackAnalysis.compatibilityScore')}：{rec.score_breakdown?.type_compatibility}</span>
                                                             </div>
                                                             <div className="flex items-center gap-1">
                                                                 <Zap className="h-4 w-4 text-muted-foreground" />
-                                                                <span>电源均衡：{rec.score_breakdown?.power_balance}</span>
+                                                                <span>{t('rackAnalysis.powerBalance')}：{rec.score_breakdown?.power_balance}</span>
                                                             </div>
                                                             <div className="flex items-center gap-1">
                                                                 <Activity className="h-4 w-4 text-muted-foreground" />
-                                                                <span>电源余量：{rec.score_breakdown?.power_headroom}</span>
+                                                                <span>{t('rackAnalysis.powerHeadroom')}：{rec.score_breakdown?.power_headroom}</span>
                                                             </div>
                                                         </div>
 
@@ -971,7 +971,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                     {(!smartRecommendResult.top_recommendations || smartRecommendResult.top_recommendations.length === 0) && (
                                         <Card>
                                             <CardContent className="py-12 text-center text-muted-foreground">
-                                                没有找到符合条件的机柜，请调整设备参数后重试
+                                                {t('rackAnalysis.noRecommendation')}
                                             </CardContent>
                                         </Card>
                                     )}
@@ -990,7 +990,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                                     <Card>
                                         <CardHeader className="pb-2">
-                                            <CardDescription>总机柜数</CardDescription>
+                                            <CardDescription>{t('rackAnalysis.totalRacks')}</CardDescription>
                                             <CardTitle className="text-2xl">{capacityOverview.total_racks}</CardTitle>
                                         </CardHeader>
                                         <CardContent>
@@ -1002,7 +1002,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
 
                                     <Card>
                                         <CardHeader className="pb-2">
-                                            <CardDescription>空间利用率</CardDescription>
+                                            <CardDescription>{t('rackAnalysis.spaceUtilization2')}</CardDescription>
                                             <CardTitle className="text-2xl">{capacityOverview.space_utilization}%</CardTitle>
                                         </CardHeader>
                                         <CardContent>
@@ -1017,7 +1017,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
 
                                     <Card>
                                         <CardHeader className="pb-2">
-                                            <CardDescription>电源利用率</CardDescription>
+                                            <CardDescription>{t('rackAnalysis.powerUtilization2')}</CardDescription>
                                             <CardTitle className="text-2xl">{capacityOverview.power_utilization}%</CardTitle>
                                         </CardHeader>
                                         <CardContent>
@@ -1048,7 +1048,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                         <CardHeader>
                                             <CardTitle className="text-base flex items-center gap-2">
                                                 <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                                                容量预警
+                                                {t('rackAnalysis.capacityWarning')}
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent>
@@ -1069,12 +1069,12 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                 {capacityForecast && (
                                     <Card>
                                         <CardHeader>
-                                            <CardTitle>容量预测（未来12个月）</CardTitle>
+                                            <CardTitle>{t('rackAnalysis.capacityPrediction')}</CardTitle>
                                         </CardHeader>
                                         <CardContent>
                                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                                 <div>
-                                                    <h4 className="text-sm font-medium mb-3">空间使用趋势</h4>
+                                                    <h4 className="text-sm font-medium mb-3">{t('rackAnalysis.spaceUsageTrend')}</h4>
                                                     <div className="space-y-2">
                                                         {capacityForecast.space_forecast?.map((forecast: any, idx: number) => (
                                                             <div key={idx} className="flex items-center gap-3">
@@ -1095,7 +1095,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <h4 className="text-sm font-medium mb-3">电源使用趋势</h4>
+                                                    <h4 className="text-sm font-medium mb-3">{t('rackAnalysis.powerUsageTrend')}</h4>
                                                     <div className="space-y-2">
                                                         {capacityForecast.power_forecast?.map((forecast: any, idx: number) => (
                                                             <div key={idx} className="flex items-center gap-3">
@@ -1140,7 +1140,7 @@ export default function RackAnalysis({ breadcrumbs = [] }: Props) {
 
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle>各机房容量详情</CardTitle>
+                                        <CardTitle>{t('rackAnalysis.roomCapacityDetails')}</CardTitle>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -214,7 +214,7 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
         if (!file) return;
 
         if (!file.name.endsWith('.csv') && !file.name.endsWith('.txt')) {
-            showToast('请上传CSV格式的文件', 'error');
+            showToast(t('batchOperations.uploadCSVError'), 'error');
             return;
         }
 
@@ -261,7 +261,7 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
 
     const handleImport = () => {
         if (selectedImportRows.length === 0) {
-            showToast('请至少选择一条数据导入', 'warning');
+            showToast(t('batchOperations.selectImportData'), 'warning');
             return;
         }
         setConfirmAction('import');
@@ -305,7 +305,7 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
             }
         } catch (error) {
             console.error('Import failed:', error);
-            showToast('导入失败', 'error');
+            showToast(t('batchOperations.importFailed'), 'error');
         } finally {
             setConfirmLoading(false);
         }
@@ -637,7 +637,7 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
     const getConfirmTitle = () => {
         switch (confirmAction) {
             case 'import':
-                return '确认导入';
+                return t('batchOperations.confirmImport');
             case 'migrate':
                 return '确认迁移';
             case 'power':
@@ -648,7 +648,7 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
     const getConfirmDescription = () => {
         switch (confirmAction) {
             case 'import':
-                return `确定要导入选中的 ${selectedImportRows.length} 台设备吗？`;
+                return t('batchOperations.confirmImportDesc', { count: selectedImportRows.length });
             case 'migrate':
                 return `确定要迁移选中的 ${selectedMigrationRows.length} 台设备吗？`;
             case 'power':
@@ -714,25 +714,25 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="批量操作" />
+            <Head title={t('batchOperations.title')} />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold">批量操作</h1>
+                    <h1 className="text-2xl font-bold">{t('batchOperations.title')}</h1>
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
                     <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="import" className="flex items-center gap-2">
                             <Upload className="h-4 w-4" />
-                            CSV批量导入
+                            {t('batchOperations.csvImport')}
                         </TabsTrigger>
                         <TabsTrigger value="migration" className="flex items-center gap-2">
                             <ArrowUpDown className="h-4 w-4" />
-                            批量迁移
+                            {t('batchOperations.batchMigration')}
                         </TabsTrigger>
                         <TabsTrigger value="power" className="flex items-center gap-2">
                             <Power className="h-4 w-4" />
-                            批量上下电
+                            {t('batchOperations.batchPower')}
                         </TabsTrigger>
                     </TabsList>
 
@@ -741,10 +741,10 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <FileSpreadsheet className="h-5 w-5" />
-                                    CSV批量导入设备
+                                    {t('batchOperations.csvImportTitle')}
                                 </CardTitle>
                                 <CardDescription>
-                                    上传CSV文件批量导入设备，支持智能校验、自动匹配机柜和设备库
+                                    {t('batchOperations.csvImportDesc')}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
@@ -754,12 +754,12 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
                                         onClick={() => window.location.href = '/api/batch-operations/devices/download-template'}
                                     >
                                         <Download className="mr-2 h-4 w-4" />
-                                        下载模板
+                                        {t('batchOperations.downloadTemplate')}
                                     </Button>
                                     <Label htmlFor="import-file" className="cursor-pointer">
                                         <div className="flex items-center gap-2 rounded-md border bg-background px-4 py-2 hover:bg-muted">
                                             <Upload className="h-4 w-4" />
-                                            <span>{importFile ? importFile.name : '选择CSV文件'}</span>
+                                            <span>{importFile ? importFile.name : t('batchOperations.selectCSV')}</span>
                                         </div>
                                         <Input
                                             id="import-file"
@@ -795,7 +795,7 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
                                                 disabled={selectedImportRows.length === 0 || importLoading}
                                             >
                                                 <Plus className="mr-2 h-4 w-4" />
-                                                导入选中 ({selectedImportRows.length})
+                                                {t('batchOperations.importSelected')} ({selectedImportRows.length})
                                             </Button>
                                         </div>
 
@@ -869,10 +869,10 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <ArrowUpDown className="h-5 w-5" />
-                                    批量迁移设备
+                                    {t('batchOperations.batchMigrationTitle')}
                                 </CardTitle>
                                 <CardDescription>
-                                    选择源机柜，加载设备后批量调整位置到目标机柜
+                                    {t('batchOperations.batchMigrationDesc')}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
@@ -1006,10 +1006,10 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <Power className="h-5 w-5" />
-                                    批量上下电
+                                    {t('batchOperations.batchPowerTitle')}
                                 </CardTitle>
                                 <CardDescription>
-                                    选择机柜，加载设备后批量执行开机或关机操作
+                                    {t('batchOperations.batchPowerDesc')}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
