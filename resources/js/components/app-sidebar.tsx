@@ -45,6 +45,7 @@ export function AppSidebar() {
             title: t('navigation.cockpit'),
             href: '/cockpit',
             icon: Monitor,
+            target: '_blank',
         },
         {
             title: t('navigation.roomManagement'),

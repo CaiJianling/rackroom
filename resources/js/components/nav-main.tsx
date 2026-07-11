@@ -35,6 +35,20 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                     <SidebarMenuItem key={item.title}>
                         {item.items && item.items.length > 0 ? (
                             <CollapsibleNavItem item={item} isCurrentUrl={isCurrentUrl} />
+                        ) : item.target === '_blank' ? (
+                            <SidebarMenuButton
+                                asChild
+                                tooltip={{ children: item.title }}
+                            >
+                                <a
+                                    href={String(item.href) || '#'}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    {item.icon && <item.icon />}
+                                    <span>{item.title}</span>
+                                </a>
+                            </SidebarMenuButton>
                         ) : (
                             <SidebarMenuButton
                                 asChild
