@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\DetectionLog;
 use App\Models\Device;
+use App\Models\Rack;
 use App\Models\Room;
 use App\Models\SystemSetting;
 use GuzzleHttp\Client;
@@ -76,7 +77,10 @@ class AutoDetectDevices extends Command
             $results = $this->detectDevices();
 
             // 获取机房温湿度
-            $tempHumidityResults = $this->fetchRoomTempHumidity();
+            $roomTempHumidityResults = $this->fetchRoomTempHumidity();
+
+            // 获取机柜温湿度
+            $rackTempHumidityResults = $this->fetchRackTempHumidity();
 
             $duration = round((microtime(true) - $startTime) * 1000);
 
@@ -90,14 +94,15 @@ class AutoDetectDevices extends Command
                 'duration_ms' => $duration,
                 'details' => $results['details'],
                 'status' => 'success',
-                'message' => "检测完成，{$results['updated']} 台设备状态已更新，{$tempHumidityResults['updated']} 个机房温湿度已更新",
+                'message' => "检测完成，{$results['updated']} 台设备状态已更新，{$roomTempHumidityResults['updated']} 个机房温湿度已更新，{$rackTempHumidityResults['updated']} 个机柜温湿度已更新",
                 'completed_at' => now(),
             ]);
 
             $this->info("检测完成！耗时 {$duration}ms");
             $this->info("总计: {$results['total']}, 在线: {$results['online']}, 离线: {$results['offline']}, 维护中: {$results['maintenance']}");
             $this->info("状态更新: {$results['updated']} 台设备");
-            $this->info("温湿度更新: {$tempHumidityResults['updated']} 个机房");
+            $this->info("机房温湿度更新: {$roomTempHumidityResults['updated']} 个");
+            $this->info("机柜温湿度更新: {$rackTempHumidityResults['updated']} 个");
 
             return self::SUCCESS;
         } catch (\Exception $e) {
@@ -257,6 +262,44 @@ class AutoDetectDevices extends Command
                 }
             } catch (\Exception $e) {
                 $this->warning("机房 {$room->name} 温湿度获取失败: {$e->getMessage()}");
+            }
+        }
+
+        return [
+            'total' => $totalCount,
+            'updated' => $updatedCount,
+        ];
+    }
+
+    /**
+     * 获取所有配置了温湿度URL的机柜的温湿度数据
+     */
+    private function fetchRackTempHumidity(): array
+    {
+        $updatedCount = 0;
+        $totalCount = 0;
+
+        $racks = Rack::query()
+            ->whereNotNull('temp_humidity_url')
+            ->where('temp_humidity_url', '!=', '')
+            ->get();
+
+        foreach ($racks as $rack) {
+            $totalCount++;
+            try {
+                $data = $this->fetchTempHumidityFromUrl($rack->temp_humidity_url);
+
+                if ($data !== null) {
+                    $rack->update([
+                        'current_temp' => $data['temp'],
+                        'current_humidity' => $data['humidity'],
+                        'temp_humidity_updated_at' => now(),
+                    ]);
+                    $updatedCount++;
+                    $this->info("机柜 {$rack->name} 温湿度更新: {$data['temp']}°C, {$data['humidity']}%");
+                }
+            } catch (\Exception $e) {
+                $this->warning("机柜 {$rack->name} 温湿度获取失败: {$e->getMessage()}");
             }
         }
 

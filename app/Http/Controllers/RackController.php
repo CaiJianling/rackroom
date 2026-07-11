@@ -104,6 +104,7 @@ class RackController extends Controller
             'name' => 'required|string|max:255',
             'device_count' => 'required|integer|min:0',
             'description' => 'nullable|string',
+            'temp_humidity_url' => 'nullable|url|max:500',
         ]);
 
         if ($validated['rack_type_id']) {
@@ -152,6 +153,7 @@ class RackController extends Controller
             'name' => 'required|string|max:255',
             'device_count' => 'required|integer|min:0',
             'description' => 'nullable|string',
+            'temp_humidity_url' => 'nullable|url|max:500',
         ]);
 
         // 检查是否有关联设备

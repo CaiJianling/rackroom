@@ -12,6 +12,8 @@ import {
     Eye,
     Download,
     Upload,
+    Thermometer,
+    Droplets,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -85,6 +87,10 @@ interface Rack {
     device_count: number;
     devices_count: number;
     description: string | null;
+    temp_humidity_url: string | null;
+    current_temp: number | null;
+    current_humidity: number | null;
+    temp_humidity_updated_at: string | null;
     created_at: string;
     updated_at: string;
     room?: Room;
@@ -156,6 +162,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
         power: 0,
         device_count: 0,
         description: '',
+        temp_humidity_url: '',
     });
     const [searchTerm, setSearchTerm] = useState('');
     const [roomFilter, setRoomFilter] = useState<string>('all');
@@ -193,6 +200,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
             power: rack.power,
             device_count: rack.devices_count || 0,
             description: rack.description || '',
+            temp_humidity_url: rack.temp_humidity_url || '',
         });
         setIsEditDialogOpen(true);
     };
@@ -208,6 +216,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
             power: 0,
             device_count: 0,
             description: '',
+            temp_humidity_url: '',
         });
     };
 
@@ -230,6 +239,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
             power: 0,
             device_count: 0,
             description: '',
+            temp_humidity_url: '',
         });
         setIsCreateDialogOpen(true);
     };
@@ -244,6 +254,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
             power: 0,
             device_count: 0,
             description: '',
+            temp_humidity_url: '',
         });
     };
 
@@ -256,6 +267,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                 name: form.name,
                 device_count: form.device_count,
                 description: form.description,
+                temp_humidity_url: form.temp_humidity_url,
             };
             router.put(`/racks/${editingRack.id}`, submitData, {
                 onSuccess: () => closeEditDialog(),
@@ -271,6 +283,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
             name: form.name,
             device_count: form.device_count,
             description: form.description,
+            temp_humidity_url: form.temp_humidity_url,
         };
         router.post('/racks', submitData, {
             onSuccess: () => closeCreateDialog(),
@@ -591,6 +604,18 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                         </div>
                                     </TableHead>
                                     <TableHead className="h-10 px-4">
+                                        <div className="flex items-center gap-2">
+                                            <Thermometer className="h-4 w-4" />
+                                            {t('rackManagement.temperature')}
+                                        </div>
+                                    </TableHead>
+                                    <TableHead className="h-10 px-4">
+                                        <div className="flex items-center gap-2">
+                                            <Droplets className="h-4 w-4" />
+                                            {t('rackManagement.humidity')}
+                                        </div>
+                                    </TableHead>
+                                    <TableHead className="h-10 px-4">
                                         {t('rackManagement.created')}
                                     </TableHead>
                                     <TableHead className="h-10 px-4 text-right">
@@ -602,7 +627,7 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                 {filteredRacks.length === 0 ? (
                                     <TableRow>
                                         <TableCell
-                                            colSpan={8}
+                                            colSpan={10}
                                             className="py-8 text-center text-muted-foreground"
                                         >
                                             {searchTerm || roomFilter !== 'all' ? (
@@ -682,6 +707,26 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                                         {rack.devices_count}
                                                     </span>
                                                 </div>
+                                            </TableCell>
+                                            <TableCell className="px-4 py-3">
+                                                {rack.current_temp !== null ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <Thermometer className="h-4 w-4 text-red-500" />
+                                                        <span className="font-medium">{rack.current_temp}°C</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-muted-foreground">-</span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="px-4 py-3">
+                                                {rack.current_humidity !== null ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <Droplets className="h-4 w-4 text-blue-500" />
+                                                        <span className="font-medium">{rack.current_humidity}%</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-muted-foreground">-</span>
+                                                )}
                                             </TableCell>
                                             <TableCell className="px-4 py-3">
                                                 {new Date(
@@ -931,6 +976,27 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                         </p>
                                     )}
                                 </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="temp-humidity-url">
+                                        {t('rackManagement.tempHumidityUrl')}
+                                    </Label>
+                                    <Input
+                                        id="temp-humidity-url"
+                                        value={form.temp_humidity_url}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                            setForm({
+                                                ...form,
+                                                temp_humidity_url: e.target.value,
+                                            })
+                                        }
+                                        placeholder={t('rackManagement.tempHumidityUrlPlaceholder')}
+                                    />
+                                    {errors?.temp_humidity_url && (
+                                        <p className="text-sm text-destructive">
+                                            {errors.temp_humidity_url}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                             <DialogFooter>
                                 <Button
@@ -1115,6 +1181,27 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                         </p>
                                     )}
                                 </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="edit-temp-humidity-url">
+                                        {t('rackManagement.tempHumidityUrl')}
+                                    </Label>
+                                    <Input
+                                        id="edit-temp-humidity-url"
+                                        value={form.temp_humidity_url}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                            setForm({
+                                                ...form,
+                                                temp_humidity_url: e.target.value,
+                                            })
+                                        }
+                                        placeholder={t('rackManagement.tempHumidityUrlPlaceholder')}
+                                    />
+                                    {errors?.temp_humidity_url && (
+                                        <p className="text-sm text-destructive">
+                                            {errors.temp_humidity_url}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                             <DialogFooter>
                                 <Button
@@ -1219,6 +1306,50 @@ export default function RackIndex({ racks, rooms, rackTypes = [], breadcrumbs = 
                                         {viewingRack?.updated_at
                                             ? new Date(
                                                   viewingRack.updated_at,
+                                              ).toLocaleString()
+                                            : '-'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label className="text-sm font-medium">
+                                        {t('rackManagement.temperature')}
+                                    </Label>
+                                    <div className="mt-1 text-sm">
+                                        {viewingRack?.current_temp !== null ? (
+                                            <span className="font-medium text-red-500">{viewingRack?.current_temp}°C</span>
+                                        ) : '-'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium">
+                                        {t('rackManagement.humidity')}
+                                    </Label>
+                                    <div className="mt-1 text-sm">
+                                        {viewingRack?.current_humidity !== null ? (
+                                            <span className="font-medium text-blue-500">{viewingRack?.current_humidity}%</span>
+                                        ) : '-'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label className="text-sm font-medium">
+                                        {t('rackManagement.tempHumidityUrl')}
+                                    </Label>
+                                    <div className="mt-1 text-sm break-all">
+                                        {viewingRack?.temp_humidity_url || '-'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium">
+                                        {t('rackManagement.tempHumidityUpdated')}
+                                    </Label>
+                                    <div className="mt-1 text-sm">
+                                        {viewingRack?.temp_humidity_updated_at
+                                            ? new Date(
+                                                  viewingRack.temp_humidity_updated_at,
                                               ).toLocaleString()
                                             : '-'}
                                     </div>

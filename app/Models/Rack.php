@@ -16,6 +16,10 @@ class Rack extends Model
         'power',
         'device_count',
         'description',
+        'temp_humidity_url',
+        'current_temp',
+        'current_humidity',
+        'temp_humidity_updated_at',
     ];
 
     public function room(): BelongsTo

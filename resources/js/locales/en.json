@@ -561,7 +561,12 @@
         "rackDetails": "Rack Details",
         "hasDevicesLocked": "Locked: devices exist",
         "curPower": "Current Power",
-        "devices": "Devices"
+        "devices": "Devices",
+        "temperature": "Temperature",
+        "humidity": "Humidity",
+        "tempHumidityUrl": "Temp/Humidity Controller URL",
+        "tempHumidityUrlPlaceholder": "https://example.com/temp-humidity",
+        "tempHumidityUpdated": "Temp/Humidity Updated"
     },
     "rackTypeManagement": {
         "title": "Rack Type Management",

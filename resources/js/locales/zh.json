@@ -571,7 +571,12 @@
         "rackDetails": "机柜详情",
         "hasDevicesLocked": "有设备不可修改",
         "curPower": "当前功率",
-        "d/*  */evices": "设备"
+        "devices": "设备",
+        "temperature": "温度",
+        "humidity": "湿度",
+        "tempHumidityUrl": "温湿度控制器URL",
+        "tempHumidityUrlPlaceholder": "https://example.com/temp-humidity",
+        "tempHumidityUpdated": "温湿度更新时间"
     },
     "rackTypeManagement": {
         "title": "机柜类型管理",
