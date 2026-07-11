@@ -11,6 +11,7 @@ import {
     Settings,
     Eye,
     Wrench,
+    Monitor,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { NavFooter } from '@/components/nav-footer';
@@ -39,6 +40,11 @@ export function AppSidebar() {
             title: t('navigation.dashboard'),
             href: dashboard(),
             icon: LayoutGrid,
+        },
+        {
+            title: t('navigation.cockpit'),
+            href: '/cockpit',
+            icon: Monitor,
         },
         {
             title: t('navigation.roomManagement'),

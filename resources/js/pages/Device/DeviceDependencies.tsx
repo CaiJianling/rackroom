@@ -15,7 +15,9 @@ import {
     Server,
     Trash2,
 } from 'lucide-react';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import * as dagre from 'dagre';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -89,6 +91,7 @@ interface TopologyNode {
     id: number;
     name: string;
     type: string;
+    type_color: string | null;
     ip: string | null;
     status: string;
     x?: number;
@@ -100,6 +103,7 @@ interface TopologyEdge {
     target: number;
     type: string;
     description: string | null;
+    points?: Array<{ x: number; y: number }>;
 }
 
 interface ImpactResult {
@@ -158,9 +162,19 @@ const DEVICE_STATUS_COLORS: Record<string, string> = {
     maintenance: 'bg-yellow-100 text-yellow-800',
 };
 
+const getContrastColor = (hexColor: string): string => {
+    const hex = hexColor.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.5 ? '#1f2937' : '#ffffff';
+};
+
 export default function DeviceDependencies({ breadcrumbs = BREADCRUMBS }: { breadcrumbs?: Array<{ title: string; href: string }> }) {
     const { flash } = usePage().props as PageProps;
     const { showToast } = useToast();
+    const { t } = useTranslation();
 
     const [activeTab, setActiveTab] = useState('topology');
     const [loading, setLoading] = useState(false);
@@ -170,6 +184,13 @@ export default function DeviceDependencies({ breadcrumbs = BREADCRUMBS }: { brea
     const [topologyData, setTopologyData] = useState<{ nodes: TopologyNode[]; edges: TopologyEdge[] }>({ nodes: [], edges: [] });
     const [selectedNode, setSelectedNode] = useState<TopologyNode | null>(null);
     const [impactResult, setImpactResult] = useState<ImpactResult | null>(null);
+
+    const [scale, setScale] = useState(1);
+    const [translate, setTranslate] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [lastTranslate, setLastTranslate] = useState({ x: 0, y: 0 });
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const [addDialogOpen, setAddDialogOpen] = useState(false);
     const [editingDependency, setEditingDependency] = useState<Dependency | null>(null);
@@ -259,66 +280,61 @@ export default function DeviceDependencies({ breadcrumbs = BREADCRUMBS }: { brea
     const positionTopologyNodes = (nodes: TopologyNode[], edges: TopologyEdge[]): { nodes: TopologyNode[]; edges: TopologyEdge[] } => {
         if (nodes.length === 0) return { nodes: [], edges };
 
-        const levels = new Map<number, number>();
+        const g = new dagre.graphlib.Graph();
 
-        const findLevel = (nodeId: number, level = 0) => {
-            if (levels.has(nodeId)) {
-                const existingLevel = levels.get(nodeId)!;
-                if (level < existingLevel) {
-                    levels.set(nodeId, level);
-                }
-            } else {
-                levels.set(nodeId, level);
-            }
-        };
-
-        nodes.forEach(node => {
-            const outgoingEdges = edges.filter(e => e.source === node.id);
-            if (outgoingEdges.length === 0 && !levels.has(node.id)) {
-                levels.set(node.id, 0);
-            }
+        g.setGraph({
+            rankdir: 'TB',
+            nodesep: 50,
+            ranksep: 120,
+            marginx: 50,
+            marginy: 50,
+            align: 'UL',
         });
 
-        edges.forEach(edge => {
-            if (levels.has(edge.source)) {
-                findLevel(edge.target, levels.get(edge.source)! + 1);
-            }
-        });
-
-        const maxLevel = Math.max(...Array.from(levels.values()), 0);
-        const levelGroups = new Map<number, TopologyNode[]>();
-
-        nodes.forEach(node => {
-            const level = levels.get(node.id) ?? maxLevel;
-            if (!levelGroups.has(level)) {
-                levelGroups.set(level, []);
-            }
-            levelGroups.get(level)!.push(node);
-        });
+        g.setDefaultEdgeLabel(() => ({}));
 
         const nodeWidth = 180;
         const nodeHeight = 80;
-        const horizontalGap = 100;
-        const verticalGap = 120;
-        const containerPadding = 60;
+
+        nodes.forEach(node => {
+            g.setNode(node.id.toString(), {
+                width: nodeWidth,
+                height: nodeHeight,
+                label: node.name,
+            });
+        });
+
+        edges.forEach(edge => {
+            g.setEdge(edge.source.toString(), edge.target.toString(), {
+                type: edge.type,
+                description: edge.description,
+            });
+        });
+
+        dagre.layout(g);
 
         const positionedNodes = nodes.map(node => {
-            const level = levels.get(node.id) ?? maxLevel;
-            const group = levelGroups.get(level) ?? [];
-            const index = group.findIndex(n => n.id === node.id);
-            const groupSize = group.length;
-
-            const totalWidth = groupSize * nodeWidth + (groupSize - 1) * horizontalGap;
-            const startX = (containerPadding + (maxLevel + 1) * (nodeWidth + horizontalGap) - totalWidth) / 2;
-
+            const nodeData = g.node(node.id.toString());
             return {
                 ...node,
-                x: startX + index * (nodeWidth + horizontalGap),
-                y: containerPadding + level * (nodeHeight + verticalGap),
+                x: nodeData.x - nodeWidth / 2,
+                y: nodeData.y - nodeHeight / 2,
             };
         });
 
-        return { nodes: positionedNodes, edges };
+        const layoutEdges = edges.map(edge => {
+            const edgeData = g.edge(edge.source.toString(), edge.target.toString());
+            const adjustedPoints = (edgeData.points || []).map(p => ({
+                x: p.x,
+                y: p.y,
+            }));
+            return {
+                ...edge,
+                points: adjustedPoints,
+            };
+        });
+
+        return { nodes: positionedNodes, edges: layoutEdges as unknown as TopologyEdge[] };
     };
 
     const loadImpactAnalysis = async (deviceId: number) => {
@@ -337,6 +353,63 @@ export default function DeviceDependencies({ breadcrumbs = BREADCRUMBS }: { brea
         setSelectedNode(node);
         loadImpactAnalysis(node.id);
     };
+
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
+        if (e.button === 0 && !(e.target instanceof HTMLElement && e.target.closest('.topology-node'))) {
+            setIsDragging(true);
+            setDragStart({ x: e.clientX, y: e.clientY });
+            setLastTranslate({ ...translate });
+        }
+    }, [translate]);
+
+    const handleMouseMove = useCallback((e: React.MouseEvent) => {
+        if (!isDragging) return;
+        const dx = e.clientX - dragStart.x;
+        const dy = e.clientY - dragStart.y;
+        setTranslate({
+            x: lastTranslate.x + dx,
+            y: lastTranslate.y + dy,
+        });
+    }, [isDragging, dragStart, lastTranslate]);
+
+    const handleMouseUp = useCallback(() => {
+        setIsDragging(false);
+    }, []);
+
+    const handleMouseLeave = useCallback(() => {
+        setIsDragging(false);
+    }, []);
+
+    const handleWheel = useCallback((e: React.WheelEvent) => {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        const newScale = Math.max(0.25, Math.min(3, scale * delta));
+
+        if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const newTranslateX = mouseX - (mouseX - translate.x) * (newScale / scale);
+            const newTranslateY = mouseY - (mouseY - translate.y) * (newScale / scale);
+
+            setScale(newScale);
+            setTranslate({ x: newTranslateX, y: newTranslateY });
+        }
+    }, [scale, translate]);
+
+    const handleZoomIn = useCallback(() => {
+        setScale(prev => Math.min(3, prev * 1.2));
+    }, []);
+
+    const handleZoomOut = useCallback(() => {
+        setScale(prev => Math.max(0.25, prev / 1.2));
+    }, []);
+
+    const handleReset = useCallback(() => {
+        setScale(1);
+        setTranslate({ x: 0, y: 0 });
+    }, []);
 
     const openAddDialog = () => {
         setFormData({
@@ -479,94 +552,236 @@ export default function DeviceDependencies({ breadcrumbs = BREADCRUMBS }: { brea
             );
         }
 
-        const containerWidth = Math.max(...topologyData.nodes.map(n => (n.x || 0) + 200)) + 200;
-        const containerHeight = Math.max(...topologyData.nodes.map(n => (n.y || 0) + 100)) + 200;
+        const nodeWidth = 180;
+        const nodeHeight = 80;
+        const maxX = Math.max(...topologyData.nodes.map(n => (n.x || 0) + nodeWidth));
+        const maxY = Math.max(...topologyData.nodes.map(n => (n.y || 0) + nodeHeight));
+        const contentWidth = Math.max(maxX + 100, 800);
+        const contentHeight = Math.max(maxY + 100, 600);
 
         return (
-            <div className="overflow-auto border rounded-lg" style={{ height: '600px' }}>
-                <div className="relative overflow-visible p-8" style={{ width: `${containerWidth}px`, height: `${containerHeight}px`, minWidth: '100%' }}>
-                    <svg className="absolute inset-0 overflow-visible" style={{ width: '100%', height: '100%', minHeight: '600px' }}>
-                        {topologyData.edges.map((edge, index) => {
-                            const sourceNode = topologyData.nodes.find(n => n.id === edge.source);
-                            const targetNode = topologyData.nodes.find(n => n.id === edge.target);
-                            if (!sourceNode || !targetNode) return null;
-
-                            const x1 = (sourceNode.x || 0) + 90;
-                            const y1 = (sourceNode.y || 0) + 40;
-                            const x2 = (targetNode.x || 0) + 90;
-                            const y2 = (targetNode.y || 0) + 40;
-
-                            const midX = (x1 + x2) / 2;
-                            const midY = (y1 + y2) / 2;
-
-                            return (
-                                <g key={`edge-${index}`}>
-                                    <path
-                                        d={`M ${x1} ${y1} Q ${midX} ${y1} ${midX} ${midY} Q ${midX} ${y2} ${x2} ${y2}`}
-                                        fill="none"
-                                        stroke={selectedNode?.id === edge.source || selectedNode?.id === edge.target ? '#3b82f6' : '#94a3b8'}
-                                        strokeWidth="2"
-                                        markerEnd="url(#arrowhead)"
-                                    />
-                                    <text
-                                        x={midX}
-                                        y={midY - 10}
-                                        textAnchor="middle"
-                                        className="text-xs fill-muted-foreground"
-                                    >
-                                        {getDependencyLabel(edge.type)}
-                                    </text>
-                                </g>
-                            );
-                        })}
-                        <defs>
-                            <marker
-                                id="arrowhead"
-                                markerWidth="10"
-                                markerHeight="7"
-                                refX="9"
-                                refY="3.5"
-                                orient="auto"
-                            >
-                                <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8" />
-                            </marker>
-                        </defs>
-                    </svg>
-
-                    {topologyData.nodes.map((node) => (
-                        <div
-                            key={node.id}
-                            className={`absolute cursor-pointer transition-all duration-200 ${
-                                selectedNode?.id === node.id ? 'scale-110 z-10' : 'hover:scale-105'
-                            }`}
-                            style={{
-                                left: `${node.x}px`,
-                                top: `${node.y}px`,
-                                width: '180px',
-                            }}
-                            onClick={() => handleNodeClick(node)}
+            <div className="relative">
+                <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm text-muted-foreground">
+                        缩放比例: {Math.round(scale * 100)}%
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleZoomOut}
+                            title="缩小"
                         >
-                            <div className={`p-3 rounded-lg border-2 ${
-                                selectedNode?.id === node.id ? 'border-primary bg-primary/5' : 'border-border bg-card'
-                            } shadow-sm`}>
-                                <div className="flex items-center gap-2 mb-1">
-                                    <Server className="h-4 w-4 text-muted-foreground" />
-                                    <span className="font-medium text-sm truncate">{node.name}</span>
-                                </div>
-                                <div className="text-xs text-muted-foreground truncate">
-                                    {node.ip || '无IP'}
-                                </div>
-                                <div className="flex items-center gap-2 mt-2">
-                                    <Badge variant="outline" className="text-xs">
-                                        {node.type}
-                                    </Badge>
-                                    <Badge className={`text-xs ${DEVICE_STATUS_COLORS[node.status] || 'bg-gray-100 text-gray-800'}`}>
-                                        {node.status}
-                                    </Badge>
+                            -
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleReset}
+                            title="重置"
+                        >
+                            1:1
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleZoomIn}
+                            title="放大"
+                        >
+                            +
+                        </Button>
+                    </div>
+                </div>
+                <div
+                    ref={containerRef}
+                    className="overflow-hidden border rounded-lg bg-background"
+                    style={{ height: '600px', cursor: isDragging ? 'grabbing' : 'grab' }}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseLeave}
+                    onWheel={handleWheel}
+                >
+                    <div
+                        className="relative"
+                        style={{
+                            width: `${contentWidth}px`,
+                            height: `${contentHeight}px`,
+                            transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
+                            transformOrigin: '0 0',
+                            transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+                        }}
+                    >
+                        <svg
+                            className="absolute inset-0"
+                            width={contentWidth}
+                            height={contentHeight}
+                            style={{ zIndex: 5 }}
+                        >
+                            <defs>
+                                <marker
+                                    id="arrowhead"
+                                    markerWidth="10"
+                                    markerHeight="10"
+                                    refX="9"
+                                    refY="5"
+                                    orient="auto"
+                                >
+                                    <polygon
+                                        points="0 0, 10 5, 0 10"
+                                        fill="#64748b"
+                                        stroke="#64748b"
+                                        strokeWidth="1"
+                                    />
+                                </marker>
+                                <marker
+                                    id="arrowhead-selected"
+                                    markerWidth="12"
+                                    markerHeight="12"
+                                    refX="11"
+                                    refY="6"
+                                    orient="auto"
+                                >
+                                    <polygon
+                                        points="0 0, 12 6, 0 12"
+                                        fill="#3b82f6"
+                                        stroke="#3b82f6"
+                                        strokeWidth="1"
+                                    />
+                                </marker>
+                                <filter id="edgeGlow">
+                                    <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                                    <feMerge>
+                                        <feMergeNode in="coloredBlur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+                            </defs>
+                            {topologyData.edges.map((edge, index) => {
+                                const sourceNode = topologyData.nodes.find(n => n.id === edge.source);
+                                const targetNode = topologyData.nodes.find(n => n.id === edge.target);
+                                if (!sourceNode || !targetNode) return null;
+
+                                const sourceCenterX = (sourceNode.x || 0) + nodeWidth / 2;
+                                const sourceCenterY = (sourceNode.y || 0) + nodeHeight / 2;
+                                const targetCenterX = (targetNode.x || 0) + nodeWidth / 2;
+                                const targetCenterY = (targetNode.y || 0) + nodeHeight / 2;
+
+                                const dx = targetCenterX - sourceCenterX;
+                                const dy = targetCenterY - sourceCenterY;
+                                const distance = Math.sqrt(dx * dx + dy * dy);
+                                const angle = Math.atan2(dy, dx);
+
+                                const nodeRadiusX = nodeWidth / 2;
+                                const nodeRadiusY = nodeHeight / 2;
+
+                                const sourceOffsetX = Math.cos(angle) * nodeRadiusX;
+                                const sourceOffsetY = Math.sin(angle) * nodeRadiusY;
+                                const sourceX = sourceCenterX + sourceOffsetX;
+                                const sourceY = sourceCenterY + sourceOffsetY;
+
+                                const targetOffsetX = Math.cos(angle) * nodeRadiusX;
+                                const targetOffsetY = Math.sin(angle) * nodeRadiusY;
+                                const targetX = targetCenterX - targetOffsetX;
+                                const targetY = targetCenterY - targetOffsetY;
+
+                                const midX = (sourceX + targetX) / 2;
+                                const midY = (sourceY + targetY) / 2;
+
+                                const curveFactor = Math.min(distance * 0.35, 80);
+                                const perpAngle = angle + Math.PI / 2;
+                                const controlX = midX + Math.cos(perpAngle) * curveFactor;
+                                const controlY = midY + Math.sin(perpAngle) * curveFactor;
+
+                                const pathD = `M ${sourceX} ${sourceY} Q ${controlX} ${controlY} ${targetX} ${targetY}`;
+
+                                const isSelected = selectedNode?.id === edge.source || selectedNode?.id === edge.target;
+
+                                return (
+                                    <g key={`edge-${index}`}>
+                                        {isSelected && (
+                                            <path
+                                                d={pathD}
+                                                fill="none"
+                                                stroke="#3b82f6"
+                                                strokeWidth={8}
+                                                opacity="0.2"
+                                                filter="url(#edgeGlow)"
+                                            />
+                                        )}
+                                        <path
+                                            d={pathD}
+                                            fill="none"
+                                            stroke={isSelected ? '#3b82f6' : '#64748b'}
+                                            strokeWidth={isSelected ? 3 : 2}
+                                            markerEnd={isSelected ? 'url(#arrowhead-selected)' : 'url(#arrowhead)'}
+                                            strokeLinecap="round"
+                                        />
+                                        <text
+                                            x={midX}
+                                            y={midY - 12}
+                                            textAnchor="middle"
+                                            className="text-xs font-medium"
+                                            fill={isSelected ? '#3b82f6' : '#64748b'}
+                                            style={{ pointerEvents: 'none' }}
+                                        >
+                                            {getDependencyLabel(edge.type)}
+                                        </text>
+                                    </g>
+                                );
+                            })}
+                        </svg>
+
+                        {topologyData.nodes.map((node) => (
+                            <div
+                                key={node.id}
+                                className={`topology-node absolute cursor-pointer transition-all duration-200 ${
+                                    selectedNode?.id === node.id ? 'scale-110 z-20' : 'hover:scale-105 z-10'
+                                }`}
+                                style={{
+                                    left: `${node.x}px`,
+                                    top: `${node.y}px`,
+                                    width: `${nodeWidth}px`,
+                                    height: `${nodeHeight}px`,
+                                }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleNodeClick(node);
+                                }}
+                            >
+                                <div className={`h-full p-3 rounded-lg border-2 flex flex-col justify-center transition-colors duration-200 ${
+                                    selectedNode?.id === node.id
+                                        ? 'border-primary border-3 bg-primary text-primary-foreground shadow-xl ring-2 ring-primary/30'
+                                        : 'border-border bg-card shadow-sm'
+                                }`}>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <Server className={`h-4 w-4 flex-shrink-0 ${selectedNode?.id === node.id ? 'text-primary-foreground/70' : 'text-muted-foreground'}`} />
+                                        <span className="font-medium text-sm truncate">{node.name}</span>
+                                    </div>
+                                    <div className={`text-xs truncate ${selectedNode?.id === node.id ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                                        {node.ip || '无IP'}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <Badge
+                                            className="text-xs flex-shrink-0"
+                                            style={{
+                                                backgroundColor: node.type_color || undefined,
+                                                color: node.type_color ? getContrastColor(node.type_color) : undefined,
+                                            }}
+                                        >
+                                            {node.type}
+                                        </Badge>
+                                        <Badge className={`text-xs flex-shrink-0 ${DEVICE_STATUS_COLORS[node.status] || 'bg-gray-100 text-gray-800'}`}>
+                                            {t(`deviceManagement.statuses.${node.status}`, { defaultValue: node.status })}
+                                        </Badge>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
+                </div>
+                <div className="mt-2 text-xs text-muted-foreground text-center">
+                    提示：拖动鼠标平移视图，滚轮缩放，点击节点查看详情
                 </div>
             </div>
         );
@@ -801,19 +1016,85 @@ export default function DeviceDependencies({ breadcrumbs = BREADCRUMBS }: { brea
                     </TabsContent>
 
                     <TabsContent value="impact">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>故障影响分析</CardTitle>
-                                <CardDescription>
-                                    选择拓扑视图中的一个节点查看故障影响范围
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-center py-8 text-muted-foreground">
-                                    请先在拓扑视图中点击一个设备节点
-                                </div>
-                            </CardContent>
-                        </Card>
+                        {selectedNode && impactResult ? (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>故障影响分析 - {selectedNode.name}</CardTitle>
+                                    <CardDescription>
+                                        如果 {selectedNode.name} 发生故障，将影响以下设备
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                                            <AlertTriangle className="h-8 w-8 text-red-600" />
+                                            <div>
+                                                <p className="font-medium text-red-800">
+                                                    受影响设备总数：{impactResult.total_affected}
+                                                </p>
+                                                <p className="text-sm text-red-600">
+                                                    直接影响 {impactResult.directly_affected.length} 台，间接影响 {impactResult.second_level_affected.length} 台
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {impactResult.directly_affected.length > 0 && (
+                                            <div>
+                                                <h4 className="font-medium mb-3 flex items-center gap-2">
+                                                    <ArrowRight className="h-4 w-4 text-orange-500" />
+                                                    直接影响
+                                                </h4>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                    {impactResult.directly_affected.map((device) => (
+                                                        <div key={device.device_id} className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                                                            <div className="font-medium">{device.device_name}</div>
+                                                            <div className="text-sm text-muted-foreground">{device.ip_address || '无IP'}</div>
+                                                            <Badge variant="outline" className="mt-2">
+                                                                {getDependencyLabel(device.dependency_type)}
+                                                            </Badge>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {impactResult.second_level_affected.length > 0 && (
+                                            <div>
+                                                <h4 className="font-medium mb-3 flex items-center gap-2">
+                                                    <Circle className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                                                    间接影响
+                                                </h4>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                    {impactResult.second_level_affected.map((device) => (
+                                                        <div key={device.device_id} className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                                                            <div className="font-medium">{device.device_name}</div>
+                                                            <div className="text-sm text-muted-foreground">{device.ip_address || '无IP'}</div>
+                                                            <Badge variant="outline" className="mt-2">
+                                                                {getDependencyLabel(device.dependency_type)}
+                                                            </Badge>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>故障影响分析</CardTitle>
+                                    <CardDescription>
+                                        选择拓扑视图中的一个节点查看故障影响范围
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-center py-8 text-muted-foreground">
+                                        请先在拓扑视图中点击一个设备节点
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
                     </TabsContent>
                 </Tabs>
             </div>

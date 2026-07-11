@@ -5,10 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\Device;
 use App\Models\DeviceChangeLog;
 use App\Models\DeviceLibrary;
+use App\Models\DeviceType;
 use App\Models\Rack;
+use App\Models\Room;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BatchOperationController extends Controller
@@ -688,5 +696,844 @@ class BatchOperationController extends Controller
         }
 
         return null;
+    }
+
+    public function downloadXlsxTemplate(): StreamedResponse
+    {
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('设备导入模板');
+
+        $headers = ['设备名称*', '机柜名称', '设备库名称', 'U位', 'IP地址', '连接类型', '连接端口', '状态', '描述'];
+        foreach ($headers as $index => $header) {
+            $col = chr(65 + $index);
+            $sheet->setCellValue($col.'1', $header);
+            $sheet->getStyle($col.'1')->applyFromArray([
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2E8F0']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            ]);
+        }
+
+        $examples = [
+            ['服务器01', '机柜A', 'Dell PowerEdge R740', '1', '192.168.1.100', 'ssh', '22', 'online', '测试设备'],
+            ['交换机01', '机柜A', 'Cisco Catalyst 2960', '10', '192.168.1.101', 'ssh', '22', 'online', '核心交换机'],
+        ];
+
+        foreach ($examples as $rowIndex => $rowData) {
+            foreach ($rowData as $colIndex => $value) {
+                $sheet->setCellValue(chr(65 + $colIndex).($rowIndex + 2), $value);
+            }
+        }
+
+        $columnWidths = [20, 15, 25, 8, 15, 12, 12, 10, 30];
+        foreach ($columnWidths as $index => $width) {
+            $sheet->getColumnDimension(chr(65 + $index))->setWidth($width);
+        }
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
+            $writer->save('php://output');
+        }, 'device_import_template.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    public function previewXlsxImport(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls|max:20480',
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $spreadsheet = IOFactory::load($file->getRealPath());
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray();
+
+            $header = array_shift($rows);
+
+            $data = [];
+            $errors = [];
+            $rowNumber = 1;
+
+            foreach ($rows as $row) {
+                $rowNumber++;
+                $rowData = array_combine($header, $row);
+                $parsed = $this->parseImportRow($header, $row, $rowNumber);
+
+                if (! empty($parsed['errors'])) {
+                    foreach ($parsed['errors'] as $error) {
+                        $errors[] = $error;
+                    }
+                }
+
+                $data[] = $parsed['data'];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+                'errors' => $errors,
+                'total' => count($data),
+                'error_count' => count($errors),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => '文件解析失败: '.$e->getMessage(),
+            ], 422);
+        }
+    }
+
+    public function importXlsx(Request $request): JsonResponse
+    {
+        $request->validate([
+            'devices' => 'required|array',
+            'devices.*.name' => 'required|string|max:255',
+            'devices.*.rack_id' => 'nullable|integer|exists:racks,id',
+            'devices.*.device_library_id' => 'nullable|integer|exists:device_library,id',
+            'devices.*.u_position' => 'nullable|integer|min:1|max:100',
+            'devices.*.ip_address' => 'nullable|ip',
+            'devices.*.status' => 'nullable|in:online,offline,maintenance',
+        ]);
+
+        return $this->import($request);
+    }
+
+    public function exportAllData(): StreamedResponse
+    {
+        $spreadsheet = new Spreadsheet;
+
+        $this->createRoomsSheet($spreadsheet);
+        $this->createRacksSheet($spreadsheet);
+        $this->createDevicesSheet($spreadsheet);
+        $this->createDeviceLibrarySheet($spreadsheet);
+        $this->createDeviceTypesSheet($spreadsheet);
+
+        $filename = 'rackroom_all_data_'.now()->format('Y-m-d_H-i-s').'.xlsx';
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    private function createRoomsSheet(Spreadsheet $spreadsheet): void
+    {
+        $sheet = $spreadsheet->createSheet();
+        $sheet->setTitle('机房数据');
+
+        $headers = ['机房名称', '位置', '管理员', '温湿度URL', '当前温度', '当前湿度', '描述'];
+        foreach ($headers as $index => $header) {
+            $col = chr(65 + $index);
+            $sheet->setCellValue($col.'1', $header);
+            $sheet->getStyle($col.'1')->applyFromArray([
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2E8F0']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+            ]);
+        }
+
+        $rooms = Room::all();
+        $row = 2;
+        foreach ($rooms as $room) {
+            $sheet->setCellValue('A'.$row, $room->name);
+            $sheet->setCellValue('B'.$row, $room->location ?? '');
+            $sheet->setCellValue('C'.$row, $room->manager ?? '');
+            $sheet->setCellValue('D'.$row, $room->temp_humidity_url ?? '');
+            $sheet->setCellValue('E'.$row, $room->current_temp ?? '');
+            $sheet->setCellValue('F'.$row, $room->current_humidity ?? '');
+            $sheet->setCellValue('G'.$row, $room->description ?? '');
+            $row++;
+        }
+
+        $columnWidths = [15, 20, 15, 40, 12, 12, 30];
+        foreach ($columnWidths as $index => $width) {
+            $sheet->getColumnDimension(chr(65 + $index))->setWidth($width);
+        }
+    }
+
+    private function createRacksSheet(Spreadsheet $spreadsheet): void
+    {
+        $sheet = $spreadsheet->createSheet();
+        $sheet->setTitle('机柜数据');
+
+        $headers = ['机房名称', '机柜名称', '机柜类型', 'U数', '功率(W)', '温湿度URL', '当前温度', '当前湿度', '描述'];
+        foreach ($headers as $index => $header) {
+            $col = chr(65 + $index);
+            $sheet->setCellValue($col.'1', $header);
+            $sheet->getStyle($col.'1')->applyFromArray([
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2E8F0']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+            ]);
+        }
+
+        $racks = Rack::with(['room', 'rackType'])->get();
+        $row = 2;
+        foreach ($racks as $rack) {
+            $sheet->setCellValue('A'.$row, $rack->room?->name ?? '');
+            $sheet->setCellValue('B'.$row, $rack->name);
+            $sheet->setCellValue('C'.$row, $rack->rackType?->name ?? '');
+            $sheet->setCellValue('D'.$row, $rack->u_count);
+            $sheet->setCellValue('E'.$row, $rack->power ?? '');
+            $sheet->setCellValue('F'.$row, $rack->temp_humidity_url ?? '');
+            $sheet->setCellValue('G'.$row, $rack->current_temp ?? '');
+            $sheet->setCellValue('H'.$row, $rack->current_humidity ?? '');
+            $sheet->setCellValue('I'.$row, $rack->description ?? '');
+            $row++;
+        }
+
+        $columnWidths = [15, 15, 15, 8, 12, 40, 12, 12, 30];
+        foreach ($columnWidths as $index => $width) {
+            $sheet->getColumnDimension(chr(65 + $index))->setWidth($width);
+        }
+    }
+
+    private function createDevicesSheet(Spreadsheet $spreadsheet): void
+    {
+        $sheet = $spreadsheet->createSheet();
+        $sheet->setTitle('设备数据');
+
+        $headers = ['机房名称', '机柜名称', '设备名称', '设备型号', '制造商', '设备类型', 'U位', 'U高度', '功率(W)', '序列号', 'IP地址', '连接类型', '连接端口', '状态', '描述'];
+        foreach ($headers as $index => $header) {
+            $col = chr(65 + $index);
+            $sheet->setCellValue($col.'1', $header);
+            $sheet->getStyle($col.'1')->applyFromArray([
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2E8F0']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+            ]);
+        }
+
+        $devices = Device::with(['rack.room', 'deviceLibrary.deviceType'])->get();
+        $row = 2;
+        foreach ($devices as $device) {
+            $sheet->setCellValue('A'.$row, $device->rack?->room?->name ?? '');
+            $sheet->setCellValue('B'.$row, $device->rack?->name ?? '');
+            $sheet->setCellValue('C'.$row, $device->name);
+            $sheet->setCellValue('D'.$row, $device->deviceLibrary?->model ?? '');
+            $sheet->setCellValue('E'.$row, $device->deviceLibrary?->manufacturer ?? '');
+            $sheet->setCellValue('F'.$row, $device->deviceLibrary?->deviceType?->name ?? '');
+            $sheet->setCellValue('G'.$row, $device->u_position);
+            $sheet->setCellValue('H'.$row, $device->deviceLibrary?->u_height ?? 1);
+            $sheet->setCellValue('I'.$row, $device->power ?? ($device->deviceLibrary?->power ?? 0));
+            $sheet->setCellValue('J'.$row, $device->serial_number ?? '');
+            $sheet->setCellValue('K'.$row, $device->ip_address ?? '');
+            $sheet->setCellValue('L'.$row, $device->connection_type ?? '');
+            $sheet->setCellValue('M'.$row, $device->connection_port ?? '');
+            $sheet->setCellValue('N'.$row, $device->status ?? 'offline');
+            $sheet->setCellValue('O'.$row, $device->description ?? '');
+            $row++;
+        }
+
+        $columnWidths = [15, 15, 20, 20, 15, 15, 8, 8, 10, 20, 15, 12, 12, 10, 30];
+        foreach ($columnWidths as $index => $width) {
+            $sheet->getColumnDimension(chr(65 + $index))->setWidth($width);
+        }
+    }
+
+    private function createDeviceLibrarySheet(Spreadsheet $spreadsheet): void
+    {
+        $sheet = $spreadsheet->createSheet();
+        $sheet->setTitle('设备库数据');
+
+        $headers = ['设备名称', '型号', '制造商', '设备类型', 'U高度', '功率(W)', '描述'];
+        foreach ($headers as $index => $header) {
+            $col = chr(65 + $index);
+            $sheet->setCellValue($col.'1', $header);
+            $sheet->getStyle($col.'1')->applyFromArray([
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2E8F0']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+            ]);
+        }
+
+        $libraries = DeviceLibrary::with('deviceType')->get();
+        $row = 2;
+        foreach ($libraries as $library) {
+            $sheet->setCellValue('A'.$row, $library->name);
+            $sheet->setCellValue('B'.$row, $library->model);
+            $sheet->setCellValue('C'.$row, $library->manufacturer ?? '');
+            $sheet->setCellValue('D'.$row, $library->deviceType?->name ?? '');
+            $sheet->setCellValue('E'.$row, $library->u_height);
+            $sheet->setCellValue('F'.$row, $library->power);
+            $sheet->setCellValue('G'.$row, $library->description ?? '');
+            $row++;
+        }
+
+        $columnWidths = [20, 20, 15, 15, 8, 10, 30];
+        foreach ($columnWidths as $index => $width) {
+            $sheet->getColumnDimension(chr(65 + $index))->setWidth($width);
+        }
+    }
+
+    private function createDeviceTypesSheet(Spreadsheet $spreadsheet): void
+    {
+        $sheet = $spreadsheet->createSheet();
+        $sheet->setTitle('设备类型数据');
+
+        $headers = ['设备类型名称', '图标', '颜色'];
+        foreach ($headers as $index => $header) {
+            $col = chr(65 + $index);
+            $sheet->setCellValue($col.'1', $header);
+            $sheet->getStyle($col.'1')->applyFromArray([
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2E8F0']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+            ]);
+        }
+
+        $types = DeviceType::all();
+        $row = 2;
+        foreach ($types as $type) {
+            $sheet->setCellValue('A'.$row, $type->name);
+            $sheet->setCellValue('B'.$row, $type->icon ?? '');
+            $sheet->setCellValue('C'.$row, $type->color ?? '');
+            $row++;
+        }
+
+        $columnWidths = [20, 15, 15];
+        foreach ($columnWidths as $index => $width) {
+            $sheet->getColumnDimension(chr(65 + $index))->setWidth($width);
+        }
+    }
+
+    public function downloadAllImportTemplate(): StreamedResponse
+    {
+        $spreadsheet = new Spreadsheet;
+
+        $this->createRoomsTemplateSheet($spreadsheet);
+        $this->createRacksTemplateSheet($spreadsheet);
+        $this->createDevicesTemplateSheet($spreadsheet);
+        $this->createDeviceLibraryTemplateSheet($spreadsheet);
+        $this->createDeviceTypesTemplateSheet($spreadsheet);
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
+            $writer->save('php://output');
+        }, 'rackroom_all_import_template.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    private function createRoomsTemplateSheet(Spreadsheet $spreadsheet): void
+    {
+        $sheet = $spreadsheet->createSheet();
+        $sheet->setTitle('机房数据');
+
+        $headers = ['机房名称*', '位置', '管理员', '温湿度URL', '描述'];
+        foreach ($headers as $index => $header) {
+            $col = chr(65 + $index);
+            $sheet->setCellValue($col.'1', $header);
+            $sheet->getStyle($col.'1')->applyFromArray([
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2E8F0']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            ]);
+        }
+
+        $examples = [
+            ['机房A', '1号楼1层', '张三', 'https://example.com/temp-room-a', '生产机房'],
+            ['机房B', '2号楼2层', '李四', '', '测试机房'],
+        ];
+
+        foreach ($examples as $rowIndex => $rowData) {
+            foreach ($rowData as $colIndex => $value) {
+                $sheet->setCellValue(chr(65 + $colIndex).($rowIndex + 2), $value);
+            }
+        }
+
+        $columnWidths = [15, 20, 15, 40, 30];
+        foreach ($columnWidths as $index => $width) {
+            $sheet->getColumnDimension(chr(65 + $index))->setWidth($width);
+        }
+    }
+
+    private function createRacksTemplateSheet(Spreadsheet $spreadsheet): void
+    {
+        $sheet = $spreadsheet->createSheet();
+        $sheet->setTitle('机柜数据');
+
+        $headers = ['机房名称*', '机柜名称*', '机柜类型', 'U数', '功率(W)', '温湿度URL', '描述'];
+        foreach ($headers as $index => $header) {
+            $col = chr(65 + $index);
+            $sheet->setCellValue($col.'1', $header);
+            $sheet->getStyle($col.'1')->applyFromArray([
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2E8F0']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            ]);
+        }
+
+        $examples = [
+            ['机房A', 'A01', '标准机柜', '42', '3000', '', '生产机柜'],
+            ['机房A', 'A02', '标准机柜', '42', '3000', 'https://example.com/temp-rack-a02', '生产机柜'],
+        ];
+
+        foreach ($examples as $rowIndex => $rowData) {
+            foreach ($rowData as $colIndex => $value) {
+                $sheet->setCellValue(chr(65 + $colIndex).($rowIndex + 2), $value);
+            }
+        }
+
+        $columnWidths = [15, 15, 15, 8, 12, 40, 30];
+        foreach ($columnWidths as $index => $width) {
+            $sheet->getColumnDimension(chr(65 + $index))->setWidth($width);
+        }
+    }
+
+    private function createDevicesTemplateSheet(Spreadsheet $spreadsheet): void
+    {
+        $sheet = $spreadsheet->createSheet();
+        $sheet->setTitle('设备数据');
+
+        $headers = ['机房名称*', '机柜名称*', '设备名称*', '设备型号*', '制造商', '设备类型*', 'U位*', 'U高度', '功率(W)', '序列号', 'IP地址', '连接类型', '连接端口', '状态', '描述'];
+        foreach ($headers as $index => $header) {
+            $col = chr(65 + $index);
+            $sheet->setCellValue($col.'1', $header);
+            $sheet->getStyle($col.'1')->applyFromArray([
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2E8F0']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            ]);
+        }
+
+        $examples = [
+            ['机房A', 'A01', '服务器01', 'Dell R740', 'Dell', '服务器', '1', '2', '500', 'SN123456', '192.168.1.10', 'ssh', '22', 'online', '生产服务器'],
+            ['机房A', 'A01', '交换机01', 'Cisco 2960', 'Cisco', '网络设备', '3', '1', '50', 'SN789012', '192.168.1.1', 'ssh', '22', 'online', '核心交换机'],
+        ];
+
+        foreach ($examples as $rowIndex => $rowData) {
+            foreach ($rowData as $colIndex => $value) {
+                $sheet->setCellValue(chr(65 + $colIndex).($rowIndex + 2), $value);
+            }
+        }
+
+        $columnWidths = [15, 15, 20, 20, 15, 15, 8, 8, 10, 20, 15, 12, 12, 10, 30];
+        foreach ($columnWidths as $index => $width) {
+            $sheet->getColumnDimension(chr(65 + $index))->setWidth($width);
+        }
+    }
+
+    private function createDeviceLibraryTemplateSheet(Spreadsheet $spreadsheet): void
+    {
+        $sheet = $spreadsheet->createSheet();
+        $sheet->setTitle('设备库数据');
+
+        $headers = ['设备名称*', '型号*', '制造商', '设备类型*', 'U高度', '功率(W)', '描述'];
+        foreach ($headers as $index => $header) {
+            $col = chr(65 + $index);
+            $sheet->setCellValue($col.'1', $header);
+            $sheet->getStyle($col.'1')->applyFromArray([
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2E8F0']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            ]);
+        }
+
+        $examples = [
+            ['Dell PowerEdge R740', 'Dell R740', 'Dell', '服务器', '2', '500', '2U机架式服务器'],
+            ['Cisco Catalyst 2960', 'Cisco 2960', 'Cisco', '网络设备', '1', '50', '24口交换机'],
+        ];
+
+        foreach ($examples as $rowIndex => $rowData) {
+            foreach ($rowData as $colIndex => $value) {
+                $sheet->setCellValue(chr(65 + $colIndex).($rowIndex + 2), $value);
+            }
+        }
+
+        $columnWidths = [20, 20, 15, 15, 8, 10, 30];
+        foreach ($columnWidths as $index => $width) {
+            $sheet->getColumnDimension(chr(65 + $index))->setWidth($width);
+        }
+    }
+
+    private function createDeviceTypesTemplateSheet(Spreadsheet $spreadsheet): void
+    {
+        $sheet = $spreadsheet->createSheet();
+        $sheet->setTitle('设备类型数据');
+
+        $headers = ['设备类型名称*'];
+        foreach ($headers as $index => $header) {
+            $col = chr(65 + $index);
+            $sheet->setCellValue($col.'1', $header);
+            $sheet->getStyle($col.'1')->applyFromArray([
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2E8F0']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            ]);
+        }
+
+        $examples = [['服务器'], ['网络设备'], ['存储'], ['防火墙']];
+
+        foreach ($examples as $rowIndex => $rowData) {
+            foreach ($rowData as $colIndex => $value) {
+                $sheet->setCellValue(chr(65 + $colIndex).($rowIndex + 2), $value);
+            }
+        }
+
+        $columnWidths = [20];
+        foreach ($columnWidths as $index => $width) {
+            $sheet->getColumnDimension(chr(65 + $index))->setWidth($width);
+        }
+    }
+
+    public function previewAllImport(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls|max:20480',
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $spreadsheet = IOFactory::load($file->getRealPath());
+
+            $errors = [];
+            $stats = [
+                'rooms' => ['total' => 0, 'new' => 0],
+                'racks' => ['total' => 0, 'new' => 0],
+                'devices' => ['total' => 0, 'new' => 0],
+                'device_library' => ['total' => 0, 'new' => 0],
+                'device_types' => ['total' => 0, 'new' => 0],
+            ];
+
+            $existingRooms = Room::pluck('name')->toArray();
+            $existingRacks = Rack::with('room')->get()->keyBy(fn ($r) => $r->room->name.'|'.$r->name);
+            $existingDeviceTypes = DeviceType::pluck('name')->toArray();
+            $existingDeviceLibrary = DeviceLibrary::pluck('name')->toArray();
+
+            if ($spreadsheet->getSheetByName('机房数据')) {
+                $sheet = $spreadsheet->getSheetByName('机房数据');
+                $rows = $sheet->toArray();
+                array_shift($rows);
+                foreach ($rows as $index => $row) {
+                    if (empty($row[0])) {
+                        continue;
+                    }
+                    $stats['rooms']['total']++;
+                    $roomName = trim($row[0]);
+                    if (! in_array($roomName, $existingRooms)) {
+                        $stats['rooms']['new']++;
+                    }
+                }
+            }
+
+            if ($spreadsheet->getSheetByName('机柜数据')) {
+                $sheet = $spreadsheet->getSheetByName('机柜数据');
+                $rows = $sheet->toArray();
+                array_shift($rows);
+                foreach ($rows as $index => $row) {
+                    if (empty($row[0]) || empty($row[1])) {
+                        continue;
+                    }
+                    $stats['racks']['total']++;
+                    $roomName = trim($row[0]);
+                    $rackName = trim($row[1]);
+                    if (! in_array($roomName, $existingRooms)) {
+                        $errors[] = '机柜数据第'.($index + 2)."行：机房 '{$roomName}' 不存在";
+                    } else {
+                        $rackKey = $roomName.'|'.$rackName;
+                        if (! isset($existingRacks[$rackKey])) {
+                            $stats['racks']['new']++;
+                        }
+                    }
+                }
+            }
+
+            if ($spreadsheet->getSheetByName('设备数据')) {
+                $sheet = $spreadsheet->getSheetByName('设备数据');
+                $rows = $sheet->toArray();
+                array_shift($rows);
+                foreach ($rows as $index => $row) {
+                    if (empty($row[0]) || empty($row[1]) || empty($row[2])) {
+                        continue;
+                    }
+                    $stats['devices']['total']++;
+                    $roomName = trim($row[0]);
+                    $rackName = trim($row[1]);
+                    $deviceTypeName = trim($row[5]);
+                    $deviceModel = trim($row[3]);
+
+                    if (! in_array($roomName, $existingRooms)) {
+                        $errors[] = '设备数据第'.($index + 2)."行：机房 '{$roomName}' 不存在";
+                    }
+                    if (! in_array($deviceTypeName, $existingDeviceTypes)) {
+                        $stats['device_types']['new']++;
+                    }
+                    if (! in_array($deviceModel, $existingDeviceLibrary)) {
+                        $stats['device_library']['new']++;
+                    }
+                }
+            }
+
+            if ($spreadsheet->getSheetByName('设备库数据')) {
+                $sheet = $spreadsheet->getSheetByName('设备库数据');
+                $rows = $sheet->toArray();
+                array_shift($rows);
+                foreach ($rows as $index => $row) {
+                    if (empty($row[0]) || empty($row[1])) {
+                        continue;
+                    }
+                    $stats['device_library']['total']++;
+                    $deviceTypeName = trim($row[3]);
+                    if (! in_array($deviceTypeName, $existingDeviceTypes)) {
+                        $stats['device_types']['new']++;
+                    }
+                }
+            }
+
+            if ($spreadsheet->getSheetByName('设备类型数据')) {
+                $sheet = $spreadsheet->getSheetByName('设备类型数据');
+                $rows = $sheet->toArray();
+                array_shift($rows);
+                foreach ($rows as $index => $row) {
+                    if (empty($row[0])) {
+                        continue;
+                    }
+                    $stats['device_types']['total']++;
+                }
+            }
+
+            return response()->json([
+                'success' => empty($errors),
+                'stats' => $stats,
+                'errors' => $errors,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['文件解析失败: '.$e->getMessage()],
+            ], 422);
+        }
+    }
+
+    public function importAll(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls|max:20480',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $file = $request->file('file');
+            $spreadsheet = IOFactory::load($file->getRealPath());
+
+            $stats = [
+                'rooms' => ['created' => 0, 'updated' => 0],
+                'racks' => ['created' => 0, 'updated' => 0],
+                'devices' => ['created' => 0, 'updated' => 0],
+                'device_library' => ['created' => 0, 'updated' => 0],
+                'device_types' => ['created' => 0, 'updated' => 0],
+                'errors' => [],
+            ];
+
+            $rooms = Room::all()->keyBy('name');
+            $racks = Rack::with('room')->get()->keyBy(fn ($r) => $r->room->name.'|'.$r->name);
+            $deviceTypes = DeviceType::all()->keyBy('name');
+            $deviceLibrary = DeviceLibrary::all()->keyBy('model');
+
+            if ($spreadsheet->getSheetByName('设备类型数据')) {
+                $sheet = $spreadsheet->getSheetByName('设备类型数据');
+                $rows = $sheet->toArray();
+                array_shift($rows);
+                foreach ($rows as $index => $row) {
+                    if (empty($row[0])) {
+                        continue;
+                    }
+                    $typeName = trim($row[0]);
+                    if (! $deviceTypes->has($typeName)) {
+                        $deviceTypes->put($typeName, DeviceType::create(['name' => $typeName, 'icon' => 'server', 'color' => '#3B82F6']));
+                        $stats['device_types']['created']++;
+                    } else {
+                        $stats['device_types']['updated']++;
+                    }
+                }
+            }
+
+            if ($spreadsheet->getSheetByName('机房数据')) {
+                $sheet = $spreadsheet->getSheetByName('机房数据');
+                $rows = $sheet->toArray();
+                array_shift($rows);
+                foreach ($rows as $index => $row) {
+                    if (empty($row[0])) {
+                        continue;
+                    }
+                    $roomName = trim($row[0]);
+                    if (! $rooms->has($roomName)) {
+                        $rooms->put($roomName, Room::create([
+                            'name' => $roomName,
+                            'location' => trim($row[1] ?? ''),
+                            'manager' => trim($row[2] ?? ''),
+                            'temp_humidity_url' => trim($row[3] ?? ''),
+                            'description' => trim($row[4] ?? ''),
+                        ]));
+                        $stats['rooms']['created']++;
+                    } else {
+                        $room = $rooms->get($roomName);
+                        $room->update([
+                            'location' => trim($row[1] ?? '') ?: $room->location,
+                            'manager' => trim($row[2] ?? '') ?: $room->manager,
+                            'temp_humidity_url' => trim($row[3] ?? '') ?: $room->temp_humidity_url,
+                            'description' => trim($row[4] ?? '') ?: $room->description,
+                        ]);
+                        $stats['rooms']['updated']++;
+                    }
+                }
+            }
+
+            if ($spreadsheet->getSheetByName('机柜数据')) {
+                $sheet = $spreadsheet->getSheetByName('机柜数据');
+                $rows = $sheet->toArray();
+                array_shift($rows);
+                foreach ($rows as $index => $row) {
+                    if (empty($row[0]) || empty($row[1])) {
+                        continue;
+                    }
+                    $roomName = trim($row[0]);
+                    $rackName = trim($row[1]);
+                    $room = $rooms->get($roomName);
+                    if (! $room) {
+                        continue;
+                    }
+
+                    $rackKey = $roomName.'|'.$rackName;
+                    if (! $racks->has($rackKey)) {
+                        $racks->put($rackKey, Rack::create([
+                            'room_id' => $room->id,
+                            'name' => $rackName,
+                            'rack_type_id' => $deviceTypes->has(trim($row[2] ?? '')) ? $deviceTypes->get(trim($row[2] ?? ''))->id : null,
+                            'u_count' => intval($row[3] ?? 42),
+                            'power' => intval($row[4] ?? 3000),
+                            'temp_humidity_url' => trim($row[5] ?? ''),
+                            'description' => trim($row[6] ?? ''),
+                        ]));
+                        $stats['racks']['created']++;
+                    } else {
+                        $rack = $racks->get($rackKey);
+                        $rack->update([
+                            'u_count' => intval($row[3] ?? $rack->u_count),
+                            'power' => intval($row[4] ?? $rack->power),
+                            'temp_humidity_url' => trim($row[5] ?? '') ?: $rack->temp_humidity_url,
+                            'description' => trim($row[6] ?? '') ?: $rack->description,
+                        ]);
+                        $stats['racks']['updated']++;
+                    }
+                }
+            }
+
+            if ($spreadsheet->getSheetByName('设备库数据')) {
+                $sheet = $spreadsheet->getSheetByName('设备库数据');
+                $rows = $sheet->toArray();
+                array_shift($rows);
+                foreach ($rows as $index => $row) {
+                    if (empty($row[0]) || empty($row[1])) {
+                        continue;
+                    }
+                    $model = trim($row[1]);
+                    $deviceTypeName = trim($row[3] ?? '');
+                    $deviceType = $deviceTypes->get($deviceTypeName);
+
+                    if (! $deviceLibrary->has($model)) {
+                        $deviceLibrary->put($model, DeviceLibrary::create([
+                            'name' => trim($row[0]),
+                            'model' => $model,
+                            'manufacturer' => trim($row[2] ?? ''),
+                            'device_type_id' => $deviceType?->id,
+                            'u_height' => intval($row[4] ?? 1),
+                            'power' => intval($row[5] ?? 0),
+                            'description' => trim($row[6] ?? ''),
+                        ]));
+                        $stats['device_library']['created']++;
+                    } else {
+                        $lib = $deviceLibrary->get($model);
+                        $lib->update([
+                            'manufacturer' => trim($row[2] ?? '') ?: $lib->manufacturer,
+                            'device_type_id' => $deviceType?->id ?? $lib->device_type_id,
+                            'u_height' => intval($row[4] ?? $lib->u_height),
+                            'power' => intval($row[5] ?? $lib->power),
+                            'description' => trim($row[6] ?? '') ?: $lib->description,
+                        ]);
+                        $stats['device_library']['updated']++;
+                    }
+                }
+            }
+
+            if ($spreadsheet->getSheetByName('设备数据')) {
+                $sheet = $spreadsheet->getSheetByName('设备数据');
+                $rows = $sheet->toArray();
+                array_shift($rows);
+                foreach ($rows as $index => $row) {
+                    if (empty($row[0]) || empty($row[1]) || empty($row[2])) {
+                        continue;
+                    }
+                    $roomName = trim($row[0]);
+                    $rackName = trim($row[1]);
+                    $room = $rooms->get($roomName);
+                    if (! $room) {
+                        continue;
+                    }
+
+                    $rackKey = $roomName.'|'.$rackName;
+                    $rack = $racks->get($rackKey);
+                    if (! $rack) {
+                        continue;
+                    }
+
+                    $deviceModel = trim($row[3]);
+                    $library = $deviceLibrary->get($deviceModel);
+                    if (! $library) {
+                        continue;
+                    }
+
+                    $existingDevice = Device::where('rack_id', $rack->id)->where('u_position', intval($row[6] ?? 1))->first();
+                    $deviceData = [
+                        'name' => trim($row[2]),
+                        'device_library_id' => $library->id,
+                        'u_position' => intval($row[6] ?? 1),
+                        'power' => intval($row[8] ?? 0) ?: $library->power,
+                        'serial_number' => trim($row[9] ?? ''),
+                        'ip_address' => trim($row[10] ?? ''),
+                        'connection_type' => trim($row[11] ?? ''),
+                        'connection_port' => intval($row[12] ?? 0),
+                        'status' => trim($row[13] ?? 'offline'),
+                        'description' => trim($row[14] ?? ''),
+                    ];
+
+                    if ($existingDevice) {
+                        $existingDevice->update($deviceData);
+                        $stats['devices']['updated']++;
+                    } else {
+                        $deviceData['rack_id'] = $rack->id;
+                        Device::create($deviceData);
+                        $stats['devices']['created']++;
+                    }
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => '全量导入完成',
+                'stats' => $stats,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'errors' => ['导入失败: '.$e->getMessage()],
+            ], 500);
+        }
     }
 }

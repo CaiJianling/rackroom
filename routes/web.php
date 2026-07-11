@@ -1,4 +1,5 @@
 <?php
+
 /*
  * @Author: CaiJianling caijianling@outlook.com
  * @Date: 2026-03-25 03:55:13
@@ -13,8 +14,8 @@ use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BatchOperationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataExportController;
-use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\DeviceChangeLogController;
+use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\DeviceDependencyController;
 use App\Http\Controllers\DeviceLibraryController;
 use App\Http\Controllers\DeviceTypeController;
@@ -27,7 +28,6 @@ use App\Http\Controllers\RackExcelController;
 use App\Http\Controllers\RackTypeController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoomController;
-use App\Http\Controllers\SshTerminalController;
 use App\Http\Controllers\SshWebSocketController;
 use App\Http\Controllers\SystemSettingController;
 use App\Http\Controllers\UserController;
@@ -57,6 +57,10 @@ Route::get('/', function () {
 Route::get('dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
+
+Route::get('cockpit', [DashboardController::class, 'cockpit'])
+    ->middleware(['auth', 'verified'])
+    ->name('cockpit');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('rooms', RoomController::class);
@@ -149,6 +153,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // 监控/报表 API 路由（使用 web 中间件共享 session）
     Route::prefix('api')->group(function () {
+        // 驾驶舱API
+        Route::get('cockpit/data', [DashboardController::class, 'cockpitData']);
+
         // 监控API
         Route::get('monitor/stats', [MonitorController::class, 'stats']);
         Route::get('monitor/devices', [MonitorController::class, 'devices']);
@@ -188,12 +195,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/preview-import', [BatchOperationController::class, 'previewImport']);
             Route::post('/import', [BatchOperationController::class, 'import']);
             Route::get('/download-template', [BatchOperationController::class, 'downloadTemplate']);
+            Route::get('/download-xlsx-template', [BatchOperationController::class, 'downloadXlsxTemplate']);
+            Route::post('/preview-xlsx-import', [BatchOperationController::class, 'previewXlsxImport']);
+            Route::post('/import-xlsx', [BatchOperationController::class, 'importXlsx']);
             Route::post('/preview-migration', [BatchOperationController::class, 'previewMigration']);
             Route::post('/migrate', [BatchOperationController::class, 'migrate']);
             Route::post('/preview-power-schedule', [BatchOperationController::class, 'previewPowerSchedule']);
             Route::post('/execute-power-schedule', [BatchOperationController::class, 'executePowerSchedule']);
             Route::get('/by-rack/{rackId}', [BatchOperationController::class, 'getDevicesByRack']);
             Route::get('/search', [BatchOperationController::class, 'searchDevices']);
+            Route::get('/export-all', [BatchOperationController::class, 'exportAllData']);
+            Route::get('/download-all-template', [BatchOperationController::class, 'downloadAllImportTemplate']);
+            Route::post('/preview-all-import', [BatchOperationController::class, 'previewAllImport']);
+            Route::post('/import-all', [BatchOperationController::class, 'importAll']);
         });
 
         // 设备依赖关系API

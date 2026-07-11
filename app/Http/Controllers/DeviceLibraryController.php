@@ -68,6 +68,24 @@ class DeviceLibraryController extends Controller
 
         $deviceLibrary->update($validated);
 
+        $syncFields = [];
+        if (array_key_exists('power', $validated)) {
+            $syncFields['power'] = $validated['power'];
+        }
+        if (array_key_exists('model', $validated)) {
+            $syncFields['model'] = $validated['model'];
+        }
+        if (array_key_exists('manufacturer', $validated)) {
+            $syncFields['manufacturer'] = $validated['manufacturer'];
+        }
+        if (array_key_exists('serial_number', $validated)) {
+            $syncFields['serial_number'] = $validated['serial_number'];
+        }
+
+        if (! empty($syncFields)) {
+            $deviceLibrary->devices()->update($syncFields);
+        }
+
         // 检查请求来源，如果是可视化编辑页面则保持在该页面
         $referer = $request->headers->get('referer');
         if ($referer && str_contains($referer, '/racks/visual-edit')) {

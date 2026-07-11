@@ -196,6 +196,13 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
     const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
     const [confirmAction, setConfirmAction] = useState<'import' | 'migrate' | 'power'>('import');
     const [confirmLoading, setConfirmLoading] = useState(false);
+    const [confirmErrors, setConfirmErrors] = useState<any[]>([]);
+
+    const [allImportFile, setAllImportFile] = useState<File | null>(null);
+    const [allImportStats, setAllImportStats] = useState<any>(null);
+    const [allImportErrors, setAllImportErrors] = useState<string[]>([]);
+    const [allImportLoading, setAllImportLoading] = useState(false);
+    const [allImportExecuting, setAllImportExecuting] = useState(false);
 
     const selectedImportRows = useMemo(() => {
         return importPreview.filter(row => row._selected);
@@ -213,8 +220,11 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (!file.name.endsWith('.csv') && !file.name.endsWith('.txt')) {
-            showToast(t('batchOperations.uploadCSVError'), 'error');
+        const isXlsx = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+        const isCsv = file.name.endsWith('.csv') || file.name.endsWith('.txt');
+
+        if (!isXlsx && !isCsv) {
+            showToast(t('batchOperations.uploadFileError'), 'error');
             return;
         }
 
@@ -225,8 +235,12 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
         const formData = new FormData();
         formData.append('file', file);
 
+        const url = isXlsx
+            ? '/api/batch-operations/devices/preview-xlsx-import'
+            : '/api/batch-operations/devices/preview-import';
+
         try {
-            const response = await fetch('/api/batch-operations/devices/preview-import', {
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
@@ -416,10 +430,12 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
             const data = await response.json();
 
             if (data.success) {
+                setConfirmErrors([]);
                 showToast(`校验通过，可以执行迁移`, 'success');
                 setConfirmAction('migrate');
                 setConfirmDialogOpen(true);
             } else {
+                setConfirmErrors(data.errors || []);
                 setMigrationItems(prev => prev.map(item => {
                     const error = data.errors?.find((e: any) => e.device_name === item.device_name);
                     if (error) {
@@ -427,7 +443,8 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
                     }
                     return { ...item, _error: undefined };
                 }));
-                showToast(`校验失败，发现 ${data.errors?.length || 0} 个问题`, 'error');
+                setConfirmAction('migrate');
+                setConfirmDialogOpen(true);
             }
         } catch (error) {
             console.error('Preview migration failed:', error);
@@ -570,11 +587,14 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
             const data = await response.json();
 
             if (data.success) {
+                setConfirmErrors([]);
                 showToast(`校验通过，可以执行上下电操作`, 'success');
                 setConfirmAction('power');
                 setConfirmDialogOpen(true);
             } else {
-                showToast(`校验失败，发现 ${data.errors?.length || 0} 个问题`, 'error');
+                setConfirmErrors(data.errors || []);
+                setConfirmAction('power');
+                setConfirmDialogOpen(true);
             }
         } catch (error) {
             console.error('Preview power schedule failed:', error);
@@ -620,6 +640,88 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
         }
     };
 
+    const handleAllImportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+            showToast(t('batchOperations.uploadXlsxError'), 'error');
+            return;
+        }
+
+        setAllImportFile(file);
+        setAllImportLoading(true);
+        setAllImportErrors([]);
+        setAllImportStats(null);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/api/batch-operations/devices/preview-all-import', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setAllImportStats(data.stats);
+                setAllImportErrors(data.errors || []);
+                if (data.errors?.length > 0) {
+                    showToast(`预览完成，发现 ${data.errors.length} 个问题`, 'warning');
+                } else {
+                    showToast('预览完成，数据校验通过', 'success');
+                }
+            } else {
+                showToast(data.message || '预览失败', 'error');
+            }
+        } catch (error) {
+            console.error('Preview all import failed:', error);
+            showToast('预览失败，请检查文件格式', 'error');
+        } finally {
+            setAllImportLoading(false);
+        }
+    };
+
+    const handleExecuteAllImport = async () => {
+        if (!allImportFile) return;
+
+        setAllImportExecuting(true);
+
+        const formData = new FormData();
+        formData.append('file', allImportFile);
+
+        try {
+            const response = await fetch('/api/batch-operations/devices/import-all', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showToast(data.message, 'success');
+                setAllImportFile(null);
+                setAllImportStats(null);
+                setAllImportErrors([]);
+            } else {
+                showToast(data.message || '导入失败', 'error');
+            }
+        } catch (error) {
+            console.error('Import all failed:', error);
+            showToast('导入失败', 'error');
+        } finally {
+            setAllImportExecuting(false);
+        }
+    };
+
     const handleConfirm = () => {
         switch (confirmAction) {
             case 'import':
@@ -639,9 +741,9 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
             case 'import':
                 return t('batchOperations.confirmImport');
             case 'migrate':
-                return '确认迁移';
+                return t('batchOperations.confirmMigrate');
             case 'power':
-                return '确认执行上下电';
+                return t('batchOperations.confirmPower');
         }
     };
 
@@ -650,9 +752,9 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
             case 'import':
                 return t('batchOperations.confirmImportDesc', { count: selectedImportRows.length });
             case 'migrate':
-                return `确定要迁移选中的 ${selectedMigrationRows.length} 台设备吗？`;
+                return t('batchOperations.confirmMigrateDesc', { count: selectedMigrationRows.length });
             case 'power':
-                return `确定要执行选中的 ${selectedPowerRows.length} 台设备的上下电操作吗？`;
+                return t('batchOperations.confirmPowerDesc', { count: selectedPowerRows.length });
         }
     };
 
@@ -721,7 +823,7 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList className="grid w-full grid-cols-4">
                         <TabsTrigger value="import" className="flex items-center gap-2">
                             <Upload className="h-4 w-4" />
                             {t('batchOperations.csvImport')}
@@ -733,6 +835,10 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
                         <TabsTrigger value="power" className="flex items-center gap-2">
                             <Power className="h-4 w-4" />
                             {t('batchOperations.batchPower')}
+                        </TabsTrigger>
+                        <TabsTrigger value="allImportExport" className="flex items-center gap-2">
+                            <FileSpreadsheet className="h-4 w-4" />
+                            {t('batchOperations.allImportExport')}
                         </TabsTrigger>
                     </TabsList>
 
@@ -756,15 +862,22 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
                                         <Download className="mr-2 h-4 w-4" />
                                         {t('batchOperations.downloadTemplate')}
                                     </Button>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => window.location.href = '/api/batch-operations/devices/download-xlsx-template'}
+                                    >
+                                        <Download className="mr-2 h-4 w-4" />
+                                        {t('batchOperations.downloadXlsxTemplate')}
+                                    </Button>
                                     <Label htmlFor="import-file" className="cursor-pointer">
                                         <div className="flex items-center gap-2 rounded-md border bg-background px-4 py-2 hover:bg-muted">
                                             <Upload className="h-4 w-4" />
-                                            <span>{importFile ? importFile.name : t('batchOperations.selectCSV')}</span>
+                                            <span>{importFile ? importFile.name : t('batchOperations.selectFile')}</span>
                                         </div>
                                         <Input
                                             id="import-file"
                                             type="file"
-                                            accept=".csv,.txt"
+                                            accept=".csv,.txt,.xlsx,.xls"
                                             onChange={handleFileChange}
                                             className="hidden"
                                         />
@@ -1139,6 +1252,157 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
                             </CardContent>
                         </Card>
                     </TabsContent>
+
+                    <TabsContent value="allImportExport" className="mt-4">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <FileSpreadsheet className="h-5 w-5" />
+                                    {t('batchOperations.allImportExport')}
+                                </CardTitle>
+                                <CardDescription>
+                                    {t('batchOperations.allImportExportDesc')}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="rounded-lg border p-4">
+                                        <h3 className="font-medium mb-4 flex items-center gap-2">
+                                            <Download className="h-4 w-4" />
+                                            {t('batchOperations.exportAllData')}
+                                        </h3>
+                                        <p className="text-sm text-muted-foreground mb-4">
+                                            {t('batchOperations.exportAllDataDesc')}
+                                        </p>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => window.location.href = '/api/batch-operations/devices/export-all'}
+                                        >
+                                            <Download className="mr-2 h-4 w-4" />
+                                            {t('batchOperations.export')}
+                                        </Button>
+                                    </div>
+
+                                    <div className="rounded-lg border p-4">
+                                        <h3 className="font-medium mb-4 flex items-center gap-2">
+                                            <Upload className="h-4 w-4" />
+                                            {t('batchOperations.importAllData')}
+                                        </h3>
+                                        <p className="text-sm text-muted-foreground mb-4">
+                                            {t('batchOperations.importAllDataDesc')}
+                                        </p>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => window.location.href = '/api/batch-operations/devices/download-all-template'}
+                                            >
+                                                <Download className="mr-2 h-4 w-4" />
+                                                {t('batchOperations.downloadAllTemplate')}
+                                            </Button>
+                                            <Label htmlFor="all-import-file" className="cursor-pointer">
+                                                <Button variant="default">
+                                                    <Upload className="mr-2 h-4 w-4" />
+                                                    {t('batchOperations.selectFile')}
+                                                </Button>
+                                                <Input
+                                                    id="all-import-file"
+                                                    type="file"
+                                                    accept=".xlsx,.xls"
+                                                    onChange={handleAllImportFileChange}
+                                                    className="hidden"
+                                                />
+                                            </Label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {allImportLoading && (
+                                    <div className="flex items-center justify-center py-8">
+                                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                                        <span className="ml-2">{t('batchOperations.previewing')}</span>
+                                    </div>
+                                )}
+
+                                {allImportStats && (
+                                    <div className="rounded-lg border p-4">
+                                        <h3 className="font-medium mb-4">{t('batchOperations.importPreview')}</h3>
+                                        <div className="grid grid-cols-5 gap-4 mb-4">
+                                            <div className="text-center">
+                                                <div className="text-xl font-bold">{allImportStats.rooms.total}</div>
+                                                <div className="text-xs text-muted-foreground">{t('batchOperations.rooms')}</div>
+                                                {allImportStats.rooms.new > 0 && (
+                                                    <div className="text-xs text-green-500">+{allImportStats.rooms.new} {t('batchOperations.new')}</div>
+                                                )}
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="text-xl font-bold">{allImportStats.racks.total}</div>
+                                                <div className="text-xs text-muted-foreground">{t('batchOperations.racks')}</div>
+                                                {allImportStats.racks.new > 0 && (
+                                                    <div className="text-xs text-green-500">+{allImportStats.racks.new} {t('batchOperations.new')}</div>
+                                                )}
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="text-xl font-bold">{allImportStats.devices.total}</div>
+                                                <div className="text-xs text-muted-foreground">{t('batchOperations.devices')}</div>
+                                                {allImportStats.devices.new > 0 && (
+                                                    <div className="text-xs text-green-500">+{allImportStats.devices.new} {t('batchOperations.new')}</div>
+                                                )}
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="text-xl font-bold">{allImportStats.device_library.total}</div>
+                                                <div className="text-xs text-muted-foreground">{t('batchOperations.deviceLibrary')}</div>
+                                                {allImportStats.device_library.new > 0 && (
+                                                    <div className="text-xs text-green-500">+{allImportStats.device_library.new} {t('batchOperations.new')}</div>
+                                                )}
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="text-xl font-bold">{allImportStats.device_types.total}</div>
+                                                <div className="text-xs text-muted-foreground">{t('batchOperations.deviceTypes')}</div>
+                                                {allImportStats.device_types.new > 0 && (
+                                                    <div className="text-xs text-green-500">+{allImportStats.device_types.new} {t('batchOperations.new')}</div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {allImportErrors.length > 0 && (
+                                            <div className="rounded-md bg-destructive/10 p-4 mb-4">
+                                                <div className="flex items-center gap-2 text-destructive font-medium mb-2">
+                                                    <AlertTriangle className="h-4 w-4" />
+                                                    {t('batchOperations.errorsFound', { count: allImportErrors.length })}
+                                                </div>
+                                                <div className="max-h-32 overflow-auto space-y-1">
+                                                    {allImportErrors.slice(0, 10).map((error: string, index: number) => (
+                                                        <div key={index} className="text-sm text-destructive">
+                                                            {error}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="flex justify-end">
+                                            <Button
+                                                onClick={handleExecuteAllImport}
+                                                disabled={allImportErrors.length > 0 || allImportExecuting}
+                                            >
+                                                {allImportExecuting ? (
+                                                    <>
+                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                        {t('batchOperations.importing')}
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Upload className="mr-2 h-4 w-4" />
+                                                        {t('batchOperations.import')}
+                                                    </>
+                                                )}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
                 </Tabs>
             </div>
 
@@ -1148,18 +1412,44 @@ export default function DeviceBatchOperations({ racks, deviceLibrary, breadcrumb
                         <DialogTitle>{getConfirmTitle()}</DialogTitle>
                         <DialogDescription>{getConfirmDescription()}</DialogDescription>
                     </DialogHeader>
+                    {confirmErrors.length > 0 && (
+                        <div className="mb-4 rounded-md bg-destructive/10 p-4">
+                            <div className="flex items-center gap-2 text-destructive font-medium mb-2">
+                                <AlertTriangle className="h-4 w-4" />
+                                发现 {confirmErrors.length} 个问题
+                            </div>
+                            <div className="max-h-48 overflow-auto space-y-1">
+                                {confirmErrors.slice(0, 10).map((error: any, index: number) => (
+                                    <div key={index} className="text-sm text-destructive">
+                                        {error.device_name}: {error.errors?.[0] || error.message}
+                                    </div>
+                                ))}
+                                {confirmErrors.length > 10 && (
+                                    <div className="text-sm text-muted-foreground">
+                                        ...还有 {confirmErrors.length - 10} 个问题
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>
-                            取消
+                            {t('batchOperations.cancel')}
                         </Button>
-                        <Button onClick={handleConfirm} disabled={confirmLoading}>
+                        <Button
+                            onClick={handleConfirm}
+                            disabled={confirmLoading || confirmErrors.length > 0}
+                            className={confirmErrors.length > 0 ? 'bg-muted cursor-not-allowed' : ''}
+                        >
                             {confirmLoading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    处理中...
+                                    {t('batchOperations.executing')}
                                 </>
                             ) : (
-                                <>确认 ({getSelectedCount()})</>
+                                <>
+                                    {t('batchOperations.confirm')} ({getSelectedCount()})
+                                </>
                             )}
                         </Button>
                     </DialogFooter>

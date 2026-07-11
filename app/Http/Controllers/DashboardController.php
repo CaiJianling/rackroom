@@ -227,4 +227,92 @@ class DashboardController extends Controller
             ],
         ]);
     }
+
+    /**
+     * 显示驾驶舱仪表盘页面
+     */
+    public function cockpit(): Response
+    {
+        $data = $this->getCockpitData();
+
+        return inertia('Cockpit', [
+            'data' => $data,
+        ]);
+    }
+
+    /**
+     * 获取驾驶舱数据
+     */
+    private function getCockpitData(): array
+    {
+        $deviceStats = Device::selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
+        $totalPower = Device::sum('power');
+        $activeAlerts = Alert::active()->count();
+
+        return [
+            'summary' => [
+                'rooms' => Room::count(),
+                'racks' => Rack::count(),
+                'devices' => Device::count(),
+                'alerts' => $activeAlerts,
+                'power' => $totalPower,
+                'onlineDevices' => $deviceStats['online'] ?? 0,
+                'offlineDevices' => $deviceStats['offline'] ?? 0,
+                'maintenanceDevices' => $deviceStats['maintenance'] ?? 0,
+                'criticalAlerts' => Alert::ofSeverity('critical')->active()->count(),
+                'warningAlerts' => Alert::ofSeverity('warning')->active()->count(),
+            ],
+            'deviceStatus' => [
+                'online' => $deviceStats['online'] ?? 0,
+                'offline' => $deviceStats['offline'] ?? 0,
+                'maintenance' => $deviceStats['maintenance'] ?? 0,
+                'total' => Device::count(),
+            ],
+            'roomStats' => Room::withCount(['racks', 'devices'])
+                ->get()
+                ->map(fn ($room) => [
+                    'id' => $room->id,
+                    'name' => $room->name,
+                    'racks' => $room->racks_count,
+                    'devices' => $room->devices_count,
+                    'temperature' => $room->current_temperature ?? '--',
+                    'humidity' => $room->current_humidity ?? '--',
+                ])
+                ->toArray(),
+            'recentAlerts' => Alert::active()
+                ->orderByDesc('triggered_at')
+                ->limit(8)
+                ->get()
+                ->map(fn ($alert) => [
+                    'id' => $alert->id,
+                    'title' => $alert->title,
+                    'severity' => $alert->severity,
+                    'triggered_at' => $alert->triggered_at->format('m-d H:i'),
+                ])
+                ->toArray(),
+            'deviceTypes' => DeviceType::all()
+                ->map(fn ($type) => [
+                    'id' => $type->id,
+                    'name' => $type->name,
+                    'color' => $type->color ?? '#3b82f6',
+                    'count' => Device::where('device_type_id', $type->id)->count(),
+                ])
+                ->toArray(),
+            'timestamp' => now()->format('Y-m-d H:i:s'),
+        ];
+    }
+
+    /**
+     * 获取驾驶舱实时数据（API）
+     */
+    public function cockpitData()
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $this->getCockpitData(),
+        ]);
+    }
 }

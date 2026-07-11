@@ -126,6 +126,7 @@ class DeviceDependencyController extends Controller
                     'id' => $dep->source_device_id,
                     'name' => $dep->sourceDevice->name,
                     'type' => $dep->sourceDevice->deviceLibrary?->deviceType?->name ?? 'unknown',
+                    'type_color' => $dep->sourceDevice->deviceLibrary?->deviceType?->color ?? null,
                     'ip' => $dep->sourceDevice->ip_address,
                     'status' => $dep->sourceDevice->status,
                 ];
@@ -137,6 +138,7 @@ class DeviceDependencyController extends Controller
                     'id' => $dep->target_device_id,
                     'name' => $dep->targetDevice->name,
                     'type' => $dep->targetDevice->deviceLibrary?->deviceType?->name ?? 'unknown',
+                    'type_color' => $dep->targetDevice->deviceLibrary?->deviceType?->color ?? null,
                     'ip' => $dep->targetDevice->ip_address,
                     'status' => $dep->targetDevice->status,
                 ];
