@@ -258,14 +258,15 @@ class DashboardController extends Controller
             $rackCount = $racks->count();
             $deviceCount = Device::whereIn('rack_id', $racks->pluck('id'))->count();
 
-            $temperatures = $racks->filter(fn($r) => $r->current_temp !== null)->pluck('current_temp');
-            $humidities = $racks->filter(fn($r) => $r->current_humidity !== null)->pluck('current_humidity');
+            $temperatures = $racks->filter(fn ($r) => $r->current_temp !== null)->pluck('current_temp');
+            $humidities = $racks->filter(fn ($r) => $r->current_humidity !== null)->pluck('current_humidity');
 
             $avgTemp = $temperatures->isNotEmpty() ? round($temperatures->avg(), 1) : '--';
             $avgHumidity = $humidities->isNotEmpty() ? round($humidities->avg(), 1) : '--';
 
             $rackDetails = $racks->map(function ($rack) {
                 $rackDeviceCount = Device::where('rack_id', $rack->id)->count();
+
                 return [
                     'id' => $rack->id,
                     'name' => $rack->name,
@@ -289,12 +290,17 @@ class DashboardController extends Controller
         })->toArray();
 
         $allTemperatures = [];
+        $allHumidities = [];
         foreach ($roomStats as $room) {
             if (is_numeric($room['temperature'])) {
                 $allTemperatures[] = $room['temperature'];
             }
+            if (is_numeric($room['humidity'])) {
+                $allHumidities[] = $room['humidity'];
+            }
         }
-        $overallAvgTemp = !empty($allTemperatures) ? round(array_sum($allTemperatures) / count($allTemperatures), 1) : '--';
+        $overallAvgTemp = ! empty($allTemperatures) ? round(array_sum($allTemperatures) / count($allTemperatures), 1) : '--';
+        $overallAvgHumidity = ! empty($allHumidities) ? round(array_sum($allHumidities) / count($allHumidities), 1) : '--';
 
         $totalCapacity = Rack::sum('u_count');
         $usedCapacity = Device::sum('u_height');
@@ -331,6 +337,7 @@ class DashboardController extends Controller
                 'criticalAlerts' => Alert::ofSeverity('critical')->active()->count(),
                 'warningAlerts' => Alert::ofSeverity('warning')->active()->count(),
                 'avgTemperature' => $overallAvgTemp,
+                'avgHumidity' => $overallAvgHumidity,
                 'loadPercent' => $loadPercent,
             ],
             'deviceStatus' => [

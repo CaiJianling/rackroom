@@ -14,7 +14,7 @@ interface RackDetail {
 }
 
 interface ServerRoom3DProps {
-    temp: number;
+    temp: number | string;
     rackCount?: number;
     racks?: RackDetail[];
 }
@@ -27,10 +27,10 @@ function RackCabinet({
 }: {
     position: [number, number, number];
     rowIndex: number;
-    temp: number;
+    temp: number | string;
     rackData?: RackDetail;
 }) {
-    const rackTemp = typeof rackData?.temperature === 'number' ? rackData.temperature : temp;
+    const rackTemp = typeof rackData?.temperature === 'number' ? rackData.temperature : (typeof temp === 'number' ? temp : 0);
     const lightColor = rackTemp > 24.5 ? '#f97316' : '#06b6d4';
     const zDir = rowIndex === 0 ? 1 : -1;
     const deviceCount = rackData?.device_count || Math.floor(Math.random() * 8) + 2;

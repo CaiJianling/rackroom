@@ -82,6 +82,7 @@ interface SummaryData {
     criticalAlerts: number;
     warningAlerts: number;
     avgTemperature: string | number;
+    avgHumidity: string | number;
     loadPercent: number;
 }
 
@@ -287,7 +288,8 @@ export default function Cockpit({ data }: Props) {
     const selectedRoom = roomStats[selectedRoomIndex];
     const onlinePercent = deviceStatus.total > 0 ? Math.round((deviceStatus.online / deviceStatus.total) * 100) : 0;
 
-    const liveTemp = typeof summary.avgTemperature === 'number' ? summary.avgTemperature : 24.0;
+    const liveTemp = typeof summary.avgTemperature === 'number' ? summary.avgTemperature : '--';
+    const liveHumidity = typeof summary.avgHumidity === 'number' ? summary.avgHumidity : '--';
     const loadPercent = typeof summary.loadPercent === 'number' ? summary.loadPercent : 0;
 
     useEffect(() => {
@@ -439,12 +441,12 @@ export default function Cockpit({ data }: Props) {
                                     <div className="flex items-center gap-2">
                                         <span className="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#06b6d4]" />
                                         <span className="text-slate-300">温度</span>
-                                        <span className="ml-auto font-bold text-white">{liveTemp}°C</span>
+                                        <span className="ml-auto font-bold text-white">{liveTemp === '--' ? '--' : `${liveTemp}°C`}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className="h-2 w-2 rounded-full bg-purple-500 shadow-[0_0_6px_#a855f7]" />
                                         <span className="text-slate-300">湿度</span>
-                                        <span className="ml-auto font-bold text-white">42%</span>
+                                        <span className="ml-auto font-bold text-white">{liveHumidity === '--' ? '--' : `${liveHumidity}%`}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]" />
