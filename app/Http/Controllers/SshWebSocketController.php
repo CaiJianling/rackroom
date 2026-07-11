@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Device;
 use App\Services\SshWebSocketService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -21,7 +22,7 @@ class SshWebSocketController extends Controller
      */
     public function index()
     {
-        $devices = \App\Models\Device::with(['rack.room', 'deviceLibrary.deviceType'])
+        $devices = Device::with(['rack.room', 'deviceLibrary.deviceType'])
             ->where('connection_type', 'ssh')
             ->whereNotNull('ip_address')
             ->get();

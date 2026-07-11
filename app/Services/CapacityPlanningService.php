@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\Device;
 use App\Models\Rack;
 use App\Models\Room;
-use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class CapacityPlanningService
 {
@@ -196,7 +196,7 @@ class CapacityPlanningService
         ];
     }
 
-    private function calculateHistoricalGrowthRate(int $rackId, \Carbon\Carbon $date): array
+    private function calculateHistoricalGrowthRate(int $rackId, Carbon $date): array
     {
         $deviceCount = Device::where('rack_id', $rackId)
             ->where('created_at', '<=', $date->endOfMonth())
@@ -319,7 +319,7 @@ class CapacityPlanningService
                         'rack_id' => $rack->id,
                         'rack_name' => $rack->name,
                         'room_name' => $room->name,
-                        'message' => "机柜 {$rack->name} 空间使用率已达 " . round($spaceUtil, 1) . "%，即将耗尽",
+                        'message' => "机柜 {$rack->name} 空间使用率已达 ".round($spaceUtil, 1).'%，即将耗尽',
                         'current_value' => round($spaceUtil, 1),
                         'threshold' => 90,
                     ];
@@ -330,7 +330,7 @@ class CapacityPlanningService
                         'rack_id' => $rack->id,
                         'rack_name' => $rack->name,
                         'room_name' => $room->name,
-                        'message' => "机柜 {$rack->name} 空间使用率已达 " . round($spaceUtil, 1) . "%，建议关注",
+                        'message' => "机柜 {$rack->name} 空间使用率已达 ".round($spaceUtil, 1).'%，建议关注',
                         'current_value' => round($spaceUtil, 1),
                         'threshold' => 80,
                     ];
@@ -343,7 +343,7 @@ class CapacityPlanningService
                         'rack_id' => $rack->id,
                         'rack_name' => $rack->name,
                         'room_name' => $room->name,
-                        'message' => "机柜 {$rack->name} 电源使用率已达 " . round($powerUtil, 1) . "%，存在过载风险",
+                        'message' => "机柜 {$rack->name} 电源使用率已达 ".round($powerUtil, 1).'%，存在过载风险',
                         'current_value' => round($powerUtil, 1),
                         'threshold' => 90,
                     ];
@@ -354,7 +354,7 @@ class CapacityPlanningService
                         'rack_id' => $rack->id,
                         'rack_name' => $rack->name,
                         'room_name' => $room->name,
-                        'message' => "机柜 {$rack->name} 电源使用率已达 " . round($powerUtil, 1) . "%，建议关注",
+                        'message' => "机柜 {$rack->name} 电源使用率已达 ".round($powerUtil, 1).'%，建议关注',
                         'current_value' => round($powerUtil, 1),
                         'threshold' => 80,
                     ];
@@ -366,6 +366,7 @@ class CapacityPlanningService
             $priority = ['critical' => 0, 'warning' => 1];
             $aPriority = $priority[$a['type']] ?? 2;
             $bPriority = $priority[$b['type']] ?? 2;
+
             return $aPriority <=> $bPriority;
         });
 

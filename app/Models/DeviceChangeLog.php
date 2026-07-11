@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class DeviceChangeLog extends Model
 {
@@ -30,11 +32,17 @@ class DeviceChangeLog extends Model
     ];
 
     public const TYPE_CREATE = 'create';
+
     public const TYPE_UPDATE = 'update';
+
     public const TYPE_DELETE = 'delete';
+
     public const TYPE_MIGRATE = 'migrate';
+
     public const TYPE_POWER_ON = 'power_on';
+
     public const TYPE_POWER_OFF = 'power_off';
+
     public const TYPE_MAINTENANCE = 'maintenance';
 
     public const TYPE_LABELS = [
@@ -76,15 +84,15 @@ class DeviceChangeLog extends Model
         $newUPosition = $newValues['u_position'] ?? null;
 
         if ($oldUPosition && isset($oldValues['u_height'])) {
-            $oldUPosition = $oldUPosition . '-' . ($oldUPosition + $oldValues['u_height'] - 1);
+            $oldUPosition = $oldUPosition.'-'.($oldUPosition + $oldValues['u_height'] - 1);
         }
         if ($newUPosition && isset($newValues['u_height'])) {
-            $newUPosition = $newUPosition . '-' . ($newUPosition + $newValues['u_height'] - 1);
+            $newUPosition = $newUPosition.'-'.($newUPosition + $newValues['u_height'] - 1);
         }
 
-        $operatorName = $operatorName ?: (\Illuminate\Support\Facades\Auth::user()?->name ?: 'System');
+        $operatorName = $operatorName ?: (Auth::user()?->name ?: 'System');
 
-        \Illuminate\Support\Facades\Log::info('DeviceChangeLog about to create', [
+        Log::info('DeviceChangeLog about to create', [
             'device_id' => $device->id,
             'change_type' => $changeType,
             'description' => $description,
@@ -105,11 +113,11 @@ class DeviceChangeLog extends Model
                 'operator_ip' => request()->ip(),
             ]);
 
-            \Illuminate\Support\Facades\Log::info('DeviceChangeLog created successfully', ['log_id' => $log->id]);
+            Log::info('DeviceChangeLog created successfully', ['log_id' => $log->id]);
 
             return $log;
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('DeviceChangeLog create failed', [
+            Log::error('DeviceChangeLog create failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -145,12 +153,13 @@ class DeviceChangeLog extends Model
     public static function logCreate(Device $device, ?string $description = null): self
     {
         $rackName = $device->rack?->name ?? '未知';
+
         return self::log(
             $device,
             self::TYPE_CREATE,
             null,
             $device->toArray(),
-            $description ?? ('在 ' . $rackName . ' (U' . $device->u_position . ') 创建设备')
+            $description ?? ('在 '.$rackName.' (U'.$device->u_position.') 创建设备')
         );
     }
 
@@ -159,7 +168,7 @@ class DeviceChangeLog extends Model
         $changes = [];
         foreach ($newValues as $key => $value) {
             if (isset($oldValues[$key]) && $oldValues[$key] !== $value) {
-                $changes[] = $key . ': ' . $oldValues[$key] . ' → ' . $value;
+                $changes[] = $key.': '.$oldValues[$key].' → '.$value;
             }
         }
 
@@ -168,7 +177,7 @@ class DeviceChangeLog extends Model
             self::TYPE_UPDATE,
             $oldValues,
             $newValues,
-            $description ?? ('设备配置变更: ' . implode(', ', $changes))
+            $description ?? ('设备配置变更: '.implode(', ', $changes))
         );
     }
 
@@ -179,7 +188,7 @@ class DeviceChangeLog extends Model
             self::TYPE_DELETE,
             $device->toArray(),
             null,
-            $description ?? ('删除设备 ' . $device->name)
+            $description ?? ('删除设备 '.$device->name)
         );
     }
 }

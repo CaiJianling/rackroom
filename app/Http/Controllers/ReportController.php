@@ -6,6 +6,7 @@ use App\Models\Device;
 use App\Models\GeneratedReport;
 use App\Models\ReportTemplate;
 use App\Models\Room;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -167,7 +168,7 @@ class ReportController extends Controller
             default => 'txt',
         };
 
-        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        /** @var FilesystemAdapter $disk */
         $disk = Storage::disk('reports');
 
         return $disk->download(

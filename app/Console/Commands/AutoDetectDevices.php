@@ -4,7 +4,9 @@ namespace App\Console\Commands;
 
 use App\Models\DetectionLog;
 use App\Models\Device;
+use App\Models\Room;
 use App\Models\SystemSetting;
+use GuzzleHttp\Client;
 use Illuminate\Console\Command;
 
 class AutoDetectDevices extends Command
@@ -73,6 +75,9 @@ class AutoDetectDevices extends Command
             // 执行检测
             $results = $this->detectDevices();
 
+            // 获取机房温湿度
+            $tempHumidityResults = $this->fetchRoomTempHumidity();
+
             $duration = round((microtime(true) - $startTime) * 1000);
 
             // 更新日志
@@ -85,13 +90,14 @@ class AutoDetectDevices extends Command
                 'duration_ms' => $duration,
                 'details' => $results['details'],
                 'status' => 'success',
-                'message' => "检测完成，{$results['updated']} 台设备状态已更新",
+                'message' => "检测完成，{$results['updated']} 台设备状态已更新，{$tempHumidityResults['updated']} 个机房温湿度已更新",
                 'completed_at' => now(),
             ]);
 
             $this->info("检测完成！耗时 {$duration}ms");
             $this->info("总计: {$results['total']}, 在线: {$results['online']}, 离线: {$results['offline']}, 维护中: {$results['maintenance']}");
             $this->info("状态更新: {$results['updated']} 台设备");
+            $this->info("温湿度更新: {$tempHumidityResults['updated']} 个机房");
 
             return self::SUCCESS;
         } catch (\Exception $e) {
@@ -220,5 +226,84 @@ class AutoDetectDevices extends Command
         exec($command, $output, $returnCode);
 
         return $returnCode === 0;
+    }
+
+    /**
+     * 获取所有配置了温湿度URL的机房的温湿度数据
+     */
+    private function fetchRoomTempHumidity(): array
+    {
+        $updatedCount = 0;
+        $totalCount = 0;
+
+        $rooms = Room::query()
+            ->whereNotNull('temp_humidity_url')
+            ->where('temp_humidity_url', '!=', '')
+            ->get();
+
+        foreach ($rooms as $room) {
+            $totalCount++;
+            try {
+                $data = $this->fetchTempHumidityFromUrl($room->temp_humidity_url);
+
+                if ($data !== null) {
+                    $room->update([
+                        'current_temp' => $data['temp'],
+                        'current_humidity' => $data['humidity'],
+                        'temp_humidity_updated_at' => now(),
+                    ]);
+                    $updatedCount++;
+                    $this->info("机房 {$room->name} 温湿度更新: {$data['temp']}°C, {$data['humidity']}%");
+                }
+            } catch (\Exception $e) {
+                $this->warning("机房 {$room->name} 温湿度获取失败: {$e->getMessage()}");
+            }
+        }
+
+        return [
+            'total' => $totalCount,
+            'updated' => $updatedCount,
+        ];
+    }
+
+    /**
+     * 从温湿度控制器URL获取数据
+     * 预期返回格式: {"Temp.":26,"Hum.":36}
+     */
+    private function fetchTempHumidityFromUrl(string $url): ?array
+    {
+        $client = new Client([
+            'timeout' => 5,
+            'connect_timeout' => 3,
+        ]);
+
+        $response = $client->get($url);
+        $body = $response->getBody()->getContents();
+        $data = json_decode($body, true);
+
+        if (! is_array($data)) {
+            return null;
+        }
+
+        $temp = null;
+        $humidity = null;
+
+        foreach ($data as $key => $value) {
+            $lowerKey = strtolower($key);
+            if (str_contains($lowerKey, 'temp')) {
+                $temp = (float) $value;
+            } elseif (str_contains($lowerKey, 'hum')) {
+                $humidity = (float) $value;
+            }
+        }
+
+        if ($temp !== null && $humidity !== null) {
+            return [
+                'temp' => $temp,
+                'humidity' => $humidity,
+            ];
+        }
+
+        return null;
     }
 }

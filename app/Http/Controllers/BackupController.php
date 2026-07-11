@@ -145,7 +145,7 @@ class BackupController extends Controller
     private function generateBackupFilename(?string $name): string
     {
         $timestamp = now()->format('Y-m-d_H-i-s');
-        $suffix = $name ? '_'.preg_replace('/[^a-zA-Z0-9\-_]/', '_', $name) : '';
+        $suffix = $name ? '_'.preg_replace('/[\/:*?"<>|]/', '_', $name) : '';
 
         return "backup_{$timestamp}{$suffix}.json";
     }
@@ -216,7 +216,12 @@ class BackupController extends Controller
             ], 404);
         }
 
-        return Storage::download($filepath);
+        $filename = basename($filepath);
+        $encodedFilename = urlencode($filename);
+
+        return Storage::download($filepath, $filename, [
+            'Content-Disposition' => "attachment; filename=\"{$encodedFilename}\"; filename*=UTF-8''{$encodedFilename}",
+        ]);
     }
 
     /**

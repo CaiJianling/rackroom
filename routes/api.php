@@ -1,6 +1,5 @@
 <?php
 
-
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\DetectionLogController;
 use App\Http\Controllers\MonitorController;

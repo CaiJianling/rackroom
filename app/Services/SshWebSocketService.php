@@ -6,6 +6,7 @@ use App\Events\SshOutputEvent;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use phpseclib3\Net\SSH2;
+use React\EventLoop\Loop;
 
 /**
  * WebSocket SSH 连接管理器 - Reverb 版本
@@ -182,8 +183,8 @@ class SshWebSocketService
         $ssh = self::$connections[$sessionId];
 
         // 使用 ReactPHP 事件循环（如果可用）
-        if (class_exists(\React\EventLoop\Loop::class)) {
-            $loop = \React\EventLoop\Loop::get();
+        if (class_exists(Loop::class)) {
+            $loop = Loop::get();
 
             $loop->addPeriodicTimer(0.1, function () use ($sessionId, $ssh) {
                 if (! isset(self::$connections[$sessionId])) {

@@ -527,7 +527,12 @@
         "confirmDelete": "您确定要删除此机房吗？",
         "deleteWarning": "您确定要删除此机房吗？此操作无法撤销。",
         "roomsCount": "{{filtered}} / {{total}} 机房",
-        "roomDetails": "机房详情"
+        "roomDetails": "机房详情",
+        "temperature": "温度",
+        "humidity": "湿度",
+        "tempHumidityUrl": "温湿度控制器URL",
+        "tempHumidityUrlPlaceholder": "https://example.com/temp-humidity",
+        "tempHumidityUpdated": "温湿度更新时间"
     },
     "rackManagement": {
         "title": "机柜列表管理",

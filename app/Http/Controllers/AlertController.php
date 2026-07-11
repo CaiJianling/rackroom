@@ -65,9 +65,9 @@ class AlertController extends Controller
         $alertRules = AlertRule::orderBy('created_at', 'desc')->get();
 
         // 获取初始评估结果（如果启用了自动评估）
-        $smartAlertService = new SmartAlertService();
+        $smartAlertService = new SmartAlertService;
         $smartAlertResults = [];
-        $enabledRules = $alertRules->filter(fn($r) => $r->is_enabled);
+        $enabledRules = $alertRules->filter(fn ($r) => $r->is_enabled);
         if ($enabledRules->isNotEmpty()) {
             $evaluation = $smartAlertService->evaluateAllRules();
             $smartAlertResults = array_map(function ($result) {

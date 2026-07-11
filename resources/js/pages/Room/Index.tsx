@@ -10,6 +10,8 @@ import {
     Server,
     User,
     Eye,
+    Thermometer,
+    Droplets,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -67,6 +69,10 @@ interface Room {
     racks_count: number;
     manager: string | null;
     description: string | null;
+    temp_humidity_url: string | null;
+    current_temp: number | null;
+    current_humidity: number | null;
+    temp_humidity_updated_at: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -108,6 +114,7 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
         location: '',
         manager: '',
         description: '',
+        temp_humidity_url: '',
     });
     const [searchTerm, setSearchTerm] = useState('');
     const [locationFilter, setLocationFilter] = useState<string>('all');
@@ -143,6 +150,7 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
             location: room.location,
             manager: room.manager || '',
             description: room.description || '',
+            temp_humidity_url: room.temp_humidity_url || '',
         });
         setIsEditDialogOpen(true);
     };
@@ -155,6 +163,7 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
             location: '',
             manager: '',
             description: '',
+            temp_humidity_url: '',
         });
     };
 
@@ -174,6 +183,7 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
             location: '',
             manager: '',
             description: '',
+            temp_humidity_url: '',
         });
         setIsCreateDialogOpen(true);
     };
@@ -185,6 +195,7 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
             location: '',
             manager: '',
             description: '',
+            temp_humidity_url: '',
         });
     };
 
@@ -388,6 +399,18 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
                                         </div>
                                     </TableHead>
                                     <TableHead className="h-10 px-4">
+                                        <div className="flex items-center gap-2">
+                                            <Thermometer className="h-4 w-4" />
+                                            {t('roomManagement.temperature')}
+                                        </div>
+                                    </TableHead>
+                                    <TableHead className="h-10 px-4">
+                                        <div className="flex items-center gap-2">
+                                            <Droplets className="h-4 w-4" />
+                                            {t('roomManagement.humidity')}
+                                        </div>
+                                    </TableHead>
+                                    <TableHead className="h-10 px-4">
                                         {t('roomManagement.created')}
                                     </TableHead>
                                     <TableHead className="h-10 px-4 text-right">
@@ -399,7 +422,7 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
                                 {filteredRooms.length === 0 ? (
                                     <TableRow>
                                         <TableCell
-                                            colSpan={6}
+                                            colSpan={8}
                                             className="py-8 text-center text-muted-foreground"
                                         >
                                             {searchTerm ||
@@ -473,6 +496,26 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
                                                     <span className="text-muted-foreground">
                                                         -
                                                     </span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="px-4 py-3">
+                                                {room.current_temp !== null ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <Thermometer className="h-4 w-4 text-red-500" />
+                                                        <span className="font-medium">{room.current_temp}°C</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-muted-foreground">-</span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="px-4 py-3">
+                                                {room.current_humidity !== null ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <Droplets className="h-4 w-4 text-blue-500" />
+                                                        <span className="font-medium">{room.current_humidity}%</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-muted-foreground">-</span>
                                                 )}
                                             </TableCell>
                                             <TableCell className="px-4 py-3">
@@ -641,27 +684,48 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
                                     )}
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="description">
-                                        {t('roomManagement.description')}
-                                    </Label>
-                                    <Textarea
-                                        id="description"
-                                        value={form.description}
-                                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                                            setForm({
-                                                ...form,
-                                                description: e.target.value,
-                                            })
-                                        }
-                                        placeholder={t('roomManagement.description')}
-                                        rows={3}
-                                    />
-                                    {errors?.description && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.description}
-                                        </p>
-                                    )}
-                                </div>
+                                        <Label htmlFor="description">
+                                            {t('roomManagement.description')}
+                                        </Label>
+                                        <Textarea
+                                            id="description"
+                                            value={form.description}
+                                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                                                setForm({
+                                                    ...form,
+                                                    description: e.target.value,
+                                                })
+                                            }
+                                            placeholder={t('roomManagement.description')}
+                                            rows={3}
+                                        />
+                                        {errors?.description && (
+                                            <p className="text-sm text-destructive">
+                                                {errors.description}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="temp-humidity-url">
+                                            {t('roomManagement.tempHumidityUrl')}
+                                        </Label>
+                                        <Input
+                                            id="temp-humidity-url"
+                                            value={form.temp_humidity_url}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                                setForm({
+                                                    ...form,
+                                                    temp_humidity_url: e.target.value,
+                                                })
+                                            }
+                                            placeholder={t('roomManagement.tempHumidityUrlPlaceholder')}
+                                        />
+                                        {errors?.temp_humidity_url && (
+                                            <p className="text-sm text-destructive">
+                                                {errors.temp_humidity_url}
+                                            </p>
+                                        )}
+                                    </div>
                             </div>
                             <DialogFooter>
                                 <Button
@@ -779,6 +843,27 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
                                         </p>
                                     )}
                                 </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="edit-temp-humidity-url">
+                                        {t('roomManagement.tempHumidityUrl')}
+                                    </Label>
+                                    <Input
+                                        id="edit-temp-humidity-url"
+                                        value={form.temp_humidity_url}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                            setForm({
+                                                ...form,
+                                                temp_humidity_url: e.target.value,
+                                            })
+                                        }
+                                        placeholder={t('roomManagement.tempHumidityUrlPlaceholder')}
+                                    />
+                                    {errors?.temp_humidity_url && (
+                                        <p className="text-sm text-destructive">
+                                            {errors.temp_humidity_url}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                             <DialogFooter>
                                 <Button
@@ -875,6 +960,50 @@ export default function RoomIndex({ rooms, breadcrumbs = [] }: Props) {
                                         {viewingRoom?.updated_at
                                             ? new Date(
                                                   viewingRoom.updated_at,
+                                              ).toLocaleString()
+                                            : '-'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label className="text-sm font-medium">
+                                        {t('roomManagement.temperature')}
+                                    </Label>
+                                    <div className="mt-1 text-sm">
+                                        {viewingRoom?.current_temp !== null ? (
+                                            <span className="font-medium text-red-500">{viewingRoom?.current_temp}°C</span>
+                                        ) : '-'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium">
+                                        {t('roomManagement.humidity')}
+                                    </Label>
+                                    <div className="mt-1 text-sm">
+                                        {viewingRoom?.current_humidity !== null ? (
+                                            <span className="font-medium text-blue-500">{viewingRoom?.current_humidity}%</span>
+                                        ) : '-'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label className="text-sm font-medium">
+                                        {t('roomManagement.tempHumidityUrl')}
+                                    </Label>
+                                    <div className="mt-1 text-sm break-all">
+                                        {viewingRoom?.temp_humidity_url || '-'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium">
+                                        {t('roomManagement.tempHumidityUpdated')}
+                                    </Label>
+                                    <div className="mt-1 text-sm">
+                                        {viewingRoom?.temp_humidity_updated_at
+                                            ? new Date(
+                                                  viewingRoom.temp_humidity_updated_at,
                                               ).toLocaleString()
                                             : '-'}
                                     </div>

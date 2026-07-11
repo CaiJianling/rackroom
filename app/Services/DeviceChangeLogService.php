@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Device;
 use App\Models\DeviceChangeLog;
-use Illuminate\Support\Collection;
 
 class DeviceChangeLogService
 {
@@ -13,30 +12,30 @@ class DeviceChangeLogService
         $query = DeviceChangeLog::with('device')
             ->orderBy('created_at', 'desc');
 
-        if (!empty($filters['device_id'])) {
+        if (! empty($filters['device_id'])) {
             $query->where('device_id', $filters['device_id']);
         }
 
-        if (!empty($filters['change_type'])) {
+        if (! empty($filters['change_type'])) {
             $query->where('change_type', $filters['change_type']);
         }
 
-        if (!empty($filters['rack_id'])) {
+        if (! empty($filters['rack_id'])) {
             $query->where(function ($q) use ($filters) {
                 $q->whereJsonContains('old_values', ['rack_id' => $filters['rack_id']])
                     ->orWhereJsonContains('new_values', ['rack_id' => $filters['rack_id']]);
             });
         }
 
-        if (!empty($filters['operator_name'])) {
-            $query->where('operator_name', 'like', '%' . $filters['operator_name'] . '%');
+        if (! empty($filters['operator_name'])) {
+            $query->where('operator_name', 'like', '%'.$filters['operator_name'].'%');
         }
 
-        if (!empty($filters['date_from'])) {
+        if (! empty($filters['date_from'])) {
             $query->whereDate('created_at', '>=', $filters['date_from']);
         }
 
-        if (!empty($filters['date_to'])) {
+        if (! empty($filters['date_to'])) {
             $query->whereDate('created_at', '<=', $filters['date_to']);
         }
 
@@ -136,29 +135,29 @@ class DeviceChangeLogService
             ->where('change_type', DeviceChangeLog::TYPE_MIGRATE)
             ->orderBy('created_at', 'desc');
 
-        if (!empty($filters['from_rack'])) {
-            $query->where('old_rack_name', 'like', '%' . $filters['from_rack'] . '%');
+        if (! empty($filters['from_rack'])) {
+            $query->where('old_rack_name', 'like', '%'.$filters['from_rack'].'%');
         }
 
-        if (!empty($filters['to_rack'])) {
-            $query->where('new_rack_name', 'like', '%' . $filters['to_rack'] . '%');
+        if (! empty($filters['to_rack'])) {
+            $query->where('new_rack_name', 'like', '%'.$filters['to_rack'].'%');
         }
 
-        if (!empty($filters['device_name'])) {
+        if (! empty($filters['device_name'])) {
             $query->whereHas('device', function ($q) use ($filters) {
-                $q->where('name', 'like', '%' . $filters['device_name'] . '%');
+                $q->where('name', 'like', '%'.$filters['device_name'].'%');
             });
         }
 
-        if (!empty($filters['operator'])) {
-            $query->where('operator_name', 'like', '%' . $filters['operator'] . '%');
+        if (! empty($filters['operator'])) {
+            $query->where('operator_name', 'like', '%'.$filters['operator'].'%');
         }
 
-        if (!empty($filters['date_from'])) {
+        if (! empty($filters['date_from'])) {
             $query->whereDate('created_at', '>=', $filters['date_from']);
         }
 
-        if (!empty($filters['date_to'])) {
+        if (! empty($filters['date_to'])) {
             $query->whereDate('created_at', '<=', $filters['date_to']);
         }
 

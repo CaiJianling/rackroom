@@ -517,7 +517,12 @@
         "confirmDelete": "Are you sure you want to delete this room?",
         "deleteWarning": "Are you sure you want to delete this room? This action cannot be undone.",
         "roomsCount": "{{filtered}} of {{total}} rooms",
-        "roomDetails": "Room Details"
+        "roomDetails": "Room Details",
+        "temperature": "Temperature",
+        "humidity": "Humidity",
+        "tempHumidityUrl": "Temp/Humidity Controller URL",
+        "tempHumidityUrlPlaceholder": "https://example.com/temp-humidity",
+        "tempHumidityUpdated": "Temp/Humidity Updated"
     },
     "rackManagement": {
         "title": "Rack List",

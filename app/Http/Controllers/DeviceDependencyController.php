@@ -120,7 +120,7 @@ class DeviceDependencyController extends Controller
         $nodeIds = [];
 
         foreach ($dependencies as $dep) {
-            if (!in_array($dep->source_device_id, $nodeIds)) {
+            if (! in_array($dep->source_device_id, $nodeIds)) {
                 $nodeIds[] = $dep->source_device_id;
                 $nodes[] = [
                     'id' => $dep->source_device_id,
@@ -131,7 +131,7 @@ class DeviceDependencyController extends Controller
                 ];
             }
 
-            if (!in_array($dep->target_device_id, $nodeIds)) {
+            if (! in_array($dep->target_device_id, $nodeIds)) {
                 $nodeIds[] = $dep->target_device_id;
                 $nodes[] = [
                     'id' => $dep->target_device_id,

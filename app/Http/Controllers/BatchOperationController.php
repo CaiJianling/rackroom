@@ -9,8 +9,7 @@ use App\Models\Rack;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BatchOperationController extends Controller
 {
@@ -59,7 +58,7 @@ class BatchOperationController extends Controller
             $rowNumber++;
             $rowData = $this->parseImportRow($header, $row, $rowNumber);
 
-            if (!empty($rowData['errors'])) {
+            if (! empty($rowData['errors'])) {
                 foreach ($rowData['errors'] as $error) {
                     $errors[] = $error;
                 }
@@ -116,10 +115,11 @@ class BatchOperationController extends Controller
                         'name' => $deviceData['name'] ?? '未知',
                         'errors' => $validator->errors()->all(),
                     ];
+
                     continue;
                 }
 
-                if (!empty($deviceData['rack_id']) && !empty($deviceData['u_position'])) {
+                if (! empty($deviceData['rack_id']) && ! empty($deviceData['u_position'])) {
                     $conflict = $this->checkUPositionConflict(
                         $deviceData['rack_id'],
                         $deviceData['u_position'],
@@ -133,6 +133,7 @@ class BatchOperationController extends Controller
                             'name' => $deviceData['name'],
                             'errors' => [$conflict['message']],
                         ];
+
                         continue;
                     }
                 }
@@ -147,7 +148,7 @@ class BatchOperationController extends Controller
                     'description' => $deviceData['description'] ?? null,
                 ];
 
-                if (!empty($createData['device_library_id'])) {
+                if (! empty($createData['device_library_id'])) {
                     $deviceLibrary = DeviceLibrary::with('deviceType')->find($createData['device_library_id']);
                     if ($deviceLibrary) {
                         $createData['power'] = $deviceLibrary->power;
@@ -184,7 +185,7 @@ class BatchOperationController extends Controller
         ]);
     }
 
-    public function downloadTemplate(): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function downloadTemplate(): StreamedResponse
     {
         $headers = [
             'Content-Type' => 'text/csv',
@@ -249,12 +250,13 @@ class BatchOperationController extends Controller
             $device = Device::with('rack', 'deviceLibrary')->find($migration['device_id']);
             $targetRack = Rack::find($migration['target_rack_id']);
 
-            if (!$device || !$targetRack) {
+            if (! $device || ! $targetRack) {
                 $errors[] = [
                     'row' => $index + 1,
                     'device_name' => $device?->name ?? '未知',
                     'errors' => ['设备或目标机柜不存在'],
                 ];
+
                 continue;
             }
 
@@ -275,6 +277,7 @@ class BatchOperationController extends Controller
                     'device_name' => $device->name,
                     'errors' => ["目标U位 {$migration['target_u_position']}-{$targetUEnd} 超出机柜容量 ({$targetRack->u_count}U)"],
                 ];
+
                 continue;
             }
 
@@ -284,6 +287,7 @@ class BatchOperationController extends Controller
                     'device_name' => $device->name,
                     'errors' => [$conflict['message']],
                 ];
+
                 continue;
             }
 
@@ -328,7 +332,7 @@ class BatchOperationController extends Controller
                 $device = Device::with('rack', 'deviceLibrary')->find($migration['device_id']);
                 $targetRack = Rack::find($migration['target_rack_id']);
 
-                if (!$device || !$targetRack) {
+                if (! $device || ! $targetRack) {
                     throw new \Exception('设备或目标机柜不存在');
                 }
 
@@ -380,12 +384,13 @@ class BatchOperationController extends Controller
         foreach ($devices as $index => $item) {
             $device = Device::with('rack')->find($item['device_id']);
 
-            if (!$device) {
+            if (! $device) {
                 $errors[] = [
                     'row' => $index + 1,
                     'device_name' => '未知',
                     'errors' => ['设备不存在'],
                 ];
+
                 continue;
             }
 
@@ -395,6 +400,7 @@ class BatchOperationController extends Controller
                     'device_name' => $device->name,
                     'errors' => ['设备无IP地址，无法执行上下电操作'],
                 ];
+
                 continue;
             }
 
@@ -437,7 +443,7 @@ class BatchOperationController extends Controller
             try {
                 $device = Device::find($item['device_id']);
 
-                if (!$device) {
+                if (! $device) {
                     throw new \Exception('设备不存在');
                 }
 
@@ -476,7 +482,7 @@ class BatchOperationController extends Controller
     public function getDevicesByRack(Request $request, int $rackId): JsonResponse
     {
         $rack = Rack::find($rackId);
-        if (!$rack) {
+        if (! $rack) {
             return response()->json([
                 'success' => false,
                 'message' => '机柜不存在',
@@ -543,7 +549,7 @@ class BatchOperationController extends Controller
             $data['name'] = trim($rowData['name']);
         }
 
-        if (!empty($rowData['rack_name'])) {
+        if (! empty($rowData['rack_name'])) {
             $rack = Rack::where('name', trim($rowData['rack_name']))->first();
             if ($rack) {
                 $data['rack_id'] = $rack->id;
@@ -557,7 +563,7 @@ class BatchOperationController extends Controller
             }
         }
 
-        if (!empty($rowData['device_library_name'])) {
+        if (! empty($rowData['device_library_name'])) {
             $deviceLibrary = DeviceLibrary::where('name', trim($rowData['device_library_name']))->first();
             if ($deviceLibrary) {
                 $data['device_library_id'] = $deviceLibrary->id;
@@ -572,7 +578,7 @@ class BatchOperationController extends Controller
             }
         }
 
-        if (!empty($rowData['u_position'])) {
+        if (! empty($rowData['u_position'])) {
             $uPosition = intval($rowData['u_position']);
             if ($uPosition < 1 || $uPosition > 100) {
                 $errors[] = [
@@ -587,7 +593,7 @@ class BatchOperationController extends Controller
             $data['u_position'] = 1;
         }
 
-        if (!empty($rowData['ip_address'])) {
+        if (! empty($rowData['ip_address'])) {
             if (filter_var(trim($rowData['ip_address']), FILTER_VALIDATE_IP)) {
                 $data['ip_address'] = trim($rowData['ip_address']);
             } else {
@@ -599,7 +605,7 @@ class BatchOperationController extends Controller
             }
         }
 
-        if (!empty($rowData['connection_type'])) {
+        if (! empty($rowData['connection_type'])) {
             $validTypes = ['ssh', 'rdp', 'vnc', 'radmin'];
             if (in_array(strtolower(trim($rowData['connection_type'])), $validTypes)) {
                 $data['connection_type'] = strtolower(trim($rowData['connection_type']));
@@ -612,7 +618,7 @@ class BatchOperationController extends Controller
             }
         }
 
-        if (!empty($rowData['connection_port'])) {
+        if (! empty($rowData['connection_port'])) {
             $port = intval($rowData['connection_port']);
             if ($port >= 0 && $port <= 65535) {
                 $data['connection_port'] = $port;
@@ -625,7 +631,7 @@ class BatchOperationController extends Controller
             }
         }
 
-        if (!empty($rowData['status'])) {
+        if (! empty($rowData['status'])) {
             $validStatuses = ['online', 'offline', 'maintenance'];
             if (in_array(strtolower(trim($rowData['status'])), $validStatuses)) {
                 $data['status'] = strtolower(trim($rowData['status']));
@@ -640,7 +646,7 @@ class BatchOperationController extends Controller
             $data['status'] = 'online';
         }
 
-        $data['description'] = !empty($rowData['description']) ? trim($rowData['description']) : null;
+        $data['description'] = ! empty($rowData['description']) ? trim($rowData['description']) : null;
 
         return [
             'data' => $data,

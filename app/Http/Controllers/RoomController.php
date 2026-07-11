@@ -40,6 +40,7 @@ class RoomController extends Controller
             'location' => 'required|string|max:255',
             'manager' => 'nullable|string|max:255',
             'description' => 'nullable|string',
+            'temp_humidity_url' => 'nullable|url|max:500',
         ]);
 
         Room::create($validated);
@@ -64,6 +65,7 @@ class RoomController extends Controller
             'location' => 'required|string|max:255',
             'manager' => 'nullable|string|max:255',
             'description' => 'nullable|string',
+            'temp_humidity_url' => 'nullable|url|max:500',
         ]);
 
         $room->update($validated);

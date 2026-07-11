@@ -2,12 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\Device;
 use App\Models\DetectionLog;
+use App\Models\Device;
 use App\Models\Rack;
 use App\Models\Room;
 use Carbon\Carbon;
-use Illuminate\Support\Collection;
 
 class DeviceHealthAnalysisService
 {
@@ -74,6 +73,7 @@ class DeviceHealthAnalysisService
                     return $detail['is_online'] ?? false;
                 }
             }
+
             return $device->status === 'online';
         })->count();
 
@@ -187,6 +187,7 @@ class DeviceHealthAnalysisService
                     'online_rate' => $device->status === 'online' ? 100.0 : 0.0,
                     'check_count' => 0,
                 ];
+
                 continue;
             }
 
@@ -296,10 +297,11 @@ class DeviceHealthAnalysisService
             ->first(function ($log) use ($device) {
                 $details = is_array($log->details) ? $log->details : [];
                 foreach ($details as $detail) {
-                    if (isset($detail['ip']) && $detail['ip'] === $device->ip_address && !($detail['is_online'] ?? false)) {
+                    if (isset($detail['ip']) && $detail['ip'] === $device->ip_address && ! ($detail['is_online'] ?? false)) {
                         return true;
                     }
                 }
+
                 return false;
             });
 
@@ -466,7 +468,7 @@ class DeviceHealthAnalysisService
         if (count($criticalDevices) > 0) {
             $alerts[] = [
                 'level' => 'critical',
-                'message' => '有 ' . count($criticalDevices) . ' 台设备健康度严重下降，需要立即处理',
+                'message' => '有 '.count($criticalDevices).' 台设备健康度严重下降，需要立即处理',
                 'devices' => array_map(fn ($d) => $d['device_name'], $criticalDevices),
             ];
         }
@@ -475,7 +477,7 @@ class DeviceHealthAnalysisService
         if (count($offlineDevices) > 0) {
             $alerts[] = [
                 'level' => 'warning',
-                'message' => '有 ' . count($offlineDevices) . ' 台设备离线率较高，请检查网络连接',
+                'message' => '有 '.count($offlineDevices).' 台设备离线率较高，请检查网络连接',
                 'devices' => array_map(fn ($d) => $d['device_name'], $offlineDevices),
             ];
         }
@@ -484,7 +486,7 @@ class DeviceHealthAnalysisService
         if (count($unstableDevices) > 0) {
             $alerts[] = [
                 'level' => 'warning',
-                'message' => '有 ' . count($unstableDevices) . ' 台设备运行不稳定，建议进行检测',
+                'message' => '有 '.count($unstableDevices).' 台设备运行不稳定，建议进行检测',
                 'devices' => array_map(fn ($d) => $d['device_name'], $unstableDevices),
             ];
         }

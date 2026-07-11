@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Lang;
+use phpseclib3\Net\SSH2;
 
 /**
  * SSH WebSocket 服务器
@@ -15,7 +16,6 @@ class SshWebSocketServer extends Command
                             {--host= : 服务器绑定地址 (默认从 WEBSOCKET_HOST 环境变量读取)}
                             {--port= : WebSocket 服务器端口 (默认从 WEBSOCKET_PORT 环境变量读取, 默认8081)}';
 
-                            
     protected $description = '启动 SSH WebSocket 服务器';
 
     private array $clients = [];
@@ -88,7 +88,7 @@ class SshWebSocketServer extends Command
 
     private function handleClientMessage(int $socketId): void
     {
-        if (!isset($this->socketMap[$socketId])) {
+        if (! isset($this->socketMap[$socketId])) {
             return;
         }
 
@@ -97,14 +97,16 @@ class SshWebSocketServer extends Command
 
         if ($data === false || $data === 0) {
             $this->disconnectClient($socketId);
+
             return;
         }
 
         $clientId = $this->clients[$socketId]['id'] ?? 'unknown';
 
         // WebSocket 握手
-        if (!$this->clients[$socketId]['handshaked']) {
+        if (! $this->clients[$socketId]['handshaked']) {
             $this->performHandshake($socketId, $buffer);
+
             return;
         }
 
@@ -114,11 +116,11 @@ class SshWebSocketServer extends Command
             return;
         }
 
-        $this->info("收到消息 [{$clientId}]: " . substr($message, 0, 100));
+        $this->info("收到消息 [{$clientId}]: ".substr($message, 0, 100));
 
         try {
             $jsonData = json_decode($message, true);
-            if (!is_array($jsonData) || !isset($jsonData['type'])) {
+            if (! is_array($jsonData) || ! isset($jsonData['type'])) {
                 return;
             }
 
@@ -140,21 +142,21 @@ class SshWebSocketServer extends Command
                     break;
             }
         } catch (\Exception $e) {
-            $this->error("处理消息失败: " . $e->getMessage());
+            $this->error('处理消息失败: '.$e->getMessage());
         }
     }
 
     private function performHandshake(int $socketId, string $headers): void
     {
-        if (!isset($this->socketMap[$socketId])) {
+        if (! isset($this->socketMap[$socketId])) {
             return;
         }
 
         if (preg_match("/Sec-WebSocket-Key: (.*)\r\n/", $headers, $matches)) {
-            $key = base64_encode(pack('H*', sha1($matches[1] . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
-            $upgrade = "HTTP/1.1 101 Web Socket Protocol Handshake\r\n" .
-                "Upgrade: websocket\r\n" .
-                "Connection: Upgrade\r\n" .
+            $key = base64_encode(pack('H*', sha1($matches[1].'258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
+            $upgrade = "HTTP/1.1 101 Web Socket Protocol Handshake\r\n".
+                "Upgrade: websocket\r\n".
+                "Connection: Upgrade\r\n".
                 "Sec-WebSocket-Accept: {$key}\r\n\r\n";
 
             socket_write($this->socketMap[$socketId], $upgrade);
@@ -171,22 +173,24 @@ class SshWebSocketServer extends Command
 
     private function handleAuth(int $socketId, array $data): void
     {
-        if (!isset($data['host'], $data['port'], $data['username'], $data['password'])) {
+        if (! isset($data['host'], $data['port'], $data['username'], $data['password'])) {
             $this->send($socketId, json_encode([
                 'type' => 'auth_failed',
                 'message' => Lang::get('ssh.missing_params'),
             ]));
+
             return;
         }
 
         try {
-            $ssh = new \phpseclib3\Net\SSH2($data['host'], $data['port'], 30);
+            $ssh = new SSH2($data['host'], $data['port'], 30);
 
-            if (!$ssh->login($data['username'], $data['password'])) {
+            if (! $ssh->login($data['username'], $data['password'])) {
                 $this->send($socketId, json_encode([
                     'type' => 'auth_failed',
                     'message' => Lang::get('ssh.invalid_credentials'),
                 ]));
+
                 return;
             }
 
@@ -219,7 +223,7 @@ class SshWebSocketServer extends Command
                 ]));
             }
         } catch (\Exception $e) {
-            $this->error("SSH 连接失败: " . $e->getMessage());
+            $this->error('SSH 连接失败: '.$e->getMessage());
             $this->send($socketId, json_encode([
                 'type' => 'auth_failed',
                 'message' => Lang::get('ssh.connection_failed', ['message' => $e->getMessage()]),
@@ -229,7 +233,7 @@ class SshWebSocketServer extends Command
 
     private function handleInput(int $socketId, array $data): void
     {
-        if (!isset($this->clients[$socketId]['ssh'])) {
+        if (! isset($this->clients[$socketId]['ssh'])) {
             return;
         }
 
@@ -237,7 +241,7 @@ class SshWebSocketServer extends Command
         $input = $data['data'] ?? '';
 
         try {
-            $this->info("写入输入: " . json_encode($input));
+            $this->info('写入输入: '.json_encode($input));
             $ssh->write($input);
 
             // 立即读取回显/输出
@@ -250,14 +254,14 @@ class SshWebSocketServer extends Command
                 $this->readAndSendOutput($socketId);
             }
         } catch (\Exception $e) {
-            $this->error("写入 SSH 失败: " . $e->getMessage());
+            $this->error('写入 SSH 失败: '.$e->getMessage());
             $this->disconnectClient($socketId);
         }
     }
 
     private function readAndSendOutput(int $socketId): void
     {
-        if (!isset($this->clients[$socketId]['ssh'])) {
+        if (! isset($this->clients[$socketId]['ssh'])) {
             return;
         }
 
@@ -278,14 +282,14 @@ class SshWebSocketServer extends Command
             }
 
             if ($allOutput !== '') {
-                $this->info("读取到输出，长度: " . strlen($allOutput));
+                $this->info('读取到输出，长度: '.strlen($allOutput));
                 $this->send($socketId, json_encode([
                     'type' => 'output',
                     'data' => $allOutput,
                 ]));
             }
         } catch (\Exception $e) {
-            $this->error("读取输出失败: " . $e->getMessage());
+            $this->error('读取输出失败: '.$e->getMessage());
         }
     }
 
@@ -320,7 +324,7 @@ class SshWebSocketServer extends Command
 
     private function disconnectClient(int $socketId): void
     {
-        if (!isset($this->clients[$socketId])) {
+        if (! isset($this->clients[$socketId])) {
             return;
         }
 
@@ -372,7 +376,7 @@ class SshWebSocketServer extends Command
 
     private function send(int $socketId, string $message): void
     {
-        if (!isset($this->socketMap[$socketId])) {
+        if (! isset($this->socketMap[$socketId])) {
             return;
         }
 
@@ -434,6 +438,7 @@ class SshWebSocketServer extends Command
             for ($i = 0; $i < $length; $i++) {
                 $decoded .= $payload[$i] ^ $mask[$i % 4];
             }
+
             return $decoded;
         }
 
@@ -448,11 +453,11 @@ class SshWebSocketServer extends Command
         if ($length <= 125) {
             $frame .= chr($length);
         } elseif ($length <= 65535) {
-            $frame .= chr(126) . pack('n', $length);
+            $frame .= chr(126).pack('n', $length);
         } else {
-            $frame .= chr(127) . pack('J', $length);
+            $frame .= chr(127).pack('J', $length);
         }
 
-        return $frame . $message;
+        return $frame.$message;
     }
 }

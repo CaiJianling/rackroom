@@ -13,6 +13,10 @@ class Room extends Model
         'location',
         'manager',
         'description',
+        'temp_humidity_url',
+        'current_temp',
+        'current_humidity',
+        'temp_humidity_updated_at',
     ];
 
     public function racks(): HasMany

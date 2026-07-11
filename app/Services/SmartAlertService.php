@@ -69,8 +69,10 @@ class SmartAlertService
             if ($ruleType === 'rack_capacity') {
                 $usedSlots = $entity->devices()->count();
                 $totalSlots = $entity->slots ?? 42;
+
                 return $totalSlots > 0 ? ($usedSlots / $totalSlots) * 100 : 0;
             }
+
             return 0;
         }
 
@@ -87,15 +89,19 @@ class SmartAlertService
     {
         $maxPower = $device->deviceLibrary?->power ?? 500;
         $currentPower = $device->power ?? 0;
-        if ($maxPower <= 0) return 0;
+        if ($maxPower <= 0) {
+            return 0;
+        }
+
         return ($currentPower / $maxPower) * 100;
     }
 
     private function getHealthScore(Device $device): float
     {
-        $healthService = new DeviceHealthAnalysisService();
+        $healthService = new DeviceHealthAnalysisService;
         try {
             $analysis = $healthService->analyzeDeviceHealth($device->id);
+
             return $analysis['health_score'] ?? 100;
         } catch (\Exception $e) {
             return 100;
@@ -154,21 +160,23 @@ class SmartAlertService
             ->where('id', '!=', $device->rack_id)
             ->get()
             ->map(function ($rack) {
-                $totalPower = $rack->devices->sum(fn($d) => $d->deviceLibrary?->power ?? 100);
+                $totalPower = $rack->devices->sum(fn ($d) => $d->deviceLibrary?->power ?? 100);
                 $maxPower = ($rack->slots ?? 42) * 100;
+
                 return [
                     'rack' => $rack,
                     'available_power' => $maxPower - $totalPower,
                     'utilization' => $maxPower > 0 ? ($totalPower / $maxPower) * 100 : 0,
                 ];
             })
-            ->filter(fn($r) => $r['available_power'] > 100)
+            ->filter(fn ($r) => $r['available_power'] > 100)
             ->sortBy('utilization');
 
         $bestRack = $otherRacks->first();
 
         if ($bestRack) {
             $utilization = number_format($bestRack['utilization'], 1);
+
             return [
                 'title' => '负载均衡建议',
                 'description' => "将 {$device->name} 迁移到 {$bestRack['rack']->name} ({$bestRack['rack']->room?->name}) 可以平衡负载。当前机柜利用率 {$utilization}%。",
@@ -179,6 +187,7 @@ class SmartAlertService
         }
 
         $valStr = number_format($value, 1);
+
         return [
             'title' => '电源负载过高',
             'description' => "{$device->name} 当前功率负载 {$valStr}%，超过预设阈值。建议检查设备功耗或升级电源模块。",
@@ -191,6 +200,7 @@ class SmartAlertService
     {
         $healthScore = $this->getHealthScore($device);
         $scoreStr = number_format($healthScore, 1);
+
         return [
             'title' => '健康度下降告警',
             'description' => "{$device->name} 当前健康度 {$scoreStr}%。建议进行设备检查和维护。",
@@ -212,11 +222,11 @@ class SmartAlertService
 
     private function generateRackCapacitySuggestion(Device $device): array
     {
-        if (!$device instanceof Rack) {
+        if (! $device instanceof Rack) {
             $device = $device->rack;
         }
 
-        if (!$device) {
+        if (! $device) {
             return [
                 'title' => '机柜容量预警',
                 'description' => '机柜容量接近上限，请考虑扩展或重新分配设备。',
@@ -228,8 +238,8 @@ class SmartAlertService
         $availableRacks = Rack::with('room')
             ->where('id', '!=', $device->id)
             ->get()
-            ->filter(fn($r) => ($r->slots ?? 42) - $r->devices()->count() > 5)
-            ->sortBy(fn($r) => $r->devices()->count() / ($r->slots ?? 42));
+            ->filter(fn ($r) => ($r->slots ?? 42) - $r->devices()->count() > 5)
+            ->sortBy(fn ($r) => $r->devices()->count() / ($r->slots ?? 42));
 
         $bestRack = $availableRacks->first();
 

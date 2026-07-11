@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -33,7 +34,7 @@ class DetectionLog extends Model
     /**
      * 获取最近的检测日志
      */
-    public static function getRecent(int $limit = 10): \Illuminate\Database\Eloquent\Collection
+    public static function getRecent(int $limit = 10): Collection
     {
         return self::orderByDesc('created_at')
             ->limit($limit)

@@ -89,7 +89,7 @@ class DeviceChangeLogController extends Controller
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
 
-        if (!$dateFrom || !$dateTo) {
+        if (! $dateFrom || ! $dateTo) {
             return response()->json([
                 'success' => false,
                 'message' => '请提供开始日期和结束日期',

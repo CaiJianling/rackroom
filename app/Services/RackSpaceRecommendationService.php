@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\Device;
 use App\Models\DeviceLibrary;
 use App\Models\Rack;
 use Illuminate\Support\Collection;
@@ -10,6 +9,7 @@ use Illuminate\Support\Collection;
 class RackSpaceRecommendationService
 {
     private const COOLING_PATTERN_TOP_DOWN = 'top_down';
+
     private const COOLING_PATTERN_BOTTOM_UP = 'bottom_up';
 
     public function __construct(
@@ -141,6 +141,7 @@ class RackSpaceRecommendationService
                 'power' => $device->power ?? 0,
             ];
         }
+
         return $ranges;
     }
 
@@ -363,7 +364,7 @@ class RackSpaceRecommendationService
         $currentGapStart = null;
 
         for ($u = 1; $u <= $rack->u_count; $u++) {
-            if (!$occupiedSlots[$u]) {
+            if (! $occupiedSlots[$u]) {
                 if ($currentGapStart === null) {
                     $currentGapStart = $u;
                 }
@@ -437,7 +438,7 @@ class RackSpaceRecommendationService
     {
         $query = Rack::with(['devices.deviceLibrary', 'rackType']);
 
-        if (!empty($rackIds)) {
+        if (! empty($rackIds)) {
             $query->whereIn('id', $rackIds);
         }
 
@@ -585,7 +586,7 @@ class RackSpaceRecommendationService
         $groupedByRoom = [];
         foreach ($topRecommendations as $rec) {
             $roomName = $rec['room_name'];
-            if (!isset($groupedByRoom[$roomName])) {
+            if (! isset($groupedByRoom[$roomName])) {
                 $groupedByRoom[$roomName] = [];
             }
             $groupedByRoom[$roomName][] = $rec;
@@ -735,13 +736,13 @@ class RackSpaceRecommendationService
             }
         }
 
-        if (!$canFit || !$powerOk) {
+        if (! $canFit || ! $powerOk) {
             return [
                 'rack_id' => $rack->id,
                 'rack_name' => $rack->name,
                 'room_name' => $rack->room?->name,
                 'can_accommodate' => false,
-                'reason' => !$canFit ? '空间不足' : '电源容量不足',
+                'reason' => ! $canFit ? '空间不足' : '电源容量不足',
             ];
         }
 
@@ -880,9 +881,10 @@ class RackSpaceRecommendationService
 
         if ($matchingCount > 0) {
             $score = 70 + ($matchingCount * 10);
+
             return [
                 'score' => min(100, $score),
-                'reasons' => ["与现有设备类型兼容（" . implode(', ', $matchingTypes) . "）"],
+                'reasons' => ['与现有设备类型兼容（'.implode(', ', $matchingTypes).'）'],
             ];
         }
 
@@ -970,12 +972,12 @@ class RackSpaceRecommendationService
             if ($powerRatio > 0.9) {
                 $warnings[] = [
                     'type' => 'danger',
-                    'message' => "电源负载将达到 {$powerAfter}W，占额定功率的 " . round($powerRatio * 100, 1) . "%，接近上限",
+                    'message' => "电源负载将达到 {$powerAfter}W，占额定功率的 ".round($powerRatio * 100, 1).'%，接近上限',
                 ];
             } elseif ($powerRatio > 0.8) {
                 $warnings[] = [
                     'type' => 'warning',
-                    'message' => "电源负载将达到 {$powerAfter}W，占额定功率的 " . round($powerRatio * 100, 1) . "%，建议关注",
+                    'message' => "电源负载将达到 {$powerAfter}W，占额定功率的 ".round($powerRatio * 100, 1).'%，建议关注',
                 ];
             }
         }

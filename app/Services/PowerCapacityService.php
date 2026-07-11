@@ -2,10 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Device;
 use App\Models\Rack;
 use App\Models\Room;
-use Illuminate\Support\Collection;
 
 class PowerCapacityService
 {
@@ -47,10 +45,10 @@ class PowerCapacityService
         if ($powerLimit > 0) {
             if ($utilization >= 90) {
                 $status = 'critical';
-                $warning = '电源容量即将超载，当前负载 ' . round($utilization, 1) . '%';
+                $warning = '电源容量即将超载，当前负载 '.round($utilization, 1).'%';
             } elseif ($utilization >= 80) {
                 $status = 'warning';
-                $warning = '电源容量接近上限，当前负载 ' . round($utilization, 1) . '%';
+                $warning = '电源容量接近上限，当前负载 '.round($utilization, 1).'%';
             }
         }
 
@@ -137,7 +135,7 @@ class PowerCapacityService
 
     private function getRedundancyRecommendation(Rack $rack, bool $hasRedundantPower, float $powerLimit): string
     {
-        if (!$hasRedundantPower && $rack->devices->count() > 1) {
+        if (! $hasRedundantPower && $rack->devices->count() > 1) {
             return '建议为高功率设备配置冗余电源模块，以提高系统可靠性';
         }
 
@@ -236,10 +234,10 @@ class PowerCapacityService
             $zoneIndex = (int) ($rackIndex / 4);
             $rackPower = (float) $rack->devices->sum('power');
 
-            if (!isset($zones[$zoneIndex])) {
+            if (! isset($zones[$zoneIndex])) {
                 $zones[$zoneIndex] = [
                     'zone' => $zoneIndex + 1,
-                    'label' => "区域 " . ($zoneIndex + 1),
+                    'label' => '区域 '.($zoneIndex + 1),
                     'rack_count' => 0,
                     'total_power' => 0,
                     'power_limit' => 0,

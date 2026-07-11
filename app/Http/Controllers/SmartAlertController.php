@@ -55,10 +55,10 @@ class SmartAlertController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
-            'rule_type' => 'required|in:' . implode(',', array_keys(AlertRule::RULE_TYPES)),
-            'condition' => 'required|in:' . implode(',', array_keys(AlertRule::CONDITIONS)),
+            'rule_type' => 'required|in:'.implode(',', array_keys(AlertRule::RULE_TYPES)),
+            'condition' => 'required|in:'.implode(',', array_keys(AlertRule::CONDITIONS)),
             'condition_value' => 'required|numeric',
-            'severity' => 'required|in:' . implode(',', array_keys(AlertRule::SEVERITIES)),
+            'severity' => 'required|in:'.implode(',', array_keys(AlertRule::SEVERITIES)),
             'is_enabled' => 'boolean',
             'suggestion' => 'nullable|string|max:1000',
         ]);
@@ -79,10 +79,10 @@ class SmartAlertController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string|max:1000',
-            'rule_type' => 'sometimes|required|in:' . implode(',', array_keys(AlertRule::RULE_TYPES)),
-            'condition' => 'sometimes|required|in:' . implode(',', array_keys(AlertRule::CONDITIONS)),
+            'rule_type' => 'sometimes|required|in:'.implode(',', array_keys(AlertRule::RULE_TYPES)),
+            'condition' => 'sometimes|required|in:'.implode(',', array_keys(AlertRule::CONDITIONS)),
             'condition_value' => 'sometimes|required|numeric',
-            'severity' => 'sometimes|required|in:' . implode(',', array_keys(AlertRule::SEVERITIES)),
+            'severity' => 'sometimes|required|in:'.implode(',', array_keys(AlertRule::SEVERITIES)),
             'is_enabled' => 'boolean',
             'suggestion' => 'nullable|string|max:1000',
         ]);
@@ -110,7 +110,7 @@ class SmartAlertController extends Controller
     public function toggle(int $id): JsonResponse
     {
         $rule = AlertRule::findOrFail($id);
-        $rule->update(['is_enabled' => !$rule->is_enabled]);
+        $rule->update(['is_enabled' => ! $rule->is_enabled]);
 
         return response()->json([
             'success' => true,
