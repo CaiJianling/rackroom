@@ -252,6 +252,72 @@ class DashboardController extends Controller
         $totalPower = Device::sum('power');
         $activeAlerts = Alert::active()->count();
 
+        $rooms = Room::with('racks')->get();
+        $roomStats = $rooms->map(function ($room) {
+            $racks = $room->racks;
+            $rackCount = $racks->count();
+            $deviceCount = Device::whereIn('rack_id', $racks->pluck('id'))->count();
+
+            $temperatures = $racks->filter(fn($r) => $r->current_temp !== null)->pluck('current_temp');
+            $humidities = $racks->filter(fn($r) => $r->current_humidity !== null)->pluck('current_humidity');
+
+            $avgTemp = $temperatures->isNotEmpty() ? round($temperatures->avg(), 1) : '--';
+            $avgHumidity = $humidities->isNotEmpty() ? round($humidities->avg(), 1) : '--';
+
+            $rackDetails = $racks->map(function ($rack) {
+                $rackDeviceCount = Device::where('rack_id', $rack->id)->count();
+                return [
+                    'id' => $rack->id,
+                    'name' => $rack->name,
+                    'u_count' => $rack->u_count,
+                    'power' => $rack->power,
+                    'device_count' => $rackDeviceCount,
+                    'temperature' => $rack->current_temp ?? '--',
+                    'humidity' => $rack->current_humidity ?? '--',
+                ];
+            })->toArray();
+
+            return [
+                'id' => $room->id,
+                'name' => $room->name,
+                'racks' => $rackCount,
+                'devices' => $deviceCount,
+                'temperature' => $avgTemp,
+                'humidity' => $avgHumidity,
+                'rack_details' => $rackDetails,
+            ];
+        })->toArray();
+
+        $allTemperatures = [];
+        foreach ($roomStats as $room) {
+            if (is_numeric($room['temperature'])) {
+                $allTemperatures[] = $room['temperature'];
+            }
+        }
+        $overallAvgTemp = !empty($allTemperatures) ? round(array_sum($allTemperatures) / count($allTemperatures), 1) : '--';
+
+        $totalCapacity = Rack::sum('u_count');
+        $usedCapacity = Device::sum('u_height');
+        $loadPercent = $totalCapacity > 0 ? round(($usedCapacity / $totalCapacity) * 100, 1) : 0;
+
+        $recentDevices = Device::with(['deviceLibrary.deviceType', 'rack'])
+            ->orderByDesc('updated_at')
+            ->limit(10)
+            ->get()
+            ->map(fn ($device) => [
+                'id' => $device->id,
+                'name' => $device->name,
+                'model' => $device->model,
+                'status' => $device->status,
+                'power' => $device->power,
+                'rack_name' => $device->rack?->name ?? '',
+                'temperature' => $device->rack?->current_temp ?? '--',
+                'humidity' => $device->rack?->current_humidity ?? '--',
+                'type_name' => $device->deviceLibrary?->deviceType?->name ?? '',
+                'type_color' => $device->deviceLibrary?->deviceType?->color ?? '#3b82f6',
+            ])
+            ->toArray();
+
         return [
             'summary' => [
                 'rooms' => Room::count(),
@@ -264,6 +330,8 @@ class DashboardController extends Controller
                 'maintenanceDevices' => $deviceStats['maintenance'] ?? 0,
                 'criticalAlerts' => Alert::ofSeverity('critical')->active()->count(),
                 'warningAlerts' => Alert::ofSeverity('warning')->active()->count(),
+                'avgTemperature' => $overallAvgTemp,
+                'loadPercent' => $loadPercent,
             ],
             'deviceStatus' => [
                 'online' => $deviceStats['online'] ?? 0,
@@ -271,17 +339,7 @@ class DashboardController extends Controller
                 'maintenance' => $deviceStats['maintenance'] ?? 0,
                 'total' => Device::count(),
             ],
-            'roomStats' => Room::withCount(['racks', 'devices'])
-                ->get()
-                ->map(fn ($room) => [
-                    'id' => $room->id,
-                    'name' => $room->name,
-                    'racks' => $room->racks_count,
-                    'devices' => $room->devices_count,
-                    'temperature' => $room->current_temperature ?? '--',
-                    'humidity' => $room->current_humidity ?? '--',
-                ])
-                ->toArray(),
+            'roomStats' => $roomStats,
             'recentAlerts' => Alert::active()
                 ->orderByDesc('triggered_at')
                 ->limit(8)
@@ -293,12 +351,14 @@ class DashboardController extends Controller
                     'triggered_at' => $alert->triggered_at->format('m-d H:i'),
                 ])
                 ->toArray(),
-            'deviceTypes' => DeviceType::all()
+            'recentDevices' => $recentDevices,
+            'deviceTypes' => DeviceType::withCount('devices')
+                ->get()
                 ->map(fn ($type) => [
                     'id' => $type->id,
                     'name' => $type->name,
-                    'color' => $type->color ?? '#3b82f6',
-                    'count' => Device::where('device_type_id', $type->id)->count(),
+                    'color' => $type->color,
+                    'count' => $type->devices_count,
                 ])
                 ->toArray(),
             'timestamp' => now()->format('Y-m-d H:i:s'),
