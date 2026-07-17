@@ -594,6 +594,7 @@ export default function Cockpit({ data }: Props) {
                                     dampingFactor={0.1}
                                 />
 
+                                {/* <Environment preset="city" /> */}
                                 <Environment files="/hdr/potsdamer_platz_1k.hdr" />
                             </Canvas>
                         </div>
