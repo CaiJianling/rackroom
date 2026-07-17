@@ -71,7 +71,7 @@ function ReactSlot({ position, color }: { position: [number, number, number]; co
     );
 }
 
-export function ServerRoom3D({ temp, rackCount = 6, racks = [] }: ServerRoom3DProps) {
+export function ServerRoom3D({ temp, rackCount = 0, racks = [] }: ServerRoom3DProps) {
     const groupRef = useRef<THREE.Group>(null);
 
     useFrame((state) => {
@@ -80,8 +80,8 @@ export function ServerRoom3D({ temp, rackCount = 6, racks = [] }: ServerRoom3DPr
         }
     });
 
-    const rows = 2;
-    const cols = Math.max(Math.ceil(rackCount / rows), 3);
+    const rows = rackCount > 0 ? 2 : 0;
+    const cols = rackCount > 0 ? Math.max(Math.ceil(rackCount / rows), 3) : 0;
 
     return (
         <group ref={groupRef}>

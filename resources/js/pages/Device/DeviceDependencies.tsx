@@ -190,6 +190,7 @@ export default function DeviceDependencies({ breadcrumbs = BREADCRUMBS }: { brea
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [lastTranslate, setLastTranslate] = useState({ x: 0, y: 0 });
+    const [wheelZoomEnabled, setWheelZoomEnabled] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
     const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -381,6 +382,7 @@ export default function DeviceDependencies({ breadcrumbs = BREADCRUMBS }: { brea
     }, []);
 
     const handleWheel = useCallback((e: React.WheelEvent) => {
+        if (!wheelZoomEnabled) return;
         e.preventDefault();
         const delta = e.deltaY > 0 ? 0.9 : 1.1;
         const newScale = Math.max(0.25, Math.min(3, scale * delta));
@@ -396,7 +398,7 @@ export default function DeviceDependencies({ breadcrumbs = BREADCRUMBS }: { brea
             setScale(newScale);
             setTranslate({ x: newTranslateX, y: newTranslateY });
         }
-    }, [scale, translate]);
+    }, [scale, translate, wheelZoomEnabled]);
 
     const handleZoomIn = useCallback(() => {
         setScale(prev => Math.min(3, prev * 1.2));
@@ -590,6 +592,22 @@ export default function DeviceDependencies({ breadcrumbs = BREADCRUMBS }: { brea
                         >
                             +
                         </Button>
+                        <div className="flex items-center gap-2 ml-4 border-l border-border pl-4">
+                            <span className="text-sm text-muted-foreground">滚轮缩放</span>
+                            <button
+                                onClick={() => setWheelZoomEnabled(!wheelZoomEnabled)}
+                                className={`relative w-10 h-5 rounded-full transition-colors duration-200 ${
+                                    wheelZoomEnabled ? 'bg-primary' : 'bg-muted'
+                                }`}
+                                title={wheelZoomEnabled ? '关闭滚轮缩放' : '开启滚轮缩放'}
+                            >
+                                <span
+                                    className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${
+                                        wheelZoomEnabled ? 'translate-x-5' : 'translate-x-0'
+                                    }`}
+                                />
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div

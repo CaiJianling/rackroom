@@ -582,7 +582,7 @@ export default function Cockpit({ data }: Props) {
 
                                 <ServerRoom3D
                                     temp={liveTemp}
-                                    rackCount={selectedRoom?.racks || 6}
+                                    rackCount={selectedRoom?.racks ?? 0}
                                     racks={selectedRoom?.rack_details || []}
                                 />
 
@@ -594,7 +594,7 @@ export default function Cockpit({ data }: Props) {
                                     dampingFactor={0.1}
                                 />
 
-                                <Environment preset="city" />
+                                <Environment files="/hdr/potsdamer_platz_1k.hdr" />
                             </Canvas>
                         </div>
 
