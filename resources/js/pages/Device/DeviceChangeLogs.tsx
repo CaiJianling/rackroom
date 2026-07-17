@@ -87,6 +87,24 @@ export default function DeviceChangeLogs({ breadcrumbs = BREADCRUMBS }: Props) {
         maintenance: '维护',
     };
 
+    const formatDateTime = (dateTime: string): string => {
+        try {
+            const date = new Date(dateTime);
+            if (isNaN(date.getTime())) return dateTime;
+
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        } catch {
+            return dateTime;
+        }
+    };
+
     useEffect(() => {
         loadLogs();
     }, []);
@@ -410,7 +428,7 @@ export default function DeviceChangeLogs({ breadcrumbs = BREADCRUMBS }: Props) {
                                                             <User className="h-3 w-3" />
                                                             {log.operator_name || '系统'}
                                                         </span>
-                                                        <span>{log.created_at}</span>
+                                                        <span>{formatDateTime(log.created_at)}</span>
                                                         {log.operator_ip && <span>IP: {log.operator_ip}</span>}
                                                     </div>
 
@@ -561,7 +579,7 @@ export default function DeviceChangeLogs({ breadcrumbs = BREADCRUMBS }: Props) {
                                                             <User className="h-3 w-3" />
                                                             {migration.operator || '系统'}
                                                         </span>
-                                                        <span>{migration.timestamp}</span>
+                                                        <span>{formatDateTime(migration.timestamp)}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -719,7 +737,7 @@ export default function DeviceChangeLogs({ breadcrumbs = BREADCRUMBS }: Props) {
                                                     </div>
                                                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
                                                         <span>{log.operator || '系统'}</span>
-                                                        <span>{log.timestamp}</span>
+                                                        <span>{formatDateTime(log.timestamp)}</span>
                                                     </div>
                                                 </div>
                                             ))}
